@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventario de la Finca</title>
+</head>
+<body>
+    <h1>Productos en Inventario</h1>
+    <ul>
+        {% for producto in productos %}
+            <li>{{ producto.nombre }} - Cantidad: {{ producto.cantidad }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
