@@ -1,0 +1,13 @@
+{% extends "admin/login.html" %}
+{% load i18n %}
+
+{% block content %}
+    {{ block.super }} {# Esto carga el formulario de login original #}
+
+    <div style="padding: 10px 40px; text-align: center;">
+        <hr>
+        <p>
+            <a href="{% url 'login' %}">‹ Volver al inicio de sesión de usuario</a>
+        </p>
+    </div>
+{% endblock %}

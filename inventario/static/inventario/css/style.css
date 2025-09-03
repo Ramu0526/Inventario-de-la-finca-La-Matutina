@@ -1,0 +1,111 @@
+/* Define los colores como variables para que sea fácil cambiarlos */
+:root {
+    --bg-color: #f4f4f4;
+    --text-color: #333;
+    --form-bg-color: #ffffff;
+    --primary-color: #007bff;
+    --input-border-color: #ccc;
+}
+
+/* Estilos para el modo oscuro */
+body.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --form-bg-color: #1e1e1e;
+    --primary-color: #bb86fc;
+    --input-border-color: #555;
+}
+
+body {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    box-sizing: border-box; /* Añadido para mejor control del tamaño */
+    position: relative;
+}
+
+/* Posiciona el ícono dentro del contenedor */
+#theme-toggle {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+form {
+    background-color: var(--form-bg-color);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: background-color 0.3s;
+}
+
+/* Estilos para nuestro formulario manual */
+.form-field {
+    margin-bottom: 20px;
+}
+
+.form-field input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--text-color);
+}
+
+.form-field label {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* ================================== */
+/* ===== SECCIÓN RESPONSIVE AQUÍ ==== */
+/* ================================== */
+
+/* Estilos para pantallas con un ancho máximo de 600px (celulares) */
+@media (max-width: 600px) {
+    body {
+        /* En móvil, no es tan necesario centrar verticalmente, 
+           podemos darle un poco de espacio arriba y ya. */
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    .login-container {
+        /* Reducimos el padding para que el formulario ocupe más espacio */
+        padding: 10px;
+    }
+
+    form {
+        /* También reducimos el padding interno del formulario */
+        padding: 20px;
+    }
+}

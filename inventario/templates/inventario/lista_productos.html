@@ -1,14 +1,31 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Inventario de la Finca</title>
+    <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
+    <style>
+        /* Estilos para que el botón parezca un enlace */
+        .logout-button {
+            background: none;
+            border: none;
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+            font-size: inherit;
+        }
+    </style>
 </head>
 <body>
+    <p>
+        ¡Hola, {{ user.username }}!
+        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Cerrar sesión</button>
+        </form>
+    </p>
+    
     <h1>Productos en Inventario</h1>
-    <ul>
-        {% for producto in productos %}
-            <li>{{ producto.nombre }} - Cantidad: {{ producto.cantidad }}</li>
-        {% endfor %}
-    </ul>
-</body>
+    </body>
 </html>

@@ -62,7 +62,7 @@ ROOT_URLCONF = 'FincaInventario.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -122,6 +122,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Le decimos a Django cuál es nuestra URL de login personalizada
+LOGIN_URL = 'login'
+
+# A dónde ir después de un login exitoso
+LOGIN_REDIRECT_URL = '/'
 
 # Esta configuración es para que WhiteNoise funcione en Render
 if IS_RENDER:
