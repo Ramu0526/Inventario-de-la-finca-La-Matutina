@@ -6,10 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyTheme = (theme) => {
         if (theme === 'dark') {
             body.classList.add('dark-mode');
-            themeToggle.textContent = '☀️'; // Sol
+            themeToggle.textContent = '🌑'; // luna
         } else {
             body.classList.remove('dark-mode');
-            themeToggle.textContent = '🌑'; // Luna
+            themeToggle.textContent = '☀️'; // sol
         }
     };
 
