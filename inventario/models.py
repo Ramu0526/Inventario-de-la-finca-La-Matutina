@@ -1,6 +1,7 @@
 # inventario/models.py
 from django.db import models
-from django.conf import settings # Necesario para el historial
+from django.conf import settings
+from django.core.validators import MinValueValidator
 # Se elimina la importación de CloudinaryField
 
 # --- NUEVOS MODELOS PARA 'INVENTARIO' ---
@@ -33,14 +34,14 @@ class Medicamento(models.Model):
 
 class Alimento(models.Model):
     nombre = models.CharField(max_length=100, help_text="Ej: Heno, Silo de maíz, Sal mineral")
-    cantidad_kg = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_kg = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)])
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True)
     def __str__(self): return self.nombre
 
 class ControlPlaga(models.Model):
     nombre_producto = models.CharField(max_length=100)
     tipo = models.CharField(max_length=50, help_text="Ej: Herbicida, Insecticida")
-    cantidad_litros = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_litros = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)])
     def __str__(self): return self.nombre_producto
 
 class Potrero(models.Model):
@@ -57,5 +58,5 @@ class Mantenimiento(models.Model):
 
 class Combustible(models.Model):
     tipo = models.CharField(max_length=50, help_text="Ej: Diesel, Gasolina")
-    cantidad_galones = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_galones = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)])
     def __str__(self): return f"{self.cantidad_galones} galones de {self.tipo}"

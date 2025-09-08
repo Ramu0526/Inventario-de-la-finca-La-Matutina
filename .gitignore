@@ -26,6 +26,9 @@ __pycache__/
 # Archivos de logs
 *.log
 
+# Archivos de Cobertura de Tests
+.coverage
+
 # Carpetas de configuración de editores de código
 .vscode/
 .idea/

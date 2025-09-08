@@ -35,14 +35,11 @@ class CustomUserAdmin(UserAdmin):
         return format_html('<a href="{}">Restablecer contraseña</a>', url)
     password_change_link.short_description = "Contraseña"
 
+# --- SECCIÓN CORREGIDA ---
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cantidad', 'categoria', 'imagen_thumbnail')
-
-    def imagen_thumbnail(self, obj):
-        if obj.imagen:
-            return format_html('<img src="{}" width="50" height="50" />', obj.imagen.url)
-        return "Sin imagen"
-    imagen_thumbnail.short_description = 'Vista Previa'
+    # Eliminamos 'imagen_thumbnail' porque el campo 'imagen' ya no existe
+    list_display = ('nombre', 'cantidad', 'categoria')
+    # Ya no necesitamos la función imagen_thumbnail, así que la eliminamos
 
 # --- 2. Registro de Modelos en el Admin (Forma Correcta) ---
 

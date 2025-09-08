@@ -1,3 +1,103 @@
 from django.test import TestCase
+from django.core.exceptions import ValidationError
+from .models import Alimento, ControlPlaga, Combustible
+from caracteristicas.models import Ubicacion
 
-# Create your tests here.
+class AlimentoModelTest(TestCase):
+
+    def setUp(self):
+        self.ubicacion = Ubicacion.objects.create(nombre="Bodega")
+
+    def test_cantidad_kg_cannot_be_negative(self):
+        """
+        Test that an Alimento with a negative cantidad_kg raises a ValidationError.
+        """
+        alimento = Alimento(
+            nombre="Heno",
+            cantidad_kg=-10.5,
+            ubicacion=self.ubicacion
+        )
+
+        with self.assertRaises(ValidationError):
+            alimento.full_clean()
+
+class ControlPlagaModelTest(TestCase):
+
+    def test_cantidad_litros_cannot_be_negative(self):
+        """
+        Test that a ControlPlaga with a negative cantidad_litros raises a ValidationError.
+        """
+        control_plaga = ControlPlaga(
+            nombre_producto="Herbicida",
+            tipo="Herbicida",
+            cantidad_litros=-5.0
+        )
+
+        with self.assertRaises(ValidationError):
+            control_plaga.full_clean()
+
+class CombustibleModelTest(TestCase):
+
+    def test_cantidad_galones_cannot_be_negative(self):
+        """
+        Test that a Combustible with a negative cantidad_galones raises a ValidationError.
+        """
+        combustible = Combustible(
+            tipo="Diesel",
+            cantidad_galones=-20.0
+        )
+
+        with self.assertRaises(ValidationError):
+            combustible.full_clean()
+
+from django.test import Client
+from django.urls import reverse
+from django.contrib.auth.models import User
+from django.contrib import admin
+
+class ListaProductosViewTest(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.url = reverse('lista_productos')
+
+    def test_lista_productos_view_authenticated_user(self):
+        """
+        Test that an authenticated user can access the lista_productos page.
+        """
+        self.client.login(username='testuser', password='password')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventario/lista_productos.html')
+
+    def test_lista_productos_view_unauthenticated_user(self):
+        """
+        Test that an unauthenticated user is redirected to the login page.
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/login/?next=/')
+
+from .admin import CustomUserChangeForm, CustomUserAdmin
+from .models import Producto
+from django.contrib.auth.forms import UserChangeForm
+
+class CustomUserChangeFormTest(TestCase):
+
+    def test_custom_labels(self):
+        form = CustomUserChangeForm()
+        self.assertEqual(form.fields['first_name'].label, "Nombre")
+        self.assertEqual(form.fields['last_name'].label, "Apellido")
+
+class CustomUserAdminTest(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.admin = CustomUserAdmin(User, admin.site)
+
+    def test_password_change_link(self):
+        link = self.admin.password_change_link(self.user)
+        expected_link = f'<a href="/admin/auth/user/{self.user.pk}/password/">Restablecer contraseña</a>'
+        # We check for a partial match because the full URL might be different
+        self.assertIn('Restablecer contraseña', link)
