@@ -112,15 +112,8 @@ if DEBUG:
 else:
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    # Configuración de Cloudinary
-    CLOUDINARY_URL = config('CLOUDINARY_URL', default=None)
-    if CLOUDINARY_URL:
-        DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-        CLOUDINARY_STORAGE = {
-            'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-            'API_KEY': config('CLOUDINARY_API_KEY'),
-            'API_SECRET': config('CLOUDINARY_API_SECRET'),
-        }
+    # django-cloudinary-storage lee automáticamente la variable de entorno CLOUDINARY_URL
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
