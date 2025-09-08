@@ -14,3 +14,10 @@ urlpatterns = [
     # URL de tu aplicación de inventario
     path('', include('inventario.urls')),
 ]
+
+# --- Configuración para servir archivos multimedia en Desarrollo ---
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

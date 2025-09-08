@@ -30,6 +30,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Librerías de terceros
+    'cloudinary_storage',
+    'cloudinary',
     
     # Mis aplicaciones
     'inventario',
@@ -99,12 +103,24 @@ LOGIN_REDIRECT_URL = '/'
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
 
-# Configuración de archivos estáticos para Producción (Render)
-# Esta condición ahora funcionará porque DEBUG será False en Render
-if not DEBUG:
+# En desarrollo, los medios se guardan localmente
+if DEBUG:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# En producción, se configuran para Cloudinary
+else:
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Configuración de Cloudinary
+    CLOUDINARY_URL = config('CLOUDINARY_URL', default=None)
+    if CLOUDINARY_URL:
+        DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+            'API_KEY': config('CLOUDINARY_API_KEY'),
+            'API_SECRET': config('CLOUDINARY_API_SECRET'),
+        }
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
