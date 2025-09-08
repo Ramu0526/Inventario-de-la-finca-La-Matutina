@@ -1,21 +1,18 @@
 # inventario/models.py
 from django.db import models
 from django.conf import settings # Necesario para el historial
-# LÍNEA CORRECTA
-from cloudinary_storage.storage import MediaCloudinaryStorage
+# Se elimina la importación de CloudinaryField
 
 # --- NUEVOS MODELOS PARA 'INVENTARIO' ---
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     cantidad = models.PositiveIntegerField()
+    # Conectamos con los modelos que estarán en la otra app
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True)
     proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
-
-    # Cambia CloudinaryField por ImageField. 
-    # Django usará Cloudinary automáticamente gracias a tu settings.py
-    imagen = models.ImageField(upload_to='productos/', null=True, blank=True, help_text="Sube una foto del producto")
+    # Se elimina el campo 'imagen'
 
     def __str__(self):
         return self.nombre

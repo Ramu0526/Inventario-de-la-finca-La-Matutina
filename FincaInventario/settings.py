@@ -3,40 +3,28 @@ Django settings for FincaInventario project.
 """
 
 from pathlib import Path
-import dj_database_url
-from decouple import config # <-- Importado al principio
+# Se eliminan las importaciones de dj_database_url y decouple
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Variables de Entorno Leídas con Decouple ---
-SECRET_KEY = config('SECRET_KEY')
-CLOUDINARY_URL = config('CLOUDINARY_URL', default='')
+# Se elimina la lógica de decouple para SECRET_KEY y CLOUDINARY_URL
+# La SECRET_KEY se vuelve a poner directamente (puedes cambiarla después)
+SECRET_KEY = 'django-insecure-a5b&z!m8(0y@q*v2-c9+j$l#p!k_f@x)o=h-n&3b*g'
 
-# --- Configuración de Desarrollo vs. Producción (Render) ---
-IS_RENDER = 'RENDER' in config('RENDER_VAR', default='') # Usamos decouple aquí también
-if IS_RENDER:
-    DEBUG = False
-else:
-    DEBUG = True
+# DEBUG se establece en True para desarrollo local
+DEBUG = True
 
 ALLOWED_HOSTS = []
-RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 
-
-# --- Application definition ---
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage', # <-- Antes de staticfiles
     'django.contrib.staticfiles',
-    'cloudinary',
+    # Se eliminan 'cloudinary_storage' y 'cloudinary'
     
     # Mis aplicaciones
     'inventario',
@@ -46,7 +34,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Whitenoise puede quedarse, es útil
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -74,22 +62,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'FincaInventario.wsgi.application'
 
-
-# --- Database ---
-if IS_RENDER:
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+# Database
+# Se revierte a la configuración simple de SQLite
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
-
-# --- Password validation ---
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -97,8 +79,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# --- Internationalization & Authentication ---
+# Internationalization & Authentication
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 USE_I18N = True
@@ -106,18 +87,12 @@ USE_TZ = True
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 
-
-# --- Static, Media & Cloudinary Files ---
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Se eliminan MEDIA_URL, MEDIA_ROOT, DEFAULT_FILE_STORAGE y la lógica de Render para STATIC_ROOT
+# Si tenías una carpeta de staticfiles en la raíz, puedes añadir esta línea:
+# STATICFILES_DIRS = [BASE_DIR / "static"]
 
-if IS_RENDER:
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-
-# --- Default primary key field type ---
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
