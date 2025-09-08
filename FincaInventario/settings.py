@@ -90,6 +90,11 @@ LOGIN_REDIRECT_URL = '/'
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 
+# Configuración de archivos estáticos para Producción (Render)
+if not DEBUG:
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Se eliminan MEDIA_URL, MEDIA_ROOT, DEFAULT_FILE_STORAGE y la lógica de Render para STATIC_ROOT
 # Si tenías una carpeta de staticfiles en la raíz, puedes añadir esta línea:
 # STATICFILES_DIRS = [BASE_DIR / "static"]
