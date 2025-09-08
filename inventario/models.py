@@ -1,7 +1,7 @@
 # inventario/models.py
 from django.db import models
 from django.conf import settings # Necesario para el historial
-
+from cloudinary_storage.fields import CloudinaryField
 
 # --- NUEVOS MODELOS PARA 'INVENTARIO' ---
 
@@ -12,8 +12,11 @@ class Producto(models.Model):
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True)
     proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
-    def __str__(self): return self.nombre
+    imagen = CloudinaryField('image', null=True, blank=True, help_text="Sube una foto del producto")
 
+    def __str__(self):
+        return self.nombre
+    
 class Ganado(models.Model):
     identificador = models.CharField(max_length=50, unique=True, help_text="Ej: Arete N° 123")
     raza = models.CharField(max_length=100)
