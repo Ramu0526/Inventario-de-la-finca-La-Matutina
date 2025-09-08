@@ -9,13 +9,14 @@ from django.urls import reverse
 from .models import (Producto, Ganado, Medicamento, Alimento, 
                      ControlPlaga, Potrero, Mantenimiento, Combustible)
 
+# --- 1. Clases de Personalización del Admin ---
+
 class CustomUserChangeForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['first_name'].label = "Nombre"
         self.fields['last_name'].label = "Apellido"
 
-# --- Personalización del Admin de Usuarios (CON EL ENLACE CORREGIDO) ---
 class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
     fieldsets = (
@@ -29,21 +30,33 @@ class CustomUserAdmin(UserAdmin):
     )
     readonly_fields = ('password_change_link',)
 
-    # MÉTODO CORREGIDO
     def password_change_link(self, obj):
-        # Usamos 'reverse' para obtener la URL correcta y segura para cambiar la contraseña
         url = reverse('admin:auth_user_password_change', args=[obj.pk])
         return format_html('<a href="{}">Restablecer contraseña</a>', url)
     password_change_link.short_description = "Contraseña"
-# --- Registro de Modelos en el Admin ---
 
+class ProductoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'cantidad', 'categoria', 'imagen_thumbnail')
+
+    def imagen_thumbnail(self, obj):
+        if obj.imagen:
+            return format_html('<img src="{}" width="50" height="50" />', obj.imagen.url)
+        return "Sin imagen"
+    imagen_thumbnail.short_description = 'Vista Previa'
+
+# --- 2. Registro de Modelos en el Admin (Forma Correcta) ---
+
+# Ocultamos el modelo Group del admin
 admin.site.unregister(Group)
+
+# Registramos User con su personalización
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
+# Registramos Producto con su personalización
+admin.site.register(Producto, ProductoAdmin)
 
-# Registramos SOLAMENTE los modelos de la app 'inventario'
-admin.site.register(Producto)
+# Registramos el resto de los modelos de 'inventario' (usarán el admin por defecto)
 admin.site.register(Ganado)
 admin.site.register(Medicamento)
 admin.site.register(Alimento)
