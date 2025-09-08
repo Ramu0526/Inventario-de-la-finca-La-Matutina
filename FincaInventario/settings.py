@@ -3,18 +3,24 @@ Django settings for FincaInventario project.
 """
 
 from pathlib import Path
-# Se eliminan las importaciones de dj_database_url y decouple
+from decouple import config
+import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Se elimina la lógica de decouple para SECRET_KEY y CLOUDINARY_URL
-# La SECRET_KEY se vuelve a poner directamente (puedes cambiarla después)
-SECRET_KEY = 'django-insecure-a5b&z!m8(0y@q*v2-c9+j$l#p!k_f@x)o=h-n&3b*g'
+# Lee las variables desde el archivo .env o las variables de entorno de Render
+SECRET_KEY = config('SECRET_KEY')
 
-# DEBUG se establece en True para desarrollo local
-DEBUG = True
+# DEBUG es True solo si la variable de entorno DEBUG es 'True'.
+# En Render, como no existirá, será False por defecto.
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+# Configuración de hosts permitidos
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 INSTALLED_APPS = [
@@ -24,7 +30,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Se eliminan 'cloudinary_storage' y 'cloudinary'
     
     # Mis aplicaciones
     'inventario',
@@ -34,7 +39,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Whitenoise puede quedarse, es útil
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,13 +68,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'FincaInventario.wsgi.application'
 
 # Database
-# Se revierte a la configuración simple de SQLite
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Usa la base de datos de Render si la variable DATABASE_URL existe en el entorno
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
-}
+else: # Si no, usa SQLite para desarrollo local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -91,13 +101,10 @@ LOGIN_REDIRECT_URL = '/'
 STATIC_URL = 'static/'
 
 # Configuración de archivos estáticos para Producción (Render)
+# Esta condición ahora funcionará porque DEBUG será False en Render
 if not DEBUG:
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Se eliminan MEDIA_URL, MEDIA_ROOT, DEFAULT_FILE_STORAGE y la lógica de Render para STATIC_ROOT
-# Si tenías una carpeta de staticfiles en la raíz, puedes añadir esta línea:
-# STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
