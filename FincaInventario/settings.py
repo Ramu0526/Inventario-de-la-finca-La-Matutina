@@ -78,9 +78,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Use the presence of DATABASE_URL as a reliable indicator of a production environment.
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
+# --- Debugging Prints ---
+print("--- SETTINGS.PY DIAGNOSTICS ---")
+print(f"Value of 'DATABASE_URL' in os.environ: {os.environ.get('DATABASE_URL')}")
+print(f"IS_PRODUCTION flag is: {IS_PRODUCTION}")
+# --- End Debugging Prints ---
+
 if IS_PRODUCTION:
     # --- PRODUCTION SETTINGS (Render) ---
     DEBUG = False # Force DEBUG to False in production
+    print(f"Running in PRODUCTION mode. DEBUG is set to: {DEBUG}")
     
     ALLOWED_HOSTS = ['.onrender.com'] # Be more specific if you have a custom domain
     RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
@@ -104,6 +111,7 @@ if IS_PRODUCTION:
 else:
     # --- LOCAL DEVELOPMENT SETTINGS ---
     DEBUG = True
+    print(f"Running in DEVELOPMENT mode. DEBUG is set to: {DEBUG}")
     
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
     
