@@ -110,22 +110,12 @@ if DEBUG:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # En producción, se configuran para Cloudinary
 else:
-    import cloudinary
-
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # La librería cloudinary_storage lee automáticamente la variable de entorno CLOUDINARY_URL.
+    # Esta es la configuración correcta y recomendada.
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-    # Configuración explícita de Cloudinary para mayor robustez
-    # Esto asegura que la app se configure correctamente desde la URL de Cloudinary
-    cloudinary_url = config('CLOUDINARY_URL', default=None)
-    if cloudinary_url:
-        cloudinary.config(
-            cloud_name=cloudinary.url(cloudinary_url).cloud_name,
-            api_key=cloudinary.url(cloudinary_url).api_key,
-            api_secret=cloudinary.url(cloudinary_url).api_secret,
-            secure=True
-        )
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
