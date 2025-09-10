@@ -1,63 +1,71 @@
 from django.contrib import admin
-from django.contrib.auth.models import User, Group
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserChangeForm
-from django.utils.html import format_html
-from django.urls import reverse
+from django.utils.html import mark_safe
+from .models import (
+    Producto, Ganado, Medicamento, Alimento, ControlPlaga,
+    Potrero, Mantenimiento, Combustible
+)
 
-# Importamos SOLAMENTE los modelos que viven en la app 'inventario'
-from .models import (Producto, Ganado, Medicamento, Alimento, 
-                     ControlPlaga, Potrero, Mantenimiento, Combustible)
+# --- 1. Clase Base para Modelos con Imagen ---
 
-# --- 1. Clases de Personalización del Admin ---
+class ImagenAdminMixin(admin.ModelAdmin):
+    """
+    Mixin para añadir una vista previa de la imagen en el listado del admin.
+    """
+    def imagen_thumbnail(self, obj):
+        if obj.imagen:
+            return mark_safe(f'<img src="{obj.imagen.url}" width="100" />')
+        return "Sin imagen"
+    imagen_thumbnail.short_description = 'Vista Previa'
 
-class CustomUserChangeForm(UserChangeForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['first_name'].label = "Nombre"
-        self.fields['last_name'].label = "Apellido"
+# --- 2. Clases de Personalización del Admin ---
 
-class CustomUserAdmin(UserAdmin):
-    form = CustomUserChangeForm
-    fieldsets = (
-        (None, {"fields": ("username", "password_change_link",)}),
-        ("Información personal", {"fields": ("first_name", "last_name", "email")}),
-        (
-            "Permisos",
-            { "fields": ("is_active", "is_staff", "is_superuser") }
-        ),
-        ("Fechas importantes", {"fields": ("last_login", "date_joined")}),
-    )
-    readonly_fields = ('password_change_link',)
+@admin.register(Producto)
+class ProductoAdmin(ImagenAdminMixin):
+    list_display = ('nombre', 'cantidad', 'categoria', 'imagen_thumbnail')
+    list_filter = ('categoria', 'proveedor', 'ubicacion')
+    search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre')
 
-    def password_change_link(self, obj):
-        url = reverse('admin:auth_user_password_change', args=[obj.pk])
-        return format_html('<a href="{}">Restablecer contraseña</a>', url)
-    password_change_link.short_description = "Contraseña"
+@admin.register(Ganado)
+class GanadoAdmin(ImagenAdminMixin):
+    list_display = ('identificador', 'raza', 'potrero', 'imagen_thumbnail')
+    list_filter = ('raza', 'potrero')
+    search_fields = ('identificador', 'raza')
 
-# --- SECCIÓN CORREGIDA ---
-class ProductoAdmin(admin.ModelAdmin):
-    # Eliminamos 'imagen_thumbnail' porque el campo 'imagen' ya no existe
-    list_display = ('nombre', 'cantidad', 'categoria')
-    # Ya no necesitamos la función imagen_thumbnail, así que la eliminamos
+@admin.register(Medicamento)
+class MedicamentoAdmin(ImagenAdminMixin):
+    list_display = ('nombre', 'lote', 'cantidad', 'fecha_caducidad', 'imagen_thumbnail')
+    list_filter = ('fecha_caducidad',)
+    search_fields = ('nombre', 'lote')
 
-# --- 2. Registro de Modelos en el Admin (Forma Correcta) ---
+@admin.register(Alimento)
+class AlimentoAdmin(ImagenAdminMixin):
+    list_display = ('nombre', 'cantidad_kg', 'ubicacion', 'imagen_thumbnail')
+    list_filter = ('ubicacion',)
+    search_fields = ('nombre',)
 
-# Ocultamos el modelo Group del admin
-admin.site.unregister(Group)
+@admin.register(ControlPlaga)
+class ControlPlagaAdmin(ImagenAdminMixin):
+    list_display = ('nombre_producto', 'tipo', 'cantidad_litros', 'imagen_thumbnail')
+    list_filter = ('tipo',)
+    search_fields = ('nombre_producto',)
 
-# Registramos User con su personalización
-admin.site.unregister(User)
-admin.site.register(User, CustomUserAdmin)
+@admin.register(Potrero)
+class PotreroAdmin(ImagenAdminMixin):
+    list_display = ('nombre', 'area_hectareas', 'imagen_thumbnail')
+    search_fields = ('nombre',)
 
-# Registramos Producto con su personalización
-admin.site.register(Producto, ProductoAdmin)
+@admin.register(Mantenimiento)
+class MantenimientoAdmin(ImagenAdminMixin):
+    list_display = ('equipo', 'fecha_programada', 'completado', 'imagen_thumbnail')
+    list_filter = ('completado', 'fecha_programada')
+    search_fields = ('equipo', 'descripcion_tarea')
 
-# Registramos el resto de los modelos de 'inventario' (usarán el admin por defecto)
-admin.site.register(Ganado)
-admin.site.register(Medicamento)
-admin.site.register(Alimento)
-admin.site.register(ControlPlaga)
-admin.site.register(Potrero)
-admin.site.register(Mantenimiento)
-admin.site.register(Combustible)
+@admin.register(Combustible)
+class CombustibleAdmin(ImagenAdminMixin):
+    list_display = ('tipo', 'cantidad_galones', 'imagen_thumbnail')
+    list_filter = ('tipo',)
+    search_fields = ('tipo',)
+
+# Nota: La personalización del modelo User se ha eliminado de este archivo
+# para mantenerlo enfocado únicamente en la app 'inventario'.
+# Si se necesita, debería estar en el admin.py de una app de 'core' o 'users'.

@@ -7,22 +7,11 @@ from decouple import config
 import os
 import dj_database_url
 
+# --- Base Configuration ---
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Lee las variables desde el archivo .env o las variables de entorno de Render
 SECRET_KEY = config('SECRET_KEY')
 
-# DEBUG es True solo si la variable de entorno DEBUG es 'True'.
-# En Render, como no existirá, será False por defecto.
-DEBUG = config('DEBUG', default=False, cast=bool)
-
-# Configuración de hosts permitidos
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-# Application definition
+# --- Application Definition ---
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -30,8 +19,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Mis aplicaciones
+    # 3rd Party Apps
+    'cloudinary_storage',
+    'cloudinary',
+    # My Apps
     'inventario',
     'caracteristicas',
     'historial',
@@ -39,7 +30,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # WhiteNoise for serving static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -49,7 +40,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'FincaInventario.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -64,24 +54,9 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'FincaInventario.wsgi.application'
 
-# Database
-# Usa la base de datos de Render si la variable DATABASE_URL existe en el entorno
-if 'DATABASE_URL' in os.environ:
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-    }
-else: # Si no, usa SQLite para desarrollo local
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-# Password validation
+# --- Password validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -89,22 +64,55 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization & Authentication
+# --- Internationalization & Authentication ---
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 USE_I18N = True
 USE_TZ = True
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
-
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-
-# Configuración de archivos estáticos para Producción (Render)
-# Esta condición ahora funcionará porque DEBUG será False en Render
-if not DEBUG:
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- Environment-Specific Settings ---
+# This new logic assumes PRODUCTION by default and overrides for local development
+# only if a .env file is found. This is more robust for deployment environments like Render.
+
+# --- PRODUCTION SETTINGS (Default) ---
+DEBUG = False
+ALLOWED_HOSTS = ['.onrender.com']
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+DATABASES = {
+    'default': dj_database_url.config(conn_max_age=600, ssl_require=True, default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+}
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '' # In production, Cloudinary URLs are absolute, so this is not needed.
+MEDIA_ROOT = ''
+
+
+# --- LOCAL DEVELOPMENT OVERRIDE ---
+# If a .env file exists, we assume local development and override settings.
+if os.path.exists(BASE_DIR / '.env'):
+    print("!!! .env file detected. Applying LOCAL DEVELOPMENT settings. !!!")
+    DEBUG = True
+
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
