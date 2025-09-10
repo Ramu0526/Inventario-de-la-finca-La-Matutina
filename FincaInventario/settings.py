@@ -73,6 +73,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # --- Environment-Specific Settings ---
 # This new logic assumes PRODUCTION by default and overrides for local development
 # only if a .env file is found. This is more robust for deployment environments like Render.
@@ -111,6 +112,7 @@ if os.path.exists(BASE_DIR / '.env'):
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
