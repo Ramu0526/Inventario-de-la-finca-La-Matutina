@@ -73,6 +73,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # --- Environment-Specific Settings ---
 # This new logic assumes PRODUCTION by default and overrides for local development
 # only if a .env file is found. This is more robust for deployment environments like Render.
@@ -102,16 +103,17 @@ MEDIA_ROOT = ''
 if os.path.exists(BASE_DIR / '.env'):
     print("!!! .env file detected. Applying LOCAL DEVELOPMENT settings. !!!")
     DEBUG = True
-    
+
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-    
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    
+
+
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     MEDIA_URL = '/media/'

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 from .models import (
-    Producto, Ganado, Medicamento, Alimento, ControlPlaga, 
+    Producto, Ganado, Medicamento, Alimento, ControlPlaga,
     Potrero, Mantenimiento, Combustible
 )
 
@@ -67,5 +67,5 @@ class CombustibleAdmin(ImagenAdminMixin):
     search_fields = ('tipo',)
 
 # Nota: La personalización del modelo User se ha eliminado de este archivo
-# para mantenerlo enfocado únicamente en la app 'inventario'. 
-# Si se necesita, debería estar en el admin.py de una app de 'core' o 'users'.
+
+# para mantenerlo enfocado únicamente en la app 'inventario'.
