@@ -30,7 +30,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # WhiteNoise for serving static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -73,37 +73,33 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# --- Environment-Specific Settings ---
-# This new logic assumes PRODUCTION by default and overrides for local development
-# only if a .env file is found. This is more robust for deployment environments like Render.
-
-# --- PRODUCTION SETTINGS (Default) ---
-DEBUG = False
-ALLOWED_HOSTS = ['.onrender.com']
-RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, ssl_require=True, default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
-}
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
+# --- Media Files Configuration (Cloudinary) ---
+# Cloudinary is ALWAYS used for file storage.
+# The CLOUDINARY_URL environment variable must be set in both local (.env) and production.
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '' # In production, Cloudinary URLs are absolute, so this is not needed.
-MEDIA_ROOT = ''
 
+# --- Static Files & Environment-Specific Settings ---
+# Use the presence of DATABASE_URL to determine if we are in production.
+IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
-# --- LOCAL DEVELOPMENT OVERRIDE ---
-# If a .env file exists, we assume local development and override settings.
-if os.path.exists(BASE_DIR / '.env'):
-    print("!!! .env file detected. Applying LOCAL DEVELOPMENT settings. !!!")
+if IS_PRODUCTION:
+    # --- PRODUCTION SETTINGS (Render) ---
+    DEBUG = False
+    ALLOWED_HOSTS = ['.onrender.com']
+    RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+    if RENDER_EXTERNAL_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+    DATABASES = { 'default': dj_database_url.config(conn_max_age=600, ssl_require=True) }
+
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    MEDIA_URL = '' # Not needed as Cloudinary URLs are absolute.
+
+else:
+    # --- LOCAL DEVELOPMENT SETTINGS ---
     DEBUG = True
-
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
     DATABASES = {
@@ -113,8 +109,6 @@ if os.path.exists(BASE_DIR / '.env'):
         }
     }
 
-
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    STATIC_URL = '/static/'
+    MEDIA_URL = '/media/' # Needed for local dev server to handle URLs.
+    # MEDIA_ROOT is not needed when using Cloudinary.
