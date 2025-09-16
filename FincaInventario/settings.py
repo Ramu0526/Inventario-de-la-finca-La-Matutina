@@ -6,6 +6,7 @@ from pathlib import Path
 from decouple import config
 import os
 import dj_database_url
+import cloudinary
 
 # --- Base Configuration ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -76,7 +77,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # --- Media Files Configuration (Cloudinary) ---
 # Cloudinary is ALWAYS used for file storage.
 # The CLOUDINARY_URL environment variable must be set in both local (.env) and production.
+
+# --- Media Files Configuration (Cloudinary) ---
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# --- AÑADE ESTA CONFIGURACIÓN EXPLÍCITA ---
+cloudinary.config(
+  cloud_name = "dd6ugwzzx",
+  api_key = "829678619421532",
+  api_secret = "YKO6Hw4iYwwumCoBfuRZtHGG5s0",
+  secure = True
+)
+# --- FIN DE LA CONFIGURACIÓN EXPLÍCITA ---
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dd6ugwzzx',
+    'API_KEY': '829678619421532',
+    'API_SECRET': 'YKO6Hw4iYwwumCoBfuRZtHGG5s0',
+}
 
 # --- Static Files & Environment-Specific Settings ---
 # Use the presence of DATABASE_URL to determine if we are in production.
@@ -110,5 +128,5 @@ else:
     }
     
     STATIC_URL = '/static/'
-    MEDIA_URL = '/media/' # Needed for local dev server to handle URLs.
+    # MEDIA_URL = '/media/' # Comenta o elimina esta línea
     # MEDIA_ROOT is not needed when using Cloudinary.
