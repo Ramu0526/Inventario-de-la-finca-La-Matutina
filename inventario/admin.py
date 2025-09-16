@@ -66,6 +66,59 @@ class CombustibleAdmin(ImagenAdminMixin):
     list_filter = ('tipo',)
     search_fields = ('tipo',)
 
-# Nota: La personalización del modelo User se ha eliminado de este archivo
-# para mantenerlo enfocado únicamente en la app 'inventario'.
-# Si se necesita, debería estar en el admin.py de una app de 'core' o 'users'.
+# inventario/admin.py
+
+# ... (todo tu código anterior de ProductoAdmin, GanadoAdmin, etc. va aquí) ...
+
+
+# --- 3. PERSONALIZACIÓN DEL ADMIN DE USUARIOS (VERSIÓN DEFINITIVA) ---
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User, Group
+from django.utils.translation import gettext_lazy as _
+
+# --- Paso A: Ocultar el modelo de "Grupos" ---
+admin.site.unregister(Group)
+
+# --- Paso B: Crear una vista de Admin personalizada para el Usuario ---
+class CustomUserAdmin(UserAdmin):
+    
+    def get_fieldsets(self, request, obj=None):
+        """
+        Modifica dinámicamente los fieldsets para eliminar los permisos
+        y cambiar el título de la sección de fechas.
+        """
+        # Llama al método original para obtener los fieldsets por defecto
+        fieldsets = super().get_fieldsets(request, obj)
+        
+        # Si estamos en el formulario de edición (no de creación)
+        if obj:
+            # Convertimos a lista para poder modificarlo
+            fieldsets = list(fieldsets)
+            
+            # Buscamos y modificamos la sección de "Permisos"
+            # para quitar los campos 'groups' y 'user_permissions'
+            fieldsets[2] = (
+                _('Permissions'),
+                {'fields': ('is_active', 'is_staff', 'is_superuser')}
+            )
+            
+            # Cambiamos el título de la sección de fechas
+            fieldsets[3] = (
+                _('Fechas Importantes'),
+                {'fields': ('last_login', 'date_joined')}
+            )
+        
+        return fieldsets
+
+    def get_form(self, request, obj=None, **kwargs):
+        """
+        Modifica el formulario para cambiar la etiqueta de 'date_joined'.
+        """
+        form = super().get_form(request, obj, **kwargs)
+        # Cambiamos la etiqueta aquí
+        form.base_fields['date_joined'].label = 'Fecha de registro'
+        return form
+
+# --- Paso C: Registrar nuestra configuración personalizada ---
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
