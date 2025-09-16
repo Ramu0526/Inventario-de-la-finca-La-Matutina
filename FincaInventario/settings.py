@@ -74,18 +74,31 @@ LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Media Files Configuration (Cloudinary) ---
-# Cloudinary is used for ALL environments (local and production) to allow local testing.
-# The CLOUDINARY_URL must be in the .env file for local development.
+# Cloudinary is ALWAYS used for file storage.
+# The CLOUDINARY_URL environment variable must be set in both local (.env) and production.
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '/media/' # This is only used for local dev server to serve /media/ URLs
 
-# --- Environment-Specific Settings ---
-# Use the presence of a .env file to determine if we are in local development.
-IS_DEVELOPMENT = os.path.exists(BASE_DIR / '.env')
+# --- Static Files & Environment-Specific Settings ---
+# Use the presence of DATABASE_URL to determine if we are in production.
+IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
-if IS_DEVELOPMENT:
+if IS_PRODUCTION:
+    # --- PRODUCTION SETTINGS (Render) ---
+    DEBUG = False
+    ALLOWED_HOSTS = ['.onrender.com']
+    RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+    if RENDER_EXTERNAL_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+    DATABASES = { 'default': dj_database_url.config(conn_max_age=600, ssl_require=True) }
+    
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    MEDIA_URL = '' # Not needed as Cloudinary URLs are absolute.
+
+else:
     # --- LOCAL DEVELOPMENT SETTINGS ---
-    print("!!! .env file detected. Running in LOCAL DEVELOPMENT mode. !!!")
     DEBUG = True
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
     
@@ -97,20 +110,5 @@ if IS_DEVELOPMENT:
     }
     
     STATIC_URL = '/static/'
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
-else:
-    # --- PRODUCTION SETTINGS (Render) ---
-    DEBUG = False
-    ALLOWED_HOSTS = ['.onrender.com']
-    RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
-    if RENDER_EXTERNAL_HOSTNAME:
-        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-    }
-    
-    STATIC_URL = '/static/'
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    MEDIA_URL = '/media/' # Needed for local dev server to handle URLs.
+    # MEDIA_ROOT is not needed when using Cloudinary.

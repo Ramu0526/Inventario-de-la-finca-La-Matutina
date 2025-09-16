@@ -67,5 +67,5 @@ class CombustibleAdmin(ImagenAdminMixin):
     search_fields = ('tipo',)
 
 # Nota: La personalización del modelo User se ha eliminado de este archivo
-
 # para mantenerlo enfocado únicamente en la app 'inventario'.
+# Si se necesita, debería estar en el admin.py de una app de 'core' o 'users'.
