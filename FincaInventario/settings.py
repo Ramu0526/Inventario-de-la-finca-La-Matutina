@@ -13,7 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # --- Application Definition ---
+# Make sure 'jazzmin' is the first app in this list to override Django's admin.
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,6 +31,30 @@ INSTALLED_APPS = [
     'historial',
 ]
 
+# --- configuraciones del tema de jazzmin xd ---
+JAZZMIN_SETTINGS = {
+
+# --- titulogogo ---
+    "site_title": "Inventario La Matutina",  # Título que aparece en la pestaña del navegador, es lit el title de html xd
+    "site_header": "La Matutina",  # Título que aparece en la barra superior y en la página de login
+    "site_logo": "inventario/images/logo.png",  # Ruta de la imagen del logo, que debe estar en la carpeta static pndjooo, staaticccc
+
+# --- CSS PERSONALIZAOOO ----
+    "custom_css": "css/logo_resize.css",  # esta es la cosa que me fastidio fokkk
+
+# --- login ---
+    "welcome_sign": "¡Bienvenido a la administración de La Matutina!",  # Mensaje que se muestra en la página de login
+
+# --- cositas de la pagina principal xd ---
+    "theme": "darkly",  # El tema de color para la interfaz de administración
+    "navbar_small_text": False,  # Si el texto de la barra de navegación es pequeño
+    "user_avatar": None,  # Avatar del usuario actual
+    "show_sidebar": True,  # Si la barra lateral de navegación se muestra
+    "navigation_expanded": True,  # Si la barra lateral está expandida por defecto
+    "hide_apps": [],  # Lista de aplicaciones que se ocultan en la barra lateral xd
+    "hide_models": [],  # Lista de modelos que se ocultan en la barra lateral, like, pa que no se vean pues 
+    "order_with_respect_to": ["inventario"],  # Orden en el que se muestran las aplicaciones y sus modelos :v
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -75,21 +101,14 @@ LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Media Files Configuration (Cloudinary) ---
-# Cloudinary is ALWAYS used for file storage.
-# The CLOUDINARY_URL environment variable must be set in both local (.env) and production.
-
-# --- Media Files Configuration (Cloudinary) ---
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# --- AÑADE ESTA CONFIGURACIÓN EXPLÍCITA ---
 cloudinary.config(
-  cloud_name = "dd6ugwzzx",
-  api_key = "829678619421532",
-  api_secret = "YKO6Hw4iYwwumCoBfuRZtHGG5s0",
-  secure = True
+    cloud_name = "dd6ugwzzx",
+    api_key = "829678619421532",
+    api_secret = "YKO6Hw4iYwwumCoBfuRZtHGG5s0",
+    secure = True
 )
-# --- FIN DE LA CONFIGURACIÓN EXPLÍCITA ---
-
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dd6ugwzzx',
     'API_KEY': '829678619421532',
@@ -97,7 +116,6 @@ CLOUDINARY_STORAGE = {
 }
 
 # --- Static Files & Environment-Specific Settings ---
-# Use the presence of DATABASE_URL to determine if we are in production.
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
 if IS_PRODUCTION:
@@ -107,13 +125,13 @@ if IS_PRODUCTION:
     RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
     if RENDER_EXTERNAL_HOSTNAME:
         ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
+    
     DATABASES = { 'default': dj_database_url.config(conn_max_age=600, ssl_require=True) }
     
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    MEDIA_URL = '' # Not needed as Cloudinary URLs are absolute.
+    MEDIA_URL = ''
 
 else:
     # --- LOCAL DEVELOPMENT SETTINGS ---
@@ -128,5 +146,5 @@ else:
     }
     
     STATIC_URL = '/static/'
-    # MEDIA_URL = '/media/' # Comenta o elimina esta línea
-    # MEDIA_ROOT is not needed when using Cloudinary.
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
