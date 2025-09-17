@@ -115,26 +115,30 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': 'YKO6Hw4iYwwumCoBfuRZtHGG5s0',
 }
 
-# --- Static Files & Environment-Specific Settings ---
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
 if IS_PRODUCTION:
     # --- PRODUCTION SETTINGS (Render) ---
     DEBUG = False
-    ALLOWED_HOSTS = ['.onrender.com']
-    RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+    
+    RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    ALLOWED_HOSTS = []
     if RENDER_EXTERNAL_HOSTNAME:
         ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
     
-    DATABASES = { 'default': dj_database_url.config(conn_max_age=600, ssl_require=True) }
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
     
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    MEDIA_URL = ''
+    MEDIA_URL = '' # Cloudinary maneja esto
 
 else:
-    # --- LOCAL DEVELOPMENT SETTINGS ---
     DEBUG = True
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
     
