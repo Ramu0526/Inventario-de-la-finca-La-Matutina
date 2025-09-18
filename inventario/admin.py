@@ -213,7 +213,8 @@ class CustomUserAdmin(UserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields['date_joined'].label = 'Fecha de registro'
+        if 'date_joined' in form.base_fields:
+            form.base_fields['date_joined'].label = 'Fecha de registro'
         return form
 
 admin.site.unregister(User)
