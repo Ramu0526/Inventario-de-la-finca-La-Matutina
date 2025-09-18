@@ -22,9 +22,22 @@ class ImagenAdminMixin(admin.ModelAdmin):
 
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad', 'categoria', 'imagen_thumbnail')
-    list_filter = ('categoria', 'proveedor', 'ubicacion')
+    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'proveedor', 'ubicacion', 'imagen_thumbnail')
+    list_filter = ('categoria', 'proveedor', 'ubicacion', 'unidad_medida')
     search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre')
+
+    fieldsets = (
+        (None, {
+            'fields': ('nombre', 'categoria', 'proveedor', 'ubicacion', 'imagen')
+        }),
+        ('Cantidad y Precio', {
+            'fields': (('cantidad', 'unidad_medida'), 'precio')
+        }),
+    )
+
+    def cantidad_con_unidad(self, obj):
+        return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
+    cantidad_con_unidad.short_description = 'Cantidad'
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
@@ -52,24 +65,40 @@ class GanadoAdmin(ImagenAdminMixin):
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'lote', 'cantidad', 'fecha_caducidad', 'imagen_thumbnail')
-    list_filter = ('fecha_caducidad',)
-    search_fields = ('nombre', 'lote')
+    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'ubicacion', 'fecha_compra', 'fecha_ingreso', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('categoria', 'ubicacion', 'fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
+    search_fields = ('nombre',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('nombre', 'categoria', 'ubicacion', 'imagen')
+        }),
+        ('Cantidad y Precio', {
+            'fields': (('cantidad', 'unidad_medida'), 'precio')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
+        }),
+    )
+
+    def cantidad_con_unidad(self, obj):
+        return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
+    cantidad_con_unidad.short_description = 'Cantidad'
 
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('ubicacion', 'fecha_compra', 'fecha_vencimiento')
-    search_fields = ('nombre', 'ubicacion__nombre')
+    list_display = ('nombre', 'cantidad_kg_restante', 'precio', 'proveedor', 'ubicacion', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('ubicacion', 'proveedor', 'fecha_vencimiento')
+    search_fields = ('nombre', 'ubicacion__nombre', 'proveedor__nombre')
     
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
     
     fieldsets = (
         (None, {
-            'fields': ('nombre', 'ubicacion', 'imagen')
+            'fields': ('nombre', 'proveedor', 'ubicacion', 'imagen')
         }),
-        ('Cantidad (en Kg)', {
-            'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante')
+        ('Cantidad y Precio (en Kg)', {
+            'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio')
         }),
         ('Fechas', {
             'fields': ('fecha_compra', 'fecha_vencimiento')
@@ -77,36 +106,28 @@ class AlimentoAdmin(ImagenAdminMixin):
     )
 
     def cantidad_kg_restante(self, obj):
-        return obj.cantidad_kg_restante
-    cantidad_kg_restante.short_description = 'Cantidad (Kg) Restante'
+        return f"{obj.cantidad_kg_ingresada - obj.cantidad_kg_usada} Kg"
+    cantidad_kg_restante.short_description = 'Cantidad Restante'
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada_con_unidad', 'cantidad_usada_con_unidad', 'cantidad_restante_con_unidad', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('tipo', 'ubicacion', 'fecha_compra', 'fecha_vencimiento')
-    search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre')
+    list_display = ('nombre_producto', 'tipo', 'cantidad_restante_con_unidad', 'precio', 'proveedor', 'ubicacion', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('tipo', 'proveedor', 'ubicacion', 'fecha_vencimiento')
+    search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre', 'proveedor__nombre')
     
     readonly_fields = ('cantidad_usada', 'cantidad_restante')
 
     fieldsets = (
         (None, {
-            'fields': ('nombre_producto', 'tipo', 'ubicacion', 'imagen')
+            'fields': ('nombre_producto', 'tipo', 'proveedor', 'ubicacion', 'imagen')
         }),
-        ('Cantidad', {
-            'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante')
+        ('Cantidad y Precio', {
+            'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante', 'precio')
         }),
         ('Fechas', {
             'fields': ('fecha_compra', 'fecha_vencimiento')
         }),
     )
-
-    def cantidad_ingresada_con_unidad(self, obj):
-        return f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}"
-    cantidad_ingresada_con_unidad.short_description = 'Ingresado'
-
-    def cantidad_usada_con_unidad(self, obj):
-        return f"{obj.cantidad_usada} {obj.get_unidad_medida_display()}"
-    cantidad_usada_con_unidad.short_description = 'Usado'
     
     def cantidad_restante_con_unidad(self, obj):
         return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
@@ -114,18 +135,37 @@ class ControlPlagaAdmin(ImagenAdminMixin):
 
 @admin.register(Potrero)
 class PotreroAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'area_hectareas', 'imagen_thumbnail')
+    list_display = ('nombre', 'tamano', 'area_hectareas', 'imagen_thumbnail')
+    list_filter = ('tamano',)
     search_fields = ('nombre',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('nombre', 'imagen')
+        }),
+        ('Detalles del Potrero', {
+            'fields': ('tamano', 'area_hectareas')
+        }),
+    )
 
 @admin.register(Mantenimiento)
 class MantenimientoAdmin(ImagenAdminMixin):
-    list_display = ('equipo', 'fecha_programada', 'completado', 'imagen_thumbnail')
-    list_filter = ('completado', 'fecha_programada')
-    search_fields = ('equipo', 'descripcion_tarea')
+    list_display = ('equipo', 'fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado', 'imagen_thumbnail')
+    list_filter = ('completado', 'fecha_proximo_mantenimiento')
+    search_fields = ('equipo',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('equipo', 'imagen')
+        }),
+        ('Fechas y Estado', {
+            'fields': ('fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado')
+        }),
+    )
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'imagen_thumbnail')
+    list_display = ('tipo', 'cantidad_galones_restantes', 'precio', 'imagen_thumbnail')
     list_filter = ('tipo',)
     search_fields = ('tipo',)
 
@@ -135,13 +175,13 @@ class CombustibleAdmin(ImagenAdminMixin):
         (None, {
             'fields': ('tipo', 'imagen')
         }),
-        ('Cantidad (en Galones)', {
-            'fields': ('cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes')
+        ('Cantidad y Precio (en Galones)', {
+            'fields': ('cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio')
         }),
     )
 
     def cantidad_galones_restantes(self, obj):
-        return obj.cantidad_galones_restantes
+        return f"{obj.cantidad_galones_ingresada - obj.cantidad_galones_usados} gal"
     cantidad_galones_restantes.short_description = 'Galones Restantes'
 
 # ... (resto del código de admin.py) ...
