@@ -21,18 +21,32 @@ body {
     margin: 0;
     background-color: var(--bg-color);
     color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
     transition: background-color 0.3s, color 0.3s;
+}
+
+/* Nuevo contenedor que organiza el logo y el formulario */
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Logo más grande y con más espacio, como en el login de admin */
+.login-logo {
+    width: 100%;
+    max-width: 350px;
+    height: 200px;
+    margin-bottom: 30px;
 }
 
 .login-container {
     width: 100%;
-    max-width: 400px;
-    padding: 20px;
-    box-sizing: border-box; /* Añadido para mejor control del tamaño */
+    max-width: 500px;
     position: relative;
 }
 
@@ -90,22 +104,9 @@ button {
 /* ===== SECCIÓN RESPONSIVE AQUÍ ==== */
 /* ================================== */
 
-/* Estilos para pantallas con un ancho máximo de 600px (celulares) */
 @media (max-width: 600px) {
-    body {
-        /* En móvil, no es tan necesario centrar verticalmente, 
-           podemos darle un poco de espacio arriba y ya. */
-        align-items: flex-start;
-        padding-top: 20px;
-    }
-
-    .login-container {
-        /* Reducimos el padding para que el formulario ocupe más espacio */
-        padding: 10px;
-    }
-
-    form {
-        /* También reducimos el padding interno del formulario */
-        padding: 20px;
+    .login-wrapper {
+        justify-content: flex-start;
+        padding-top: 40px;
     }
 }

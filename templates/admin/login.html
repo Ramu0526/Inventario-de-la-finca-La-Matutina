@@ -1,0 +1,80 @@
+{% extends "admin/login.html" %}
+{% load static %}
+
+{% block content %}
+    {# Estilos para el botón y para aplicar el modo oscuro del usuario #}
+    <style>
+        .login-page {
+            position: relative !important;
+        }
+        #theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            z-index: 100;
+        }
+
+        /* Define las variables de color de tu style.css */
+        :root {
+            --bg-color-dark: #121212;
+            --form-bg-color-dark: #1e1e1e;
+            --text-color-dark: #e0e0e0;
+            --primary-color-dark: #bb86fc;
+            --input-border-color-dark: #555;
+        }
+
+        /* --- REGLA CORREGIDA Y REFORZADA --- */
+        /* Aplicamos el fondo oscuro directamente al HTML y al BODY para máxima prioridad */
+        body.dark-mode,
+        body.dark-mode .login-page {
+            background: var(--bg-color-dark) !important;
+        }
+        /* --- FIN DE LA CORRECCIÓN --- */
+
+        /* Aplica las variables a los elementos del login de admin cuando el modo oscuro está activo */
+        body.dark-mode .login-box,
+        body.dark-mode .card,
+        body.dark-mode .login-card-body {
+            background-color: var(--form-bg-color-dark) !important;
+            color: var(--text-color-dark) !important;
+        }
+
+        body.dark-mode .login-box-msg,
+        body.dark-mode .input-group-text {
+            color: var(--text-color-dark) !important;
+            background: #1e1e1e !important; /* Fondo para los iconos de usuario/contraseña */
+            border-color: var(--input-border-color-dark) !important;
+        }
+
+        body.dark-mode .form-control {
+            color: var(--text-color-dark) !important;
+            background-color: var(--form-bg-color-dark) !important;
+            border-color: var(--input-border-color-dark) !important;
+        }
+
+        body.dark-mode .btn-primary {
+            background-color: var(--primary-color-dark) !important;
+            border-color: var(--primary-color-dark) !important;
+        }
+
+        body.dark-mode a {
+            color: var(--primary-color-dark) !important;
+        }
+    </style>
+
+    {# Elemento del botón de tema #}
+    <div id="theme-toggle">🌑</div>
+
+    {# Contenido original del formulario de login de admin #}
+    {{ block.super }}
+
+    {# Enlace personalizado para ir al login de usuario #}
+    <p style="text-align: center; margin-top: 20px;">
+        ¿Eres usuario? <a href="{% url 'login' %}">Ingresa al panel de usuario</a>.
+    </p>
+
+    {# Script que controla la funcionalidad del botón de tema #}
+    <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
+{% endblock %}

@@ -7,37 +7,40 @@
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
 </head>
 <body>
-    <div class="login-container">
-        <form method="post">
-            {% csrf_token %}
+    <div class="login-wrapper">
+        <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="login-logo">
 
-            <h2 style="text-align: center;">Iniciar Sesión</h2>
-            <div id="theme-toggle">🌑</div>
-            <hr>
+        <div class="login-container">
+            <form method="post">
+                {% csrf_token %}
 
-            {% if messages %}
-                {% for message in messages %}
-                    <p style="color: red; text-align: center;">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
+                <h2 style="text-align: center;">Iniciar Sesión</h2>
+                <div id="theme-toggle">🌑</div>
 
-            <div class="form-field">
-                <label for="{{ form.username.id_for_label }}">Usuario:</label>
-                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
-            </div>
-            
-            <div class="form-field">
-                <label for="{{ form.password.id_for_label }}">Contraseña:</label>
-                <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
-            </div>
+                {% if messages %}
+                    {% for message in messages %}
+                        <p style="color: red; text-align: center;">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
 
-            <button type="submit">Entrar</button>
+                <div class="form-field">
+                    <label for="{{ form.username.id_for_label }}">Usuario:</label>
+                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
+                </div>
 
-            <p style="text-align: center;">
-                ¿Eres administrador? 
-                <a href="{% url 'admin:index' %}">Ingresa al panel de administración</a>.
-            </p>
-        </form>
+                <div class="form-field">
+                    <label for="{{ form.password.id_for_label }}">Contraseña:</label>
+                    <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
+                </div>
+
+                <button type="submit">Iniciar sesión</button>
+
+                <p style="text-align: center;">
+                    ¿Eres administrador?
+                    <a href="{% url 'admin:index' %}">Ingresa al panel de administración</a>.
+                </p>
+            </form>
+        </div>
     </div>
 
     <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
