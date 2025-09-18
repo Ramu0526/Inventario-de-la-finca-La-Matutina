@@ -1,3 +1,4 @@
+# inventario/tests.py
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from .models import Alimento, ControlPlaga, Combustible
@@ -79,16 +80,9 @@ class ListaProductosViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, '/login/?next=/')
 
-from .admin import CustomUserChangeForm, CustomUserAdmin
+from .admin import CustomUserAdmin
 from .models import Producto
-from django.contrib.auth.forms import UserChangeForm
 
-class CustomUserChangeFormTest(TestCase):
-
-    def test_custom_labels(self):
-        form = CustomUserChangeForm()
-        self.assertEqual(form.fields['first_name'].label, "Nombre")
-        self.assertEqual(form.fields['last_name'].label, "Apellido")
 
 class CustomUserAdminTest(TestCase):
 

@@ -9,11 +9,12 @@ from .models import (
 
 class ImagenAdminMixin(admin.ModelAdmin):
     """
-    Mixin para añadir una vista previa de la imagen en el listado del admin.
+    Mixin para añadir una vista previa de la imagen que se puede ampliar.
     """
     def imagen_thumbnail(self, obj):
         if obj.imagen:
-            return mark_safe(f'<img src="{obj.imagen.url}" width="100" />')
+            # Envolvemos la imagen en un enlace <a> para hacerla clicable
+            return mark_safe(f'<a href="{obj.imagen.url}" target="_blank"><img src="{obj.imagen.url}" width="100" /></a>')
         return "Sin imagen"
     imagen_thumbnail.short_description = 'Vista Previa'
 

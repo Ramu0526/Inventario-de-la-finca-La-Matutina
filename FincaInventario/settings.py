@@ -1,3 +1,4 @@
+# FincaInventario/settings.py
 """
 Django settings for FincaInventario project.
 """
@@ -37,6 +38,7 @@ JAZZMIN_SETTINGS = {
 # --- titulogogo ---
     "site_title": "Inventario La Matutina",  # Título que aparece en la pestaña del navegador, es lit el title de html xd
     "site_header": "La Matutina",  # Título que aparece en la barra superior y en la página de login
+    "site_brand": "Panel de control",
     "site_logo": "inventario/images/logo.png",  # Ruta de la imagen del logo, que debe estar en la carpeta static pndjooo, staaticccc
 
 # --- CSS PERSONALIZAOOO ----
@@ -54,6 +56,11 @@ JAZZMIN_SETTINGS = {
     "hide_apps": [],  # Lista de aplicaciones que se ocultan en la barra lateral xd
     "hide_models": [],  # Lista de modelos que se ocultan en la barra lateral, like, pa que no se vean pues 
     "order_with_respect_to": ["inventario"],  # Orden en el que se muestran las aplicaciones y sus modelos :v
+    
+    # --- ENLACE AÑADIDO EN EL MENÚ SUPERIOR ---
+    "topmenu_links": [
+        {"name": "Ver Vista de Usuario", "url": "lista_productos", "new_window": True},
+    ],
 }
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -97,7 +104,8 @@ TIME_ZONE = 'America/Bogota'
 USE_I18N = True
 USE_TZ = True
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'user_redirect'
+LOGOUT_REDIRECT_URL = 'login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Media Files Configuration (Cloudinary) ---

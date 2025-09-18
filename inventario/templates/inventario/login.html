@@ -3,7 +3,7 @@
 <html>
 <head>
     <title>Iniciar Sesión</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
 </head>
 <body>
@@ -11,18 +11,24 @@
         <form method="post">
             {% csrf_token %}
 
-            <h2 style="text-align: center;">Iniciar Sesión de Usuario</h2>
+            <h2 style="text-align: center;">Iniciar Sesión</h2>
             <div id="theme-toggle">🌑</div>
             <hr>
-            
+
+            {% if messages %}
+                {% for message in messages %}
+                    <p style="color: red; text-align: center;">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+
             <div class="form-field">
-                <label for="id_username">Usuario:</label>
-                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username">
+                <label for="{{ form.username.id_for_label }}">Usuario:</label>
+                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
             </div>
             
             <div class="form-field">
-                <label for="id_password">Contraseña:</label>
-                <input type="password" name="password" autocomplete="current-password" required id="id_password">
+                <label for="{{ form.password.id_for_label }}">Contraseña:</label>
+                <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
             </div>
 
             <button type="submit">Entrar</button>
