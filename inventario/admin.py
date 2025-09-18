@@ -28,9 +28,27 @@ class ProductoAdmin(ImagenAdminMixin):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'raza', 'potrero', 'imagen_thumbnail')
-    list_filter = ('raza', 'potrero')
+    list_display = ('identificador', 'raza', 'genero', 'edad', 'potrero', 'estado', 'vacunado', 'proxima_vacunacion', 'parto', 'imagen_thumbnail')
+    list_filter = ('raza', 'genero', 'estado', 'potrero', 'vacunado')
     search_fields = ('identificador', 'raza')
+    
+    readonly_fields = ('edad', 'parto')
+
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('identificador', 'raza', 'genero', 'potrero', 'imagen')
+        }),
+        ('Fechas y Estado', {
+            'fields': ('fecha_nacimiento', 'edad', 'fecha_ingreso', 'estado')
+        }),
+        ('Salud y Reproducción', {
+            'fields': ('vacunado', 'nombre_vacuna', 'proxima_vacunacion', 'parto')
+        }),
+    )
+
+    def edad(self, obj):
+        return obj.edad
+    edad.short_description = 'Edad'
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
@@ -40,15 +58,59 @@ class MedicamentoAdmin(ImagenAdminMixin):
 
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_kg', 'ubicacion', 'imagen_thumbnail')
-    list_filter = ('ubicacion',)
-    search_fields = ('nombre',)
+    list_display = ('nombre', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('ubicacion', 'fecha_compra', 'fecha_vencimiento')
+    search_fields = ('nombre', 'ubicacion__nombre')
+    
+    readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
+    
+    fieldsets = (
+        (None, {
+            'fields': ('nombre', 'ubicacion', 'imagen')
+        }),
+        ('Cantidad (en Kg)', {
+            'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_compra', 'fecha_vencimiento')
+        }),
+    )
+
+    def cantidad_kg_restante(self, obj):
+        return obj.cantidad_kg_restante
+    cantidad_kg_restante.short_description = 'Cantidad (Kg) Restante'
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'tipo', 'cantidad_litros', 'imagen_thumbnail')
-    list_filter = ('tipo',)
-    search_fields = ('nombre_producto',)
+    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada_con_unidad', 'cantidad_usada_con_unidad', 'cantidad_restante_con_unidad', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('tipo', 'ubicacion', 'fecha_compra', 'fecha_vencimiento')
+    search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre')
+    
+    readonly_fields = ('cantidad_usada', 'cantidad_restante')
+
+    fieldsets = (
+        (None, {
+            'fields': ('nombre_producto', 'tipo', 'ubicacion', 'imagen')
+        }),
+        ('Cantidad', {
+            'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_compra', 'fecha_vencimiento')
+        }),
+    )
+
+    def cantidad_ingresada_con_unidad(self, obj):
+        return f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}"
+    cantidad_ingresada_con_unidad.short_description = 'Ingresado'
+
+    def cantidad_usada_con_unidad(self, obj):
+        return f"{obj.cantidad_usada} {obj.get_unidad_medida_display()}"
+    cantidad_usada_con_unidad.short_description = 'Usado'
+    
+    def cantidad_restante_con_unidad(self, obj):
+        return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
+    cantidad_restante_con_unidad.short_description = 'Restante'
 
 @admin.register(Potrero)
 class PotreroAdmin(ImagenAdminMixin):
@@ -63,63 +125,56 @@ class MantenimientoAdmin(ImagenAdminMixin):
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'cantidad_galones', 'imagen_thumbnail')
+    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'imagen_thumbnail')
     list_filter = ('tipo',)
     search_fields = ('tipo',)
 
-# inventario/admin.py
+    readonly_fields = ('cantidad_galones_usados', 'cantidad_galones_restantes')
 
-# ... (todo tu código anterior de ProductoAdmin, GanadoAdmin, etc. va aquí) ...
+    fieldsets = (
+        (None, {
+            'fields': ('tipo', 'imagen')
+        }),
+        ('Cantidad (en Galones)', {
+            'fields': ('cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes')
+        }),
+    )
 
+    def cantidad_galones_restantes(self, obj):
+        return obj.cantidad_galones_restantes
+    cantidad_galones_restantes.short_description = 'Galones Restantes'
 
-# --- 3. PERSONALIZACIÓN DEL ADMIN DE USUARIOS (VERSIÓN DEFINITIVA) ---
+# ... (resto del código de admin.py) ...
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
 
-# --- Paso A: Ocultar el modelo de "Grupos" ---
 admin.site.unregister(Group)
 
-# --- Paso B: Crear una vista de Admin personalizada para el Usuario ---
 class CustomUserAdmin(UserAdmin):
     
     def get_fieldsets(self, request, obj=None):
-        """
-        Modifica dinámicamente los fieldsets para eliminar los permisos
-        y cambiar el título de la sección de fechas.
-        """
-        # Llama al método original para obtener los fieldsets por defecto
         fieldsets = super().get_fieldsets(request, obj)
         
-        # Si estamos en el formulario de edición (no de creación)
         if obj:
-            # Convertimos a lista para poder modificarlo
             fieldsets = list(fieldsets)
             
-            # Buscamos y modificamos la sección de "Permisos"
-            # para quitar los campos 'groups' y 'user_permissions'
             fieldsets[2] = (
                 _('Permissions'),
                 {'fields': ('is_active', 'is_staff', 'is_superuser')}
             )
             
-            # Cambiamos el título de la sección de fechas
             fieldsets[3] = (
-                _('Fechas Importantes'),
+                _('Important dates'),
                 {'fields': ('last_login', 'date_joined')}
             )
         
         return fieldsets
 
     def get_form(self, request, obj=None, **kwargs):
-        """
-        Modifica el formulario para cambiar la etiqueta de 'date_joined'.
-        """
         form = super().get_form(request, obj, **kwargs)
-        # Cambiamos la etiqueta aquí
         form.base_fields['date_joined'].label = 'Fecha de registro'
         return form
 
-# --- Paso C: Registrar nuestra configuración personalizada ---
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
