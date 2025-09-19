@@ -7,12 +7,12 @@
     <link rel="icon" type="image/png" href="{% static 'inventario/images/logo.png' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/StyleModal.css' %}">
 </head>
 <body>
 
     <div class="panel-container">
         <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="panel-logo">
-
         <div id="theme-toggle">🌑</div>
 
         <div class="panel-header">
@@ -23,7 +23,7 @@
         <hr class="separator">
 
         <div class="panel-buttons">
-            <button class="panel-btn">Alimentos</button>
+            <button class="panel-btn" id="alimentos-btn">Alimentos</button>
             <button class="panel-btn">Combustibles</button>
             <button class="panel-btn">Control Plagas</button>
             <button class="panel-btn">Ganado</button>
@@ -39,9 +39,47 @@
             {% csrf_token %}
             <button type="submit" class="logout-btn">Cerrar Sesión</button>
         </form>
-
     </div>
 
+    <div id="alimentos-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gestión de los alimentos de la finca La Matutina</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <hr class="separator">
+            <div class="modal-body">
+                {% if alimentos %}
+                    <div class="modal-grid">
+                        {% for alimento in alimentos %}
+                            <div class="item-card">
+                                {% if alimento.imagen %}
+                                    <img src="{{ alimento.imagen.url }}" alt="Imagen de {{ alimento.nombre }}" class="item-card-img">
+                                {% else %}
+                                    <div class="item-card-img-placeholder">Sin imagen</div>
+                                {% endif %}
+                                <div class="item-card-body">
+                                    <h3 class="item-card-title">{{ alimento.nombre }}</h3>
+                                    <p class="item-card-text">Cantidad: {{ alimento.cantidad_kg_ingresada }} Kg</p>
+                                    <button class="details-btn" data-id="{{ alimento.id }}">Ver detalles</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="pagination-controls"></div>
+
+                {% else %}
+                    <p>No hay alimentos registrados en el inventario.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div id="details-modal" class="modal">
+        <div class="modal-content details-content">
+            </div>
+    </div>
     <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
+    <script src="{% static 'inventario/js/JsModal.js' %}"></script>
 </body>
 </html>

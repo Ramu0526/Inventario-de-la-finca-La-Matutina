@@ -1,0 +1,262 @@
+/* ================================== */
+/* ====== ESTILOS MODAL (V2) ======== */
+/* ================================== */
+
+/* Fondo oscuro del modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+}
+
+/* Contenedor principal del modal */
+.modal-content {
+    background-color: var(--form-bg-color);
+    color: var(--text-color);
+    margin: 5% auto; /* Menos margen superior para más espacio */
+    padding: 25px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 10px;
+    width: 90%;
+    max-width: 800px; /* Un poco más ancho para las dos columnas */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Encabezado del modal */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.close-btn {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ===== AQUÍ ESTÁ LA MAGIA ===== */
+
+/* 1. El contenedor de los alimentos ahora es un grid */
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
+    gap: 20px; /* Espacio entre las tarjetas */
+    padding-top: 15px;
+}
+
+/* 2. Cada alimento se estiliza como una tarjeta individual */
+.item-card {
+    background-color: var(--bg-color); /* Un color de fondo ligeramente diferente */
+    border: 1px solid var(--input-border-color);
+    border-radius: 8px;
+    overflow: hidden; /* Para que la imagen respete los bordes redondeados */
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.item-card-img {
+    width: 100%;
+    height: 150px; /* Altura fija para las imágenes */
+    object-fit: cover; /* Asegura que la imagen cubra el espacio sin deformarse */
+}
+
+.item-card-img-placeholder {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+body.dark-mode .item-card-img-placeholder {
+    background-color: #343a40;
+    color: #adb5bd;
+}
+
+.item-card-body {
+    padding: 15px;
+}
+
+.item-card-title {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+}
+
+.item-card-text {
+    margin: 0 0 15px 0;
+}
+
+.details-btn {
+    padding: 8px 15px;
+    width: auto;
+    margin: 0;
+    background-color: #28a745;
+}
+
+/* ... (todos tus estilos de modal anteriores) ... */
+
+
+/* ===== ESTILOS PARA LA PAGINACIÓN (ACTUALIZADO) ===== */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 25px;
+    gap: 10px; /* Espacio entre los círculos */
+}
+
+.pagination-btn {
+    cursor: pointer;
+    border: 1px solid var(--input-border-color);
+    background-color: transparent;
+    color: var(--text-color);
+    
+    /* --- ESTILOS PARA HACERLO CIRCULAR --- */
+    border-radius: 50%; /* Esto crea el círculo */
+    width: 36px;       /* Ancho fijo */
+    height: 36px;      /* Alto fijo */
+    padding: 0;        /* Quitamos el padding para que el texto se centre bien */
+
+    /* --- ESTILOS PARA CENTRAR EL NÚMERO --- */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.pagination-btn:hover {
+    background-color: #e9ecef;
+}
+body.dark-mode .pagination-btn:hover {
+    background-color: #343a40;
+}
+
+/* Estilo para el botón de la página activa */
+.pagination-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+body.dark-mode .pagination-btn.active {
+    color: #121212;
+}
+
+/* Clase para ocultar las tarjetas que no pertenecen a la página actual */
+.item-card.hidden {
+    display: none;
+}
+
+/* 3. Media Query para dispositivos móviles */
+@media (max-width: 768px) {
+    /* En pantallas más pequeñas, volvemos a una sola columna */
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 80%;
+        margin: 20% auto;
+    }
+
+    .modal-content {
+        margin: 15% auto;
+    }
+}
+
+/* ... (tus estilos anteriores) ... */
+
+/* ===== ESTILOS PARA MODAL DE DETALLES ===== */
+.details-content {
+    max-width: 600px;
+    /* Un z-index más alto para que aparezca sobre el primer modal */
+    z-index: 1001; 
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    text-align: left;
+}
+
+.details-section {
+    padding: 15px;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+}
+
+.details-section h4 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--input-border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.details-section p {
+    margin: 5px 0;
+}
+
+.details-img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+    grid-column: 1 / -1; /* Ocupa todo el ancho */
+}
+
+.dispatch-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.dispatch-form input {
+    width: 80px;
+    padding: 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 5px;
+    background-color: white;
+}
+body.dark-mode .dispatch-form input {
+     background-color: #333;
+     color: white;
+}
+
+.dispatch-form button {
+    width: auto;
+    margin: 0;
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+.info-btn {
+    margin-left: 10px;
+    padding: 3px 8px;
+    font-size: 0.8em;
+    background-color: #6c757d;
+}
