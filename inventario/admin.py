@@ -22,7 +22,7 @@ class ImagenAdminMixin(admin.ModelAdmin):
 
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'proveedor', 'ubicacion', 'imagen_thumbnail')
+    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'proveedor', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
     list_filter = ('categoria', 'proveedor', 'ubicacion', 'unidad_medida')
     search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre')
 
@@ -33,6 +33,9 @@ class ProductoAdmin(ImagenAdminMixin):
         ('Cantidad y Precio', {
             'fields': (('cantidad', 'unidad_medida'), 'precio')
         }),
+        ('Fechas', {
+            'fields': ('fecha_produccion', 'fecha_venta')
+        }),
     )
 
     def cantidad_con_unidad(self, obj):
@@ -41,9 +44,9 @@ class ProductoAdmin(ImagenAdminMixin):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'raza', 'genero', 'edad', 'potrero', 'estado', 'vacunado', 'proxima_vacunacion', 'parto', 'imagen_thumbnail')
+    list_display = ('identificador', 'raza', 'genero', 'edad', 'potrero', 'fecha_nacimiento', 'fecha_ingreso', 'estado', 'nombre_vacuna', 'proxima_vacunacion', 'imagen_thumbnail')
     list_filter = ('raza', 'genero', 'estado', 'potrero', 'vacunado')
-    search_fields = ('identificador', 'raza')
+    search_fields = ('identificador', 'raza', 'nombre_vacuna')
     
     readonly_fields = ('edad', 'parto')
 
@@ -65,29 +68,45 @@ class GanadoAdmin(ImagenAdminMixin):
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'ubicacion', 'fecha_compra', 'fecha_ingreso', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'ubicacion', 'f_compra', 'f_ingreso', 'f_vencimiento', 'imagen_thumbnail')
     list_filter = ('categoria', 'ubicacion', 'fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
     search_fields = ('nombre',)
+    
+    readonly_fields = ('cantidad_usada', 'cantidad_restante')
     
     fieldsets = (
         (None, {
             'fields': ('nombre', 'categoria', 'ubicacion', 'imagen')
         }),
         ('Cantidad y Precio', {
-            'fields': (('cantidad', 'unidad_medida'), 'precio')
+            'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante', 'precio')
         }),
         ('Fechas', {
             'fields': ('fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
         }),
     )
 
-    def cantidad_con_unidad(self, obj):
-        return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
-    cantidad_con_unidad.short_description = 'Cantidad'
+    def cantidad_restante_con_unidad(self, obj):
+        return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
+    cantidad_restante_con_unidad.short_description = 'Restante'
+    
+    # --- FUNCIONES PARA ACORTAR ENCABEZADOS ---
+    def f_compra(self, obj):
+        return obj.fecha_compra
+    f_compra.short_description = 'F. Compra'
+
+    def f_ingreso(self, obj):
+        return obj.fecha_ingreso
+    f_ingreso.short_description = 'F. Ingreso'
+
+    def f_vencimiento(self, obj):
+        return obj.fecha_vencimiento
+    f_vencimiento.short_description = 'F. Vencimiento'
+
 
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_kg_restante', 'precio', 'proveedor', 'ubicacion', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_filter = ('ubicacion', 'proveedor', 'fecha_vencimiento')
     search_fields = ('nombre', 'ubicacion__nombre', 'proveedor__nombre')
     
@@ -111,7 +130,7 @@ class AlimentoAdmin(ImagenAdminMixin):
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'tipo', 'cantidad_restante_con_unidad', 'precio', 'proveedor', 'ubicacion', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada_con_unidad', 'cantidad_usada_con_unidad', 'cantidad_restante_con_unidad', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_filter = ('tipo', 'proveedor', 'ubicacion', 'fecha_vencimiento')
     search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre', 'proveedor__nombre')
     
@@ -129,6 +148,14 @@ class ControlPlagaAdmin(ImagenAdminMixin):
         }),
     )
     
+    def cantidad_ingresada_con_unidad(self, obj):
+        return f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}"
+    cantidad_ingresada_con_unidad.short_description = 'Ingresado'
+
+    def cantidad_usada_con_unidad(self, obj):
+        return f"{obj.cantidad_usada} {obj.get_unidad_medida_display()}"
+    cantidad_usada_con_unidad.short_description = 'Usado'
+
     def cantidad_restante_con_unidad(self, obj):
         return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
     cantidad_restante_con_unidad.short_description = 'Restante'
@@ -165,7 +192,7 @@ class MantenimientoAdmin(ImagenAdminMixin):
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'cantidad_galones_restantes', 'precio', 'imagen_thumbnail')
+    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'imagen_thumbnail')
     list_filter = ('tipo',)
     search_fields = ('tipo',)
 
@@ -213,6 +240,8 @@ class CustomUserAdmin(UserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+        # --- ESTA ES LA CORRECCIÓN ---
+        # Solo intentamos cambiar la etiqueta si el campo existe en el formulario
         if 'date_joined' in form.base_fields:
             form.base_fields['date_joined'].label = 'Fecha de registro'
         return form

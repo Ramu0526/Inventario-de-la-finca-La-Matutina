@@ -24,6 +24,8 @@ class Producto(models.Model):
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
+    fecha_produccion = models.DateField(default=timezone.now)
+    fecha_venta = models.DateField(null=True, blank=True)
     imagen = CloudinaryField('image', folder='productos', null=True, blank=True)
 
     def __str__(self):
@@ -95,7 +97,8 @@ class Medicamento(models.Model):
         MILILITROS = 'ml', 'Mililitros (ml)'
 
     nombre = models.CharField(max_length=100)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    cantidad_ingresada = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    cantidad_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     unidad_medida = models.CharField(max_length=2, choices=UnidadMedida.choices, default=UnidadMedida.UNIDAD)
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True, blank=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
@@ -104,6 +107,10 @@ class Medicamento(models.Model):
     fecha_ingreso = models.DateField(default=timezone.now)
     fecha_vencimiento = models.DateField()
     imagen = CloudinaryField('image', folder='medicamentos', null=True, blank=True)
+    
+    @property
+    def cantidad_restante(self):
+        return self.cantidad_ingresada - self.cantidad_usada
     
     def __str__(self): 
         return self.nombre
@@ -161,7 +168,7 @@ class Potrero(models.Model):
         GRANDE = 'G', 'Grande'
 
     nombre = models.CharField(max_length=100, help_text="Ej: Potrero La Loma")
-    tamano = models.CharField(max_length=1, choices=TamanoPotrero.choices, default=TamanoPotrero.MEDIANO)
+    tamano = models.CharField("Tamaño", max_length=1, choices=TamanoPotrero.choices, default=TamanoPotrero.MEDIANO)
     area_hectareas = models.DecimalField(max_digits=10, decimal_places=2)
     imagen = CloudinaryField('image', folder='potreros', null=True, blank=True)
     
