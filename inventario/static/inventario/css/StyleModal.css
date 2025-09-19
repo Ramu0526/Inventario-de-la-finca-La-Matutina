@@ -260,3 +260,34 @@ body.dark-mode .dispatch-form input {
     font-size: 0.8em;
     background-color: #6c757d;
 }
+
+/* ... (tus estilos anteriores) ... */
+
+/* ===== ESTILOS PARA MODAL DE INFORMACIÓN (PROVEEDOR/UBICACIÓN) ===== */
+.info-content {
+    max-width: 450px;
+    text-align: left;
+    /* Un z-index aún más alto para que aparezca sobre el modal de detalles */
+    z-index: 1002; 
+}
+
+.info-content h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.info-content p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+/* ... (tus estilos anteriores) ... */
+
+.info-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid var(--input-border-color);
+}

@@ -106,27 +106,41 @@ class MedicamentoAdmin(ImagenAdminMixin):
 
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('ubicacion', 'proveedor', 'fecha_vencimiento')
-    search_fields = ('nombre', 'ubicacion__nombre', 'proveedor__nombre')
+    # --- CAMPOS ACTUALIZADOS ---
+    list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('categoria', 'ubicacion', 'proveedor', 'fecha_vencimiento', 'etiquetas') # <-- 'categoria' y 'etiquetas' añadidas
+    search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre', 'etiquetas__nombre')
     
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
     
+    # --- FIELDSETS ACTUALIZADOS ---
     fieldsets = (
         (None, {
-            'fields': ('nombre', 'proveedor', 'ubicacion', 'imagen')
+            'fields': ('nombre', 'categoria', 'proveedor', 'ubicacion', 'imagen')
         }),
         ('Cantidad y Precio (en Kg)', {
             'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio')
+        }),
+        ('Organización', { # <-- Nueva sección para etiquetas
+            'fields': ('etiquetas',)
         }),
         ('Fechas', {
             'fields': ('fecha_compra', 'fecha_vencimiento')
         }),
     )
 
+    # --- WIDGET MEJORADO PARA ETIQUETAS ---
+    # Esto crea un cuadro de selección mucho más amigable
+    filter_horizontal = ('etiquetas',)
+
     def cantidad_kg_restante(self, obj):
         return f"{obj.cantidad_kg_ingresada - obj.cantidad_kg_usada} Kg"
     cantidad_kg_restante.short_description = 'Cantidad Restante'
+
+    # --- Función para mostrar las etiquetas en la lista ---
+    def mostrar_etiquetas(self, obj):
+        return ", ".join([e.nombre for e in obj.etiquetas.all()])
+    mostrar_etiquetas.short_description = 'Etiquetas'
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):

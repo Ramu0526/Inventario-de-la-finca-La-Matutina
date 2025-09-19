@@ -117,10 +117,14 @@ class Medicamento(models.Model):
 
 # inventario/models.py
 
+# inventario/models.py
+
 class Alimento(models.Model):
     nombre = models.CharField(max_length=100, help_text="Ej: Heno, Silo de maíz, Sal mineral")
-    # --- LÍNEA AÑADIDA ---
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True, blank=True)
+    # --- LÍNEA AÑADIDA ---
+    etiquetas = models.ManyToManyField('caracteristicas.Etiqueta', blank=True)
+    
     cantidad_kg_ingresada = models.DecimalField("Cantidad (Kg)", max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], default=0.0)
     cantidad_kg_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0.0)])
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
@@ -136,7 +140,7 @@ class Alimento(models.Model):
 
     def __str__(self):
         return self.nombre
-
+    
 class ControlPlaga(models.Model):
     class UnidadMedida(models.TextChoices):
         LITROS = 'L', 'Litros (L)'
