@@ -1,31 +1,47 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Inventario de la Finca</title>
+    <meta charset="UTF-8">
+    <title>Panel de Usuario - Finca La Matutina</title>
+    <link rel="icon" type="image/png" href="{% static 'inventario/images/logo.png' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
-    <style>
-        /* Estilos para que el botón parezca un enlace */
-        .logout-button {
-            background: none;
-            border: none;
-            color: #007bff;
-            text-decoration: underline;
-            cursor: pointer;
-            padding: 0;
-            font-size: inherit;
-        }
-    </style>
 </head>
 <body>
-    <p>
-        ¡Hola, {{ user.username }}!
-        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+
+    <div class="panel-container">
+        <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="panel-logo">
+
+        <div id="theme-toggle">🌑</div>
+
+        <div class="panel-header">
+            <h1>¡Hola, {{ user.username }}!</h1>
+            <p>Bienvenido al panel de usuario de la finca La Matutina</p>
+        </div>
+
+        <hr class="separator">
+
+        <div class="panel-buttons">
+            <button class="panel-btn">Alimentos</button>
+            <button class="panel-btn">Combustibles</button>
+            <button class="panel-btn">Control Plagas</button>
+            <button class="panel-btn">Ganado</button>
+            <button class="panel-btn">Mantenimiento</button>
+            <button class="panel-btn">Medicamentos</button>
+            <button class="panel-btn">Potreros</button>
+            <button class="panel-btn">Productos</button>
+        </div>
+
+        <hr class="separator">
+
+        <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <button type="submit" class="logout-button">Cerrar sesión</button>
+            <button type="submit" class="logout-btn">Cerrar Sesión</button>
         </form>
-    </p>
-    
-    <h1>Productos en Inventario</h1>
-    </body>
+
+    </div>
+
+    <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
+</body>
 </html>
