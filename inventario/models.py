@@ -178,6 +178,15 @@ class Mantenimiento(models.Model):
     completado = models.BooleanField(default=False)
     imagen = CloudinaryField('image', folder='mantenimiento', null=True, blank=True)
     def __str__(self): return f"Mantenimiento de {self.equipo} - Próximo: {self.fecha_proximo_mantenimiento}"
+    
+# acá va la foranea esa de mantenimiento que ud dijo 
+    lugar_mantenimiento = models.ForeignKey(
+        'LugarMantenimiento',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="mantenimientos"
+    )
 
 class Combustible(models.Model):
     tipo = models.CharField(max_length=50, help_text="Ej: Diesel, Gasolina")
@@ -192,3 +201,55 @@ class Combustible(models.Model):
 
     def __str__(self):
         return f"{self.tipo} - {self.cantidad_galones_restantes} galones restantes"
+
+# tablitas nuevas de aca pa abajo bro :v
+
+class LugarMantenimiento(models.Model):
+    nombre_lugar = models.CharField(max_length=150)
+    nombre_empresa = models.CharField(max_length=150)
+    direccion = models.CharField(max_length=200)
+    correo = models.EmailField()
+    numero = models.CharField(max_length=20, help_text="Teléfono de contacto")
+
+    def __str__(self):
+        return f"{self.nombre_lugar} - {self.nombre_empresa}"
+
+
+class Trabajador(models.Model):
+    nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
+    cedula = models.CharField(max_length=20, unique=True)
+    correo = models.EmailField()
+    numero = models.CharField(max_length=20, help_text="Teléfono de contacto")
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} - {self.cedula}"
+
+
+
+class Dotacion(models.Model):
+    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, related_name="dotaciones")
+    camisa_franela = models.BooleanField(default=False)
+    pantalon = models.BooleanField(default=False)
+    zapato = models.BooleanField(default=False)
+    fecha_entrega = models.DateField(default=timezone.now)
+
+    def __str__(self):
+        return f"Dotación de {self.trabajador}"
+
+
+class Pago(models.Model):
+    class FormaPago(models.TextChoices):
+        MENSUAL = 'M', 'Mensual'
+        QUINCENAL = 'Q', 'Quincenal'
+        SEMANAL = 'S', 'Semanal'
+
+    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, related_name="pagos")
+    pago_realizado = models.BooleanField(default=False)
+    valor = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
+    metodo_pago = models.CharField(max_length=50, help_text="Ej: Efectivo, Transferencia")
+    forma_pago = models.CharField(max_length=1, choices=FormaPago.choices, default=FormaPago.MENSUAL)
+    fecha_pago = models.DateField(default=timezone.now)
+
+    def __str__(self):
+        return f"Pago a {self.trabajador} - {self.get_forma_pago_display()} - {self.fecha_pago}"

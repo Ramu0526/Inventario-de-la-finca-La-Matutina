@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import mark_safe
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
-    Potrero, Mantenimiento, Combustible
+    Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento
 )
 
 class ImagenAdminMixin(admin.ModelAdmin):
@@ -178,18 +178,34 @@ class PotreroAdmin(ImagenAdminMixin):
 
 @admin.register(Mantenimiento)
 class MantenimientoAdmin(ImagenAdminMixin):
-    list_display = ('equipo', 'fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado', 'imagen_thumbnail')
+    list_display = (
+        'equipo', 
+        'fecha_ultimo_mantenimiento', 
+        'fecha_proximo_mantenimiento', 
+        'completado', 
+        'lugar_mantenimiento_link', 
+        'imagen_thumbnail'
+    )
     list_filter = ('completado', 'fecha_proximo_mantenimiento')
-    search_fields = ('equipo',)
+    search_fields = ('equipo', 'lugar_mantenimiento__nombre_lugar')
     
     fieldsets = (
         (None, {
-            'fields': ('equipo', 'imagen')
+            'fields': ('equipo', 'lugar_mantenimiento', 'imagen')
         }),
         ('Fechas y Estado', {
             'fields': ('fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado')
         }),
     )
+
+    def lugar_mantenimiento_link(self, obj):
+        if obj.lugar_mantenimiento:
+            return mark_safe(
+                f'<a href="/admin/inventario/lugarmantenimiento/{obj.lugar_mantenimiento.id}/change/">'
+                f'{obj.lugar_mantenimiento.nombre_lugar}</a>'
+            )
+        return "Sin lugar"
+    lugar_mantenimiento_link.short_description = "Lugar de Mantenimiento"
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
@@ -211,6 +227,30 @@ class CombustibleAdmin(ImagenAdminMixin):
     def cantidad_galones_restantes(self, obj):
         return f"{obj.cantidad_galones_ingresada - obj.cantidad_galones_usados} gal"
     cantidad_galones_restantes.short_description = 'Galones Restantes'
+
+# de acá pa abajo lo nuevo xd 
+
+@admin.register(Trabajador)
+class TrabajadorAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "apellido", "cedula", "correo", "numero")
+    search_fields = ("nombre", "apellido", "cedula")
+
+@admin.register(Dotacion)
+class DotacionAdmin(admin.ModelAdmin):
+    list_display = ("trabajador", "camisa_franela", "pantalon", "zapato", "fecha_entrega")
+    list_filter = ("camisa_franela", "pantalon", "zapato")
+
+@admin.register(Pago)
+class PagoAdmin(admin.ModelAdmin):
+    list_display = ("trabajador", "valor", "pago_realizado", "metodo_pago", "forma_pago", "fecha_pago")
+    list_filter = ("forma_pago", "pago_realizado")
+    search_fields = ("trabajador__nombre", "trabajador__apellido", "trabajador__cedula")
+
+@admin.register(LugarMantenimiento)
+class LugarMantenimientoAdmin(admin.ModelAdmin):
+    list_display = ("nombre_lugar", "nombre_empresa", "direccion", "correo", "numero")
+    search_fields = ("nombre_lugar", "nombre_empresa")
+
 
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
@@ -240,8 +280,6 @@ class CustomUserAdmin(UserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        # --- ESTA ES LA CORRECCIÓN ---
-        # Solo intentamos cambiar la etiqueta si el campo existe en el formulario
         if 'date_joined' in form.base_fields:
             form.base_fields['date_joined'].label = 'Fecha de registro'
         return form
