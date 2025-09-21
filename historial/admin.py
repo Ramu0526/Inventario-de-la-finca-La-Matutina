@@ -24,16 +24,13 @@ class LogEntryAdmin(admin.ModelAdmin):
                 changed_fields = message_data[0]['changed']['fields']
                 
                 translated_fields = []
-                # Obtenemos la clase del modelo (ej: User, Producto)
                 model = obj.content_type.model_class()
                 
                 for field_name in changed_fields:
                     try:
-                        # Buscamos el nombre legible (verbose_name) del campo
                         verbose_name = model._meta.get_field(field_name).verbose_name
                         translated_fields.append(str(verbose_name).capitalize())
                     except:
-                        # Si no lo encontramos, usamos el nombre original en inglés
                         translated_fields.append(field_name)
 
                 field_names = ", ".join(translated_fields)
@@ -44,7 +41,6 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     readable_change_message.short_description = 'Detalle del Cambio'
 
-    # Métodos para que sea de solo lectura
     def has_add_permission(self, request):
         return False
     def has_change_permission(self, request, obj=None):

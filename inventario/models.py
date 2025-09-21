@@ -7,8 +7,6 @@ from django.utils import timezone
 import datetime
 from dateutil.relativedelta import relativedelta
 
-# --- NUEVOS MODELOS PARA 'INVENTARIO' ---
-
 class Producto(models.Model):
     class UnidadMedida(models.TextChoices):
         UNIDADES = 'U', 'Unidades'
@@ -32,7 +30,6 @@ class Producto(models.Model):
         return f"{self.nombre} ({self.cantidad} {self.get_unidad_medida_display()})"
     
 class Ganado(models.Model):
-    # Opciones para los campos de seleccion
     class RazaAnimal(models.TextChoices):
         VACA = 'VACA', 'Vaca'
         TORO = 'TORO', 'Toro'
@@ -59,7 +56,6 @@ class Ganado(models.Model):
         ARTIFICIAL = 'ARTIFICIAL', 'Artificial'
         NO_APLICA = 'NO_APLICA', 'No Aplica'
 
-    # Campos del modelo
     identificador = models.CharField(max_length=50, unique=True, help_text="Ej: Arete N° 123")
     raza = models.CharField(max_length=10, choices=RazaAnimal.choices, default=RazaAnimal.VACA)
     genero = models.CharField(max_length=1, choices=GeneroAnimal.choices, default=GeneroAnimal.HEMBRA)
@@ -69,12 +65,10 @@ class Ganado(models.Model):
     fecha_ingreso = models.DateField(default=timezone.now)
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
     
-    # Campos de vacunacion
     vacunado = models.BooleanField(default=False)
     nombre_vacuna = models.CharField(max_length=100, blank=True, null=True)
     proxima_vacunacion = models.DateField(blank=True, null=True)
 
-    # Campo de parto (solo lectura en admin)
     parto = models.CharField(max_length=15, choices=TipoParto.choices, default=TipoParto.NO_APLICA)
 
     imagen = CloudinaryField('image', folder='ganado', null=True, blank=True)
@@ -115,16 +109,10 @@ class Medicamento(models.Model):
     def __str__(self): 
         return self.nombre
 
-# inventario/models.py
-
-# inventario/models.py
-
 class Alimento(models.Model):
     nombre = models.CharField(max_length=100, help_text="Ej: Heno, Silo de maíz, Sal mineral")
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True, blank=True)
-    # --- LÍNEA AÑADIDA ---
     etiquetas = models.ManyToManyField('caracteristicas.Etiqueta', blank=True)
-    
     cantidad_kg_ingresada = models.DecimalField("Cantidad (Kg)", max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], default=0.0)
     cantidad_kg_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0.0)])
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)

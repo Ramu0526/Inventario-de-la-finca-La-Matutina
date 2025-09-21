@@ -93,5 +93,4 @@ class CustomUserAdminTest(TestCase):
     def test_password_change_link(self):
         link = self.admin.password_change_link(self.user)
         expected_link = f'<a href="/admin/auth/user/{self.user.pk}/password/">Restablecer contraseña</a>'
-        # We check for a partial match because the full URL might be different
         self.assertIn('Restablecer contraseña', link)

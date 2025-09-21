@@ -1,4 +1,3 @@
-# caracteristicas/admin.py
 from django.contrib import admin
 from .models import Categoria, Proveedor, Ubicacion, Etiqueta
 from django.utils.html import mark_safe
@@ -10,11 +9,9 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
-    # Campos que se mostrarán en la lista de proveedores
     list_display = ('nombre', 'nombre_local', 'telefono', 'correo_electronico', 'ubicacion', 'imagen_thumbnail')
     search_fields = ('nombre', 'nombre_local', 'telefono', 'correo_electronico')
     
-    # Organización del formulario para añadir o editar un proveedor
     fieldsets = (
         ('Información de Contacto', {
             'fields': ('nombre', 'correo_electronico', 'telefono')
@@ -57,8 +54,6 @@ class UbicacionAdmin(admin.ModelAdmin):
         return "Sin enlace"
     link_con_icono.short_description = 'Enlace de Ubicación'
 
-
-# --- GESTIÓN DE ETIQUETAS Y SUB-ETIQUETAS ---
 class SubEtiquetaInline(admin.TabularInline):
     model = Etiqueta
     extra = 1

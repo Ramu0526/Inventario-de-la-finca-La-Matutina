@@ -25,7 +25,6 @@ class Proveedor(models.Model):
         verbose_name_plural = 'Proveedores'
 
     def __str__(self):
-        # Construimos un texto descriptivo para que aparezca en los menús desplegables
         info = f"{self.nombre}"
         if self.nombre_local:
             info += f" ({self.nombre_local})"
@@ -45,8 +44,6 @@ class Ubicacion(models.Model):
         verbose_name_plural = 'Ubicaciones'
 
     def __str__(self):
-        # --- ESTA ES LA LÍNEA CLAVE ---
-        # Formateamos el texto para que sea más descriptivo
         detalles = []
         if self.barrio:
             detalles.append(self.barrio)

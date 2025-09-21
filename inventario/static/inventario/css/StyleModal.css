@@ -1,8 +1,4 @@
-/* ================================== */
-/* ====== ESTILOS MODAL (V2) ======== */
-/* ================================== */
 
-/* Fondo oscuro del modal */
 .modal {
     display: none;
     position: fixed;
@@ -16,16 +12,15 @@
     backdrop-filter: blur(5px);
 }
 
-/* Contenedor principal del modal */
 .modal-content {
     background-color: var(--form-bg-color);
     color: var(--text-color);
-    margin: 5% auto; /* Menos margen superior para más espacio */
+    margin: 5% auto; 
     padding: 25px;
     border: 1px solid var(--input-border-color);
     border-radius: 10px;
     width: 90%;
-    max-width: 800px; /* Un poco más ancho para las dos columnas */
+    max-width: 800px; 
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s;
 }
@@ -35,7 +30,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Encabezado del modal */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -55,22 +49,18 @@
     cursor: pointer;
 }
 
-/* ===== AQUÍ ESTÁ LA MAGIA ===== */
-
-/* 1. El contenedor de los alimentos ahora es un grid */
 .modal-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
-    gap: 20px; /* Espacio entre las tarjetas */
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px; 
     padding-top: 15px;
 }
 
-/* 2. Cada alimento se estiliza como una tarjeta individual */
 .item-card {
-    background-color: var(--bg-color); /* Un color de fondo ligeramente diferente */
+    background-color: var(--bg-color);
     border: 1px solid var(--input-border-color);
     border-radius: 8px;
-    overflow: hidden; /* Para que la imagen respete los bordes redondeados */
+    overflow: hidden; 
     display: flex;
     flex-direction: column;
     text-align: center;
@@ -78,8 +68,8 @@
 
 .item-card-img {
     width: 100%;
-    height: 150px; /* Altura fija para las imágenes */
-    object-fit: cover; /* Asegura que la imagen cubra el espacio sin deformarse */
+    height: 150px; 
+    object-fit: cover; 
 }
 
 .item-card-img-placeholder {
@@ -116,16 +106,12 @@ body.dark-mode .item-card-img-placeholder {
     background-color: #28a745;
 }
 
-/* ... (todos tus estilos de modal anteriores) ... */
-
-
-/* ===== ESTILOS PARA LA PAGINACIÓN (ACTUALIZADO) ===== */
 .pagination-controls {
     display: flex;
     justify-content: center;
     align-items: center;
     padding-top: 25px;
-    gap: 10px; /* Espacio entre los círculos */
+    gap: 10px; 
 }
 
 .pagination-btn {
@@ -134,13 +120,11 @@ body.dark-mode .item-card-img-placeholder {
     background-color: transparent;
     color: var(--text-color);
     
-    /* --- ESTILOS PARA HACERLO CIRCULAR --- */
-    border-radius: 50%; /* Esto crea el círculo */
-    width: 36px;       /* Ancho fijo */
-    height: 36px;      /* Alto fijo */
-    padding: 0;        /* Quitamos el padding para que el texto se centre bien */
+    border-radius: 50%; 
+    width: 36px;  
+    height: 36px;
+    padding: 0;
 
-    /* --- ESTILOS PARA CENTRAR EL NÚMERO --- */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -156,7 +140,6 @@ body.dark-mode .pagination-btn:hover {
     background-color: #343a40;
 }
 
-/* Estilo para el botón de la página activa */
 .pagination-btn.active {
     background-color: var(--primary-color);
     color: white;
@@ -166,14 +149,11 @@ body.dark-mode .pagination-btn.active {
     color: #121212;
 }
 
-/* Clase para ocultar las tarjetas que no pertenecen a la página actual */
 .item-card.hidden {
     display: none;
 }
 
-/* 3. Media Query para dispositivos móviles */
 @media (max-width: 768px) {
-    /* En pantallas más pequeñas, volvemos a una sola columna */
     .modal-grid {
         grid-template-columns: 1fr;
     }
@@ -188,12 +168,9 @@ body.dark-mode .pagination-btn.active {
     }
 }
 
-/* ... (tus estilos anteriores) ... */
 
-/* ===== ESTILOS PARA MODAL DE DETALLES ===== */
 .details-content {
     max-width: 600px;
-    /* Un z-index más alto para que aparezca sobre el primer modal */
     z-index: 1001; 
 }
 
@@ -226,7 +203,7 @@ body.dark-mode .pagination-btn.active {
     max-height: 250px;
     object-fit: cover;
     border-radius: 8px;
-    grid-column: 1 / -1; /* Ocupa todo el ancho */
+    grid-column: 1 / -1; 
 }
 
 .dispatch-form {
@@ -261,13 +238,9 @@ body.dark-mode .dispatch-form input {
     background-color: #6c757d;
 }
 
-/* ... (tus estilos anteriores) ... */
-
-/* ===== ESTILOS PARA MODAL DE INFORMACIÓN (PROVEEDOR/UBICACIÓN) ===== */
 .info-content {
     max-width: 450px;
     text-align: left;
-    /* Un z-index aún más alto para que aparezca sobre el modal de detalles */
     z-index: 1002; 
 }
 
@@ -281,8 +254,6 @@ body.dark-mode .dispatch-form input {
     line-height: 1.6;
 }
 
-/* ... (tus estilos anteriores) ... */
-
 .info-img {
     width: 100%;
     height: 180px;
@@ -290,4 +261,67 @@ body.dark-mode .dispatch-form input {
     border-radius: 8px;
     margin-bottom: 15px;
     border: 1px solid var(--input-border-color);
+}
+
+.tags-section {
+    grid-column: 1 / -1; 
+    text-align: left;
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    margin: 0 0 15px 0;
+    list-style: none;
+}
+
+.tag-item {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+body.dark-mode .tag-item {
+    color: #121212;
+}
+
+.remove-tag-btn {
+    cursor: pointer;
+    background: #fff;
+    color: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 20px;
+}
+
+.add-tag-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.add-tag-form select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid var(--input-border-color);
+}
+
+.add-tag-form button {
+    width: auto;
+    margin: 0;
+    padding: 8px 15px;
+    font-size: 0.9em;
 }

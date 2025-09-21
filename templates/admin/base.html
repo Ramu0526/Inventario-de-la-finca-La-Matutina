@@ -7,7 +7,6 @@
 
     {# Hoja de estilos con las reglas del modo oscuro para todo el panel #}
     <style>
-        /* --- Definición de tus variables de color --- */
         body.dark-mode {
             --bg-color-dark: #121212;
             --card-bg-dark: #1e1e1e;
@@ -17,8 +16,6 @@
             --primary-color-dark: #bb86fc;
             --hover-bg-dark: #9a60e2;
         }
-
-        /* --- Estilos de Texto Mejorados --- */
         body.dark-mode, body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5,
         body.dark-mode .content-wrapper, body.dark-mode .main-footer, body.dark-mode label,
         body.dark-mode .form-text, body.dark-mode .help-block, body.dark-mode .breadcrumb-item,
@@ -30,13 +27,11 @@
             color: var(--primary-color-dark) !important;
         }
 
-        /* --- Estilos Generales --- */
         body.dark-mode,
         body.dark-mode .content-wrapper {
             background-color: var(--bg-color-dark) !important;
         }
 
-        /* --- Barra de Navegación Superior (Navbar) --- */
         body.dark-mode .main-header,
         body.dark-mode .navbar-nav {
             background-color: var(--card-bg-dark) !important;
@@ -44,7 +39,6 @@
         }
         body.dark-mode .nav-link { color: var(--text-color-dark) !important; }
 
-        /* --- Barra Lateral (Sidebar) --- */
         body.dark-mode .main-sidebar,
         body.dark-mode .brand-link {
             background-color: var(--card-bg-dark) !important;
@@ -62,7 +56,6 @@
             color: white !important;
         }
 
-        /* --- Contenedores Principales (Cards) --- */
         body.dark-mode .card {
             background-color: var(--card-bg-dark) !important;
             border-color: var(--border-color-dark) !important;
@@ -74,7 +67,6 @@
             border-top-color: var(--border-color-dark) !important;
         }
 
-        /* --- Tablas --- */
         body.dark-mode .table {
             border-color: var(--border-color-dark) !important;
         }
@@ -85,7 +77,6 @@
             background-color: rgba(255, 255, 255, 0.075) !important;
         }
 
-        /* --- Formularios y Desplegables (CORREGIDO) --- */
         body.dark-mode .form-control,
         body.dark-mode .select2-container--default .select2-selection--single {
             background-color: var(--bg-color-dark) !important;
@@ -107,7 +98,6 @@
             background-color: var(--bg-color-dark) !important;
         }
 
-        /* --- Botones y Enlaces de Acción (CORREGIDO) --- */
         body.dark-mode .button,
         body.dark-mode .btn,
         body.dark-mode .submit-row input,
@@ -130,12 +120,12 @@
             background-color: var(--primary-color-dark) !important;
             color: white !important;
         }
-        body.dark-mode .btn-primary { /* Botón principal de "Añadir" */
+        body.dark-mode .btn-primary { 
             background-color: var(--primary-color-dark) !important;
             border-color: var(--primary-color-dark) !important;
             color: white !important;
         }
-        body.dark-mode .deletelink { /* Enlace de borrar */
+        body.dark-mode .deletelink { 
             color: #ff7675 !important;
             border-color: #ff7675 !important;
         }
@@ -144,13 +134,10 @@
             color: white !important;
         }
 
-
-        /* --- Modales --- */
         body.dark-mode .modal-content {
             background-color: var(--card-bg-dark) !important;
         }
 
-        /* --- Estilos para el interruptor en la barra lateral --- */
         .user-panel .info {
             display: flex;
             align-items: center;

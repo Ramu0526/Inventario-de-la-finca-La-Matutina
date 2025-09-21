@@ -9,12 +9,9 @@ import os
 import dj_database_url
 import cloudinary
 
-# --- Base Configuration ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
-# --- Application Definition ---
-# Make sure 'jazzmin' is the first app in this list to override Django's admin.
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -23,41 +20,33 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 3rd Party Apps
     'cloudinary_storage',
     'cloudinary',
-    # My Apps
     'inventario',
     'caracteristicas',
     'historial',
 ]
 
-# --- configuraciones del tema de jazzmin xd ---
 JAZZMIN_SETTINGS = {
 
-# --- titulogogo ---
-    "site_title": "Inventario La Matutina",  # Título que aparece en la pestaña del navegador, es lit el title de html xd
-    "site_header": "La Matutina",  # Título que aparece en la barra superior y en la página de login
+    "site_title": "Inventario La Matutina",  
+    "site_header": "La Matutina",  
     "site_brand": "Panel de control",
-    "site_logo": "inventario/images/logo.png",  # Ruta de la imagen del logo, que debe estar en la carpeta static pndjooo, staaticccc
+    "site_logo": "inventario/images/logo.png", 
 
-# --- CSS PERSONALIZAOOO ----
-    "custom_css": "css/logo_resize.css",  # esta es la cosa que me fastidio fokkk
+    "custom_css": "css/logo_resize.css", 
 
-# --- login ---
-    "welcome_sign": "¡Bienvenido a la administración de La Matutina!",  # Mensaje que se muestra en la página de login
+    "welcome_sign": "¡Bienvenido a la administración de La Matutina!", 
 
-# --- cositas de la pagina principal xd ---
-    "theme": "darkly",  # El tema de color para la interfaz de administración
-    "navbar_small_text": False,  # Si el texto de la barra de navegación es pequeño
-    "user_avatar": None,  # Avatar del usuario actual
-    "show_sidebar": True,  # Si la barra lateral de navegación se muestra
-    "navigation_expanded": True,  # Si la barra lateral está expandida por defecto
-    "hide_apps": [],  # Lista de aplicaciones que se ocultan en la barra lateral xd
-    "hide_models": [],  # Lista de modelos que se ocultan en la barra lateral, like, pa que no se vean pues 
-    "order_with_respect_to": ["inventario"],  # Orden en el que se muestran las aplicaciones y sus modelos :v
+    "theme": "darkly", 
+    "navbar_small_text": False,  
+    "user_avatar": None, 
+    "show_sidebar": True,  
+    "navigation_expanded": True, 
+    "hide_apps": [],  
+    "hide_models": [],  
+    "order_with_respect_to": ["inventario"],  
     
-    # --- ENLACE AÑADIDO EN EL MENÚ SUPERIOR ---
     "topmenu_links": [
         {"name": "Ver Vista de Usuario", "url": "lista_productos", "new_window": True},
     ],
@@ -90,7 +79,6 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = 'FincaInventario.wsgi.application'
 
-# --- Password validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -98,7 +86,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# --- Internationalization & Authentication ---
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 USE_I18N = True
@@ -108,7 +95,6 @@ LOGIN_REDIRECT_URL = 'user_redirect'
 LOGOUT_REDIRECT_URL = 'login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Media Files Configuration (Cloudinary) ---
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 cloudinary.config(
@@ -126,7 +112,6 @@ CLOUDINARY_STORAGE = {
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
 if IS_PRODUCTION:
-    # --- PRODUCTION SETTINGS (Render) ---
     DEBUG = False
     
     RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -144,7 +129,7 @@ if IS_PRODUCTION:
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    MEDIA_URL = '' # Cloudinary maneja esto
+    MEDIA_URL = ''
 
 else:
     DEBUG = True

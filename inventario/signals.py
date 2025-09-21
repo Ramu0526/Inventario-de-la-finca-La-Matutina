@@ -7,7 +7,6 @@ from .models import (
     Potrero, Mantenimiento, Combustible
 )
 
-# Lista de todos los modelos que tienen un campo de imagen
 MODELS_WITH_IMAGES = [
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
     Potrero, Mantenimiento, Combustible
@@ -25,12 +24,9 @@ def handle_image_change(sender, instance, **kwargs):
             old_image = old_instance.imagen
             new_image = instance.imagen
 
-            # Comprueba si el campo de la imagen ha cambiado y si existía una imagen antigua.
             if old_image and old_image != new_image:
-                # Borra la imagen antigua de Cloudinary
                 cloudinary.uploader.destroy(old_image.public_id)
         except sender.DoesNotExist:
-            # Si el objeto es nuevo, no hay nada que hacer.
             pass
 
 @receiver(post_delete)
@@ -41,5 +37,4 @@ def handle_image_delete_on_model_delete(sender, instance, **kwargs):
     """
     if sender in MODELS_WITH_IMAGES:
         if instance.imagen:
-            # Borra la imagen de Cloudinary
             cloudinary.uploader.destroy(instance.imagen.public_id)

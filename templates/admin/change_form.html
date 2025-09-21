@@ -7,7 +7,6 @@
     {# Luego, usamos un script para cambiar el texto de esos botones #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Buscamos cada botón por su 'name' y cambiamos su 'value' (el texto)
             const saveButton = document.querySelector('input[name="_save"]');
             if (saveButton) {
                 saveButton.value = 'Guardar';

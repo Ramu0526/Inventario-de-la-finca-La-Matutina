@@ -16,7 +16,6 @@
             z-index: 100;
         }
 
-        /* Define las variables de color de tu style.css */
         :root {
             --bg-color-dark: #121212;
             --form-bg-color-dark: #1e1e1e;
@@ -25,15 +24,11 @@
             --input-border-color-dark: #555;
         }
 
-        /* --- REGLA CORREGIDA Y REFORZADA --- */
-        /* Aplicamos el fondo oscuro directamente al HTML y al BODY para máxima prioridad */
         body.dark-mode,
         body.dark-mode .login-page {
             background: var(--bg-color-dark) !important;
         }
-        /* --- FIN DE LA CORRECCIÓN --- */
 
-        /* Aplica las variables a los elementos del login de admin cuando el modo oscuro está activo */
         body.dark-mode .login-box,
         body.dark-mode .card,
         body.dark-mode .login-card-body {
@@ -44,7 +39,7 @@
         body.dark-mode .login-box-msg,
         body.dark-mode .input-group-text {
             color: var(--text-color-dark) !important;
-            background: #1e1e1e !important; /* Fondo para los iconos de usuario/contraseña */
+            background: #1e1e1e !important;
             border-color: var(--input-border-color-dark) !important;
         }
 

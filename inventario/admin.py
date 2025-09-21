@@ -5,20 +5,15 @@ from .models import (
     Potrero, Mantenimiento, Combustible
 )
 
-# --- 1. Clase Base para Modelos con Imagen ---
-
 class ImagenAdminMixin(admin.ModelAdmin):
     """
     Mixin para añadir una vista previa de la imagen que se puede ampliar.
     """
     def imagen_thumbnail(self, obj):
         if obj.imagen:
-            # Envolvemos la imagen en un enlace <a> para hacerla clicable
             return mark_safe(f'<a href="{obj.imagen.url}" target="_blank"><img src="{obj.imagen.url}" width="100" /></a>')
         return "Sin imagen"
     imagen_thumbnail.short_description = 'Vista Previa'
-
-# --- 2. Clases de Personalización del Admin ---
 
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
@@ -44,7 +39,7 @@ class ProductoAdmin(ImagenAdminMixin):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'raza', 'genero', 'edad', 'potrero', 'fecha_nacimiento', 'fecha_ingreso', 'estado', 'nombre_vacuna', 'proxima_vacunacion', 'imagen_thumbnail')
+    list_display = ('identificador', 'raza', 'genero', 'edad', 'fecha_nacimiento', 'potrero', 'fecha_ingreso', 'estado', 'nombre_vacuna', 'proxima_vacunacion', 'imagen_thumbnail')
     list_filter = ('raza', 'genero', 'estado', 'potrero', 'vacunado')
     search_fields = ('identificador', 'raza', 'nombre_vacuna')
     
@@ -89,8 +84,7 @@ class MedicamentoAdmin(ImagenAdminMixin):
     def cantidad_restante_con_unidad(self, obj):
         return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
     cantidad_restante_con_unidad.short_description = 'Restante'
-    
-    # --- FUNCIONES PARA ACORTAR ENCABEZADOS ---
+
     def f_compra(self, obj):
         return obj.fecha_compra
     f_compra.short_description = 'F. Compra'
@@ -103,17 +97,13 @@ class MedicamentoAdmin(ImagenAdminMixin):
         return obj.fecha_vencimiento
     f_vencimiento.short_description = 'F. Vencimiento'
 
-
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    # --- CAMPOS ACTUALIZADOS ---
     list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('categoria', 'ubicacion', 'proveedor', 'fecha_vencimiento', 'etiquetas') # <-- 'categoria' y 'etiquetas' añadidas
+    list_filter = ('categoria', 'ubicacion', 'proveedor', 'fecha_vencimiento', 'etiquetas')
     search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre', 'etiquetas__nombre')
-    
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
     
-    # --- FIELDSETS ACTUALIZADOS ---
     fieldsets = (
         (None, {
             'fields': ('nombre', 'categoria', 'proveedor', 'ubicacion', 'imagen')
@@ -121,7 +111,7 @@ class AlimentoAdmin(ImagenAdminMixin):
         ('Cantidad y Precio (en Kg)', {
             'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio')
         }),
-        ('Organización', { # <-- Nueva sección para etiquetas
+        ('Organización', {
             'fields': ('etiquetas',)
         }),
         ('Fechas', {
@@ -129,15 +119,12 @@ class AlimentoAdmin(ImagenAdminMixin):
         }),
     )
 
-    # --- WIDGET MEJORADO PARA ETIQUETAS ---
-    # Esto crea un cuadro de selección mucho más amigable
     filter_horizontal = ('etiquetas',)
 
     def cantidad_kg_restante(self, obj):
         return f"{obj.cantidad_kg_ingresada - obj.cantidad_kg_usada} Kg"
     cantidad_kg_restante.short_description = 'Cantidad Restante'
 
-    # --- Función para mostrar las etiquetas en la lista ---
     def mostrar_etiquetas(self, obj):
         return ", ".join([e.nombre for e in obj.etiquetas.all()])
     mostrar_etiquetas.short_description = 'Etiquetas'
@@ -225,7 +212,6 @@ class CombustibleAdmin(ImagenAdminMixin):
         return f"{obj.cantidad_galones_ingresada - obj.cantidad_galones_usados} gal"
     cantidad_galones_restantes.short_description = 'Galones Restantes'
 
-# ... (resto del código de admin.py) ...
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
