@@ -182,15 +182,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleTagManagement(event) {
         event.preventDefault();
-        const alimentoId = event.currentTarget.dataset.id;
-        let etiquetaId, accion;
-        if (event.type === 'submit') {
+        
+        // --- THIS BLOCK IS THE FIX ---
+        let alimentoId, etiquetaId, accion;
+        if (event.type === 'submit') { // 'add' action
             accion = 'add';
+            alimentoId = event.currentTarget.dataset.id;
             etiquetaId = document.getElementById('tag-select').value;
-        } else {
+        } else { // 'remove' action
             accion = 'remove';
+            alimentoId = event.currentTarget.dataset.alimentoId; // Corrected from dataset.id
             etiquetaId = event.currentTarget.dataset.tagId;
         }
+        // --- END OF FIX ---
+
         if (!etiquetaId) return;
         const csrfToken = document.querySelector('form [name=csrfmiddlewaretoken]').value;
         try {

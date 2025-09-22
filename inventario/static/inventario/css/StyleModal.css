@@ -163,10 +163,15 @@ body.dark-mode .pagination-btn.active {
         margin: 20% auto;
     }
 
-    .modal-content {
-        margin: 15% auto;
+    /* --- ADD THIS CODE --- */
+    .details-grid {
+        grid-template-columns: 1fr; /* Stacks items vertically */
     }
 
+    .details-section {
+        grid-column: 1 / -1; /* Ensures each section takes full width */
+    }
+    /* --- END OF ADDED CODE --- */
 }
 
 
