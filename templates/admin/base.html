@@ -8,13 +8,16 @@
     {# Hoja de estilos con las reglas del modo oscuro para todo el panel #}
     <style>
         body.dark-mode {
-            --bg-color-dark: #121212;
-            --card-bg-dark: #1e1e1e;
-            --text-color-dark: #e0e0e0;
-            --text-color-light-dark: #ccc;
-            --border-color-dark: #0c7e02;
-            --primary-color-dark: #14b30e;
-            --hover-bg-dark: #0c7e02;
+            --bg-color-dark: #1c1c1c;
+            --card-bg-dark: #2a2a2a;
+            --text-color-dark: #f0f0f0;
+            --text-color-light-dark: #cccccc;
+            --primary-color-dark: #28a745;
+            --border-color-dark: #1f8a38;
+            --hover-bg-dark: #218838;
+        }
+        body:not(.dark-mode) {
+            color: #333;
         }
         body.dark-mode, body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5,
         body.dark-mode .content-wrapper, body.dark-mode .main-footer, body.dark-mode label,
@@ -149,6 +152,42 @@
             margin-left: auto;
             padding: 0 10px;
         }
+
+        /* --- Fixes for filter_horizontal widget in dark mode --- */
+        body.dark-mode .selector {
+            background-color: var(--bg-color-dark);
+        }
+        body.dark-mode .selector-filter label {
+            color: var(--text-color-dark) !important;
+        }
+        body.dark-mode .selector-filter input {
+            background-color: var(--bg-color-dark) !important;
+            color: var(--text-color-dark) !important;
+            border: 1px solid var(--border-color-dark) !important;
+        }
+        body.dark-mode .selector .selector-available h2,
+        body.dark-mode .selector .selector-chosen h2 {
+            background-color: var(--card-bg-dark) !important;
+            color: var(--text-color-dark) !important;
+            border-bottom: 1px solid var(--border-color-dark) !important;
+        }
+        body.dark-mode .selector select {
+            background-color: var(--bg-color-dark) !important;
+            color: var(--text-color-dark) !important;
+            border: 1px solid var(--border-color-dark) !important;
+        }
+        body.dark-mode .selector select option {
+            background-color: var(--bg-color-dark) !important;
+            color: var(--text-color-dark) !important;
+        }
+        body.dark-mode .selector select option:checked {
+            background-color: var(--primary-color-dark) !important;
+            color: white !important;
+        }
+        body.dark-mode .selector a.selector-chooseall,
+        body.dark-mode .selector a.selector-clearall {
+            color: var(--primary-color-dark) !important;
+        }
     </style>
 {% endblock %}
 
@@ -156,37 +195,92 @@
 {# --- Bloque para añadir JavaScript al final de la página --- #}
 {% block extrajs %}
     {{ block.super }}
-    
-    {# Script para inyectar y controlar el interruptor de tema #}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const userInfoContainer = document.querySelector('.user-panel .info');
+            // --- Theme Toggler and Pop-up Sync ---
+            const body = document.body;
+            const themeToggle = document.createElement('div');
+            themeToggle.id = 'theme-toggle-sidebar';
 
-            if (userInfoContainer) {
-                const themeToggle = document.createElement('div');
-                themeToggle.id = 'theme-toggle-sidebar';
-                userInfoContainer.appendChild(themeToggle);
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    body.classList.add('dark-mode');
+                    themeToggle.textContent = '🌑';
+                } else {
+                    body.classList.remove('dark-mode');
+                    themeToggle.textContent = '☀️';
+                }
+            };
 
-                const body = document.body;
-                const applyTheme = (theme) => {
-                    if (theme === 'dark') {
-                        body.classList.add('dark-mode');
-                        themeToggle.textContent = '🌑';
-                    } else {
-                        body.classList.remove('dark-mode');
-                        themeToggle.textContent = '☀️';
-                    }
-                };
+            // Sync theme for pop-ups from opener window
+            if (window.name.includes('_popup') && window.opener) {
+                const openerTheme = window.opener.localStorage.getItem('theme');
+                if (openerTheme === 'dark') {
+                    body.classList.add('dark-mode');
+                }
+            } else {
+                // Regular page theme handling
+                const userInfoContainer = document.querySelector('.user-panel .info');
+                if (userInfoContainer) {
+                    userInfoContainer.appendChild(themeToggle);
+                    const savedTheme = localStorage.getItem('theme') || 'light';
+                    applyTheme(savedTheme);
 
-                const savedTheme = localStorage.getItem('theme') || 'light';
-                applyTheme(savedTheme);
+                    themeToggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        let newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
+                        localStorage.setItem('theme', newTheme);
+                        applyTheme(newTheme);
+                    });
+                }
+            }
 
-                themeToggle.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    let newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
-                    localStorage.setItem('theme', newTheme);
-                    applyTheme(newTheme);
-                });
+            // --- Add Icons ---
+            const iconMap = {
+                'Alimentos': 'fas fa-utensils',
+                'Combustibles': 'fas fa-gas-pump',
+                'Compradores': 'fas fa-users',
+                'Control plagas': 'fas fa-bug',
+                'Dotaciones': 'fas fa-tshirt',
+                'Ganados': 'fas fa-cow',
+                'Lugar mantenimientos': 'fas fa-tools',
+                'Mantenimientos': 'fas fa-cogs',
+                'Medicamentos': 'fas fa-pills',
+                'Pagos': 'fas fa-money-bill-wave',
+                'Potreros': 'fas fa-map-marked-alt',
+                'Productos': 'fas fa-box',
+                'Tipos de Animales': 'fas fa-paw',
+                'Trabajadores': 'fas fa-hard-hat',
+                'Vacunas': 'fas fa-syringe',
+                'Usuarios': 'fas fa-user',
+                'Categorías': 'fas fa-tags',
+                'Etiquetas': 'fas fa-tag',
+                'Proveedores': 'fas fa-truck',
+                'Ubicacione': 'fas fa-map-marker-alt',
+                'Panel de control': 'fas fa-tachometer-alt',
+            };
+
+            const navLinks = document.querySelectorAll('.nav-sidebar .nav-link p');
+
+            navLinks.forEach(link => {
+                const text = link.textContent.trim();
+                if (iconMap[text]) {
+                    const icon = document.createElement('i');
+                    icon.className = `nav-icon ${iconMap[text]}`;
+                    link.parentElement.prepend(icon);
+                }
+            });
+
+            // --- Add Vista de Usuario link ---
+            const panelDeControlLink = Array.from(document.querySelectorAll('.nav-sidebar .nav-link p')).find(el => el.textContent.trim() === 'Panel de control');
+            if (panelDeControlLink) {
+                const panelDeControlLi = panelDeControlLink.closest('.nav-item');
+                if (panelDeControlLi) {
+                    const userViewLi = document.createElement('li');
+                    userViewLi.className = 'nav-item';
+                    userViewLi.innerHTML = `<a href="{% url 'lista_productos' %}" class="nav-link"><i class="nav-icon fas fa-eye"></i><p>Vista de usuario</p></a>`;
+                    panelDeControlLi.insertAdjacentElement('afterend', userViewLi);
+                }
             }
         });
     </script>

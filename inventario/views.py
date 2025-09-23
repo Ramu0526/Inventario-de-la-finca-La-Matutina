@@ -51,11 +51,14 @@ def alimento_detalles_json(request, alimento_id):
     etiquetas_del_alimento = list(alimento.etiquetas.values('id', 'nombre'))
     todas_las_etiquetas = list(Etiqueta.objects.values('id', 'nombre'))
     proveedor_data = None
-    if alimento.proveedor:
+    proveedor = alimento.proveedores.first()
+    if proveedor:
         proveedor_data = {
-            'nombre': alimento.proveedor.nombre, 'nombre_local': alimento.proveedor.nombre_local,
-            'correo': alimento.proveedor.correo_electronico, 'telefono': alimento.proveedor.telefono,
-            'imagen_url': alimento.proveedor.imagen.url if alimento.proveedor.imagen else ''
+            'nombre': proveedor.nombre,
+            'nombre_local': getattr(proveedor, 'nombre_local', ''),
+            'correo': getattr(proveedor, 'correo_electronico', ''),
+            'telefono': getattr(proveedor, 'telefono', ''),
+            'imagen_url': proveedor.imagen.url if hasattr(proveedor, 'imagen') and proveedor.imagen else ''
         }
     ubicacion_data = None
     if alimento.ubicacion:

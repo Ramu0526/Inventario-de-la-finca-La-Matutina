@@ -63,12 +63,14 @@ class ProductoAdmin(ImagenAdminMixin):
 
 class RegistroVacunacionInline(admin.TabularInline):
     model = RegistroVacunacion
+    fields = ('vacuna', 'fecha_aplicacion', 'fecha_proxima_dosis', 'notas')
+    can_delete = True
     extra = 1
     autocomplete_fields = ['vacuna']
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'parto', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'parto', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_filter = ('animal', 'genero', 'estado')
     search_fields = ('identificador', 'animal__nombre', 'raza')
     
@@ -88,6 +90,23 @@ class GanadoAdmin(ImagenAdminMixin):
     def edad(self, obj):
         return obj.edad
     edad.short_description = 'Edad'
+
+    def historial_vacunacion(self, obj):
+        from django.utils.html import format_html
+        from django.urls import reverse
+        
+        vacunaciones = obj.vacunaciones.all().order_by('-fecha_aplicacion')
+        if not vacunaciones:
+            return "Sin registros"
+        
+        html = "<ul>"
+        for reg in vacunaciones:
+            vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+            html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
+        html += "</ul>"
+        
+        return format_html(html)
+    historial_vacunacion.short_description = 'Historial de Vacunación'
 
     def proximas_vacunas(self, obj):
         from django.utils.html import format_html
