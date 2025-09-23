@@ -11,36 +11,43 @@ class Producto(models.Model):
     class UnidadMedida(models.TextChoices):
         UNIDADES = 'U', 'Unidades'
         KILOGRAMOS = 'Kg', 'Kilogramos (Kg)'
-        GRAMOS = 'g', 'Gramos (g)'
         LITROS = 'L', 'Litros (L)'
-        MILILITROS = 'ml', 'Mililitros (ml)'
     
     nombre = models.CharField(max_length=100)
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     unidad_medida = models.CharField(max_length=2, choices=UnidadMedida.choices, default=UnidadMedida.UNIDADES)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
     fecha_produccion = models.DateField(default=timezone.now)
     fecha_venta = models.DateField(null=True, blank=True)
     imagen = CloudinaryField('image', folder='productos', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción detallada del producto.")
+    compradores = models.ManyToManyField('Comprador', through='VentaProducto', blank=True, related_name='productos_comprados')
+
+    @property
+    def precio_total(self):
+        if self.cantidad is not None and self.precio is not None:
+            return self.cantidad * self.precio
+        return 0
 
     def __str__(self):
         return f"{self.nombre} ({self.cantidad} {self.get_unidad_medida_display()})"
+
+
+class Animal(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name = 'Tipo de Animal'
+        verbose_name_plural = 'Tipos de Animales'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
     
 class Ganado(models.Model):
-    class RazaAnimal(models.TextChoices):
-        VACA = 'VACA', 'Vaca'
-        TORO = 'TORO', 'Toro'
-        CABALLO = 'CABALLO', 'Caballo'
-        YEGUA = 'YEGUA', 'Yegua'
-        PERRO = 'PERRO', 'Perro'
-        GATO = 'GATO', 'Gato'
-        GALLINA = 'GALLINA', 'Gallina'
-        GALLO = 'GALLO', 'Gallo'
-        PATO = 'PATO', 'Pato'
-    
     class GeneroAnimal(models.TextChoices):
         MACHO = 'M', 'Macho'
         HEMBRA = 'H', 'Hembra'
@@ -57,21 +64,18 @@ class Ganado(models.Model):
         NO_APLICA = 'NO_APLICA', 'No Aplica'
 
     identificador = models.CharField(max_length=50, unique=True, help_text="Ej: Arete N° 123")
-    raza = models.CharField(max_length=10, choices=RazaAnimal.choices, default=RazaAnimal.VACA)
+    animal = models.ForeignKey('Animal', on_delete=models.SET_NULL, null=True, verbose_name="Tipo de Animal")
+    raza = models.CharField("Raza", max_length=100, blank=True, help_text="Ej: Holstein, Angus")
     genero = models.CharField(max_length=1, choices=GeneroAnimal.choices, default=GeneroAnimal.HEMBRA)
-    potrero = models.ForeignKey('Potrero', on_delete=models.SET_NULL, null=True, blank=True)
+    peso_kg = models.DecimalField("Peso (Kg)", max_digits=7, decimal_places=2, null=True, blank=True)
     
     fecha_nacimiento = models.DateField()
-    fecha_ingreso = models.DateField(default=timezone.now)
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
     
-    vacunado = models.BooleanField(default=False)
-    nombre_vacuna = models.CharField(max_length=100, blank=True, null=True)
-    proxima_vacunacion = models.DateField(blank=True, null=True)
-
     parto = models.CharField(max_length=15, choices=TipoParto.choices, default=TipoParto.NO_APLICA)
 
     imagen = CloudinaryField('image', folder='ganado', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Notas o descripción del animal.")
     
     @property
     def edad(self):
@@ -80,7 +84,7 @@ class Ganado(models.Model):
         return f"{diferencia.years} años, {diferencia.months} meses"
 
     def __str__(self): 
-        return f"{self.identificador} - {self.get_raza_display()}"
+        return f"{self.identificador} - {self.animal}"
 
 class Medicamento(models.Model):
     class UnidadMedida(models.TextChoices):
@@ -97,10 +101,12 @@ class Medicamento(models.Model):
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True, blank=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='medicamentos')
     fecha_compra = models.DateField(default=timezone.now)
     fecha_ingreso = models.DateField(default=timezone.now)
     fecha_vencimiento = models.DateField()
     imagen = CloudinaryField('image', folder='medicamentos', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción y notas sobre el medicamento.")
     
     @property
     def cantidad_restante(self):
@@ -108,6 +114,61 @@ class Medicamento(models.Model):
     
     def __str__(self): 
         return self.nombre
+
+
+class Vacuna(models.Model):
+    class UnidadMedida(models.TextChoices):
+        GRAMOS = 'g', 'Gramos (g)'
+        MILILITROS = 'ml', 'Mililitros (ml)'
+        KILOGRAMOS = 'Kg', 'Kilogramos (Kg)'
+        LITROS = 'L', 'Litros (L)'
+        UNIDAD = 'U', 'Unidad'
+
+    nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=100, blank=True)
+    etiqueta = models.ForeignKey('caracteristicas.Etiqueta', on_delete=models.SET_NULL, null=True, blank=True)
+    disponible = models.BooleanField(default=True)
+    
+    cantidad = models.DecimalField("Cantidad", max_digits=10, decimal_places=2, default=0.0)
+    unidad_medida = models.CharField(max_length=2, choices=UnidadMedida.choices, default=UnidadMedida.UNIDAD)
+    
+    dosis_crecimiento = models.CharField("Dosis por Crecimiento", max_length=100, blank=True)
+    dosis_edad = models.CharField("Dosis por Edad", max_length=100, blank=True)
+    dosis_peso = models.CharField("Dosis por Peso", max_length=100, blank=True)
+    
+    fecha_compra = models.DateField(default=timezone.now)
+    fecha_vencimiento = models.DateField()
+    
+    ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='vacunas')
+    
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción de la vacuna.")
+    imagen = CloudinaryField('image', folder='vacunas', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Vacuna'
+        verbose_name_plural = 'Vacunas'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class RegistroVacunacion(models.Model):
+    ganado = models.ForeignKey('Ganado', on_delete=models.CASCADE, related_name='vacunaciones')
+    vacuna = models.ForeignKey('Vacuna', on_delete=models.CASCADE, related_name='registros')
+    fecha_aplicacion = models.DateField(default=timezone.now)
+    fecha_proxima_dosis = models.DateField(blank=True, null=True)
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Registro de Vacunación'
+        verbose_name_plural = 'Registros de Vacunación'
+        ordering = ['-fecha_aplicacion']
+
+    def __str__(self):
+        return f"Vacunación de {self.ganado.identificador} con {self.vacuna.nombre}"
+
 
 class Alimento(models.Model):
     nombre = models.CharField(max_length=100, help_text="Ej: Heno, Silo de maíz, Sal mineral")
@@ -117,10 +178,11 @@ class Alimento(models.Model):
     cantidad_kg_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0.0)])
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True)
-    proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='alimentos')
     fecha_compra = models.DateField(default=timezone.now)
     fecha_vencimiento = models.DateField(default=datetime.date.today)
     imagen = CloudinaryField('image', folder='alimentos', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción del alimento.")
 
     @property
     def cantidad_kg_restante(self):
@@ -145,10 +207,11 @@ class ControlPlaga(models.Model):
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     
     ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
-    proveedor = models.ForeignKey('caracteristicas.Proveedor', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='controles_plaga')
     fecha_compra = models.DateField(default=timezone.now)
     fecha_vencimiento = models.DateField(default=datetime.date.today)
     imagen = CloudinaryField('image', folder='control_plagas', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción del producto de control de plagas.")
 
     @property
     def cantidad_restante(self):
@@ -158,18 +221,28 @@ class ControlPlaga(models.Model):
         return f"{self.nombre_producto} ({self.cantidad_restante} {self.get_unidad_medida_display()})"
 
 class Potrero(models.Model):
-    class TamanoPotrero(models.TextChoices):
-        PEQUENO = 'P', 'Pequeño'
-        MEDIANO = 'M', 'Mediano'
-        GRANDE = 'G', 'Grande'
-
     nombre = models.CharField(max_length=100, help_text="Ej: Potrero La Loma")
-    tamano = models.CharField("Tamaño", max_length=1, choices=TamanoPotrero.choices, default=TamanoPotrero.MEDIANO)
     area_hectareas = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Boolean fields for current state
+    empastado = models.BooleanField(default=False)
+    fumigado = models.BooleanField(default=False)
+    rozado = models.BooleanField(default=False)
+    
+    # Date fields for next actions
+    fecha_proximo_empaste = models.DateField(null=True, blank=True)
+    fecha_proxima_fumigacion = models.DateField(null=True, blank=True)
+    fecha_proximo_rozado = models.DateField(null=True, blank=True)
+
+    # Fields for potrero swap
+    intercambio_con_potrero = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='intercambios_programados')
+    fecha_intercambio = models.DateField(null=True, blank=True)
+
     imagen = CloudinaryField('image', folder='potreros', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción y estado del potrero.")
     
     def __str__(self): 
-        return f"{self.nombre} ({self.get_tamano_display()})"
+        return self.nombre
 
 class Mantenimiento(models.Model):
     equipo = models.CharField(max_length=100, help_text="Ej: Tractor, Guadaña")
@@ -177,13 +250,12 @@ class Mantenimiento(models.Model):
     fecha_proximo_mantenimiento = models.DateField()
     completado = models.BooleanField(default=False)
     imagen = CloudinaryField('image', folder='mantenimiento', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción detallada del mantenimiento realizado o por realizar.")
     def __str__(self): return f"Mantenimiento de {self.equipo} - Próximo: {self.fecha_proximo_mantenimiento}"
     
 # acá va la foranea esa de mantenimiento que ud dijo 
-    lugar_mantenimiento = models.ForeignKey(
+    lugares_mantenimiento = models.ManyToManyField(
         'LugarMantenimiento',
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name="mantenimientos"
     )
@@ -193,7 +265,10 @@ class Combustible(models.Model):
     cantidad_galones_ingresada = models.DecimalField("Galones ingresados", max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], default=0.0)
     cantidad_galones_usados = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0.0)])
     precio = models.DecimalField("Precio por galón", max_digits=10, decimal_places=2, default=0.0)
+    ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='combustibles')
     imagen = CloudinaryField('image', folder='combustible', null=True, blank=True)
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Notas sobre el combustible.")
 
     @property
     def cantidad_galones_restantes(self):
@@ -210,6 +285,9 @@ class LugarMantenimiento(models.Model):
     direccion = models.CharField(max_length=200)
     correo = models.EmailField()
     numero = models.CharField(max_length=20, help_text="Teléfono de contacto")
+    ubicacion = models.ForeignKey('caracteristicas.Ubicacion', on_delete=models.SET_NULL, null=True, blank=True)
+    proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='lugares_mantenimiento')
+    descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción del lugar de mantenimiento.")
 
     def __str__(self):
         return f"{self.nombre_lugar} - {self.nombre_empresa}"
@@ -222,6 +300,10 @@ class Trabajador(models.Model):
     correo = models.EmailField()
     numero = models.CharField(max_length=20, help_text="Teléfono de contacto")
 
+    class Meta:
+        verbose_name = 'Trabajador'
+        verbose_name_plural = 'Trabajadores'
+
     def __str__(self):
         return f"{self.nombre} {self.apellido} - {self.cedula}"
 
@@ -233,6 +315,10 @@ class Dotacion(models.Model):
     pantalon = models.BooleanField(default=False)
     zapato = models.BooleanField(default=False)
     fecha_entrega = models.DateField(default=timezone.now)
+
+    class Meta:
+        verbose_name = 'Dotación'
+        verbose_name_plural = 'Dotaciones'
 
     def __str__(self):
         return f"Dotación de {self.trabajador}"
@@ -253,3 +339,28 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"Pago a {self.trabajador} - {self.get_forma_pago_display()} - {self.fecha_pago}"
+
+
+class Comprador(models.Model):
+    nombre = models.CharField(max_length=100)
+    telefono = models.CharField(max_length=20, blank=True)
+
+    class Meta:
+        verbose_name = 'Comprador'
+        verbose_name_plural = 'Compradores'
+
+    def __str__(self):
+        return self.nombre
+
+
+class VentaProducto(models.Model):
+    producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    comprador = models.ForeignKey('Comprador', on_delete=models.CASCADE)
+    valor_compra = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        verbose_name = 'Venta de Producto'
+        verbose_name_plural = 'Ventas de Productos'
+
+    def __str__(self):
+        return f"Venta de {self.producto.nombre} a {self.comprador.nombre} por {self.valor_compra}"

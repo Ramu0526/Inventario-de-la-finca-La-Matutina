@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.html import mark_safe
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
-    Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento
+    Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento,
+    Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto
 )
 
 class ImagenAdminMixin(admin.ModelAdmin):
@@ -15,63 +16,108 @@ class ImagenAdminMixin(admin.ModelAdmin):
         return "Sin imagen"
     imagen_thumbnail.short_description = 'Vista Previa'
 
+@admin.register(Animal)
+class AnimalAdmin(admin.ModelAdmin):
+    list_display = ('nombre',)
+    search_fields = ('nombre',)
+
+@admin.register(Comprador)
+class CompradorAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'telefono')
+    search_fields = ('nombre',)
+
+class VentaProductoInline(admin.TabularInline):
+    model = VentaProducto
+    extra = 1
+    autocomplete_fields = ['comprador']
+
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'proveedor', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
-    list_filter = ('categoria', 'proveedor', 'ubicacion', 'unidad_medida')
-    search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre')
+    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
+    list_filter = ('categoria', 'ubicacion', 'unidad_medida')
+    search_fields = ('nombre', 'categoria__nombre')
+
+    readonly_fields = ('precio_total_display',)
 
     fieldsets = (
         (None, {
-            'fields': ('nombre', 'categoria', 'proveedor', 'ubicacion', 'imagen')
+            'fields': ('nombre', 'categoria', 'ubicacion', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio', {
-            'fields': (('cantidad', 'unidad_medida'), 'precio')
+            'fields': (('cantidad', 'unidad_medida'), 'precio', 'precio_total_display')
         }),
         ('Fechas', {
             'fields': ('fecha_produccion', 'fecha_venta')
         }),
     )
+    
+    inlines = [VentaProductoInline]
 
     def cantidad_con_unidad(self, obj):
         return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
     cantidad_con_unidad.short_description = 'Cantidad'
+    
+    def precio_total_display(self, obj):
+        return f"${obj.precio_total:,.2f}"
+    precio_total_display.short_description = 'Precio Total'
+
+class RegistroVacunacionInline(admin.TabularInline):
+    model = RegistroVacunacion
+    extra = 1
+    autocomplete_fields = ['vacuna']
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'raza', 'genero', 'edad', 'fecha_nacimiento', 'potrero', 'fecha_ingreso', 'estado', 'nombre_vacuna', 'proxima_vacunacion', 'imagen_thumbnail')
-    list_filter = ('raza', 'genero', 'estado', 'potrero', 'vacunado')
-    search_fields = ('identificador', 'raza', 'nombre_vacuna')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'parto', 'proximas_vacunas', 'imagen_thumbnail')
+    list_filter = ('animal', 'genero', 'estado')
+    search_fields = ('identificador', 'animal__nombre', 'raza')
     
-    readonly_fields = ('edad', 'parto')
+    readonly_fields = ('edad',)
 
     fieldsets = (
         ('Información Principal', {
-            'fields': ('identificador', 'raza', 'genero', 'potrero', 'imagen')
+            'fields': ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'imagen', 'descripcion')
         }),
         ('Fechas y Estado', {
-            'fields': ('fecha_nacimiento', 'edad', 'fecha_ingreso', 'estado')
-        }),
-        ('Salud y Reproducción', {
-            'fields': ('vacunado', 'nombre_vacuna', 'proxima_vacunacion', 'parto')
+            'fields': ('fecha_nacimiento', 'edad', 'estado', 'parto')
         }),
     )
+
+    inlines = [RegistroVacunacionInline]
 
     def edad(self, obj):
         return obj.edad
     edad.short_description = 'Edad'
 
+    def proximas_vacunas(self, obj):
+        from django.utils.html import format_html
+        from django.urls import reverse
+        
+        proximas = obj.vacunaciones.filter(fecha_proxima_dosis__isnull=False).order_by('fecha_proxima_dosis')
+        if not proximas:
+            return "Ninguna programada"
+        
+        html = "<ul>"
+        for reg in proximas[:3]: # Show up to 3 next vaccinations
+            link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+            html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
+        html += "</ul>"
+        
+        return format_html(html)
+    proximas_vacunas.short_description = 'Próximas Vacunas'
+
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'ubicacion', 'f_compra', 'f_ingreso', 'f_vencimiento', 'imagen_thumbnail')
-    list_filter = ('categoria', 'ubicacion', 'fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
-    search_fields = ('nombre',)
+    list_display = ('nombre', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'fecha_compra', 'fecha_ingreso', 'f_vencimiento', 'imagen_thumbnail')
+    list_filter = ('categoria', 'ubicacion', 'proveedores', 'fecha_vencimiento')
+    search_fields = ('nombre', 'categoria__nombre', 'ubicacion__nombre', 'proveedores__nombre')
     
     readonly_fields = ('cantidad_usada', 'cantidad_restante')
+    filter_horizontal = ('proveedores',)
     
     fieldsets = (
         (None, {
-            'fields': ('nombre', 'categoria', 'ubicacion', 'imagen')
+            'fields': ('nombre', 'categoria', 'ubicacion', 'proveedores', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio', {
             'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante', 'precio')
@@ -97,16 +143,86 @@ class MedicamentoAdmin(ImagenAdminMixin):
         return obj.fecha_vencimiento
     f_vencimiento.short_description = 'F. Vencimiento'
 
+    def mostrar_ubicacion(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.ubicacion:
+            link = reverse("admin:caracteristicas_ubicacion_change", args=[obj.ubicacion.pk])
+            return format_html('<a href="{}">{}</a>', link, obj.ubicacion.nombre)
+        return "Sin ubicación"
+    mostrar_ubicacion.short_description = 'Ubicación'
+
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        if not proveedores_links:
+            return "Sin proveedor"
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
+
+@admin.register(Vacuna)
+class VacunaAdmin(ImagenAdminMixin):
+    list_display = ('nombre', 'tipo', 'disponible', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_ubicacion', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_filter = ('disponible', 'tipo', 'etiqueta', 'fecha_vencimiento', 'proveedores', 'ubicacion')
+    search_fields = ('nombre', 'tipo', 'etiqueta__nombre')
+    list_editable = ('disponible',)
+    
+    fieldsets = (
+        ('Información Principal', {
+            'fields': ('nombre', 'tipo', 'etiqueta', 'disponible', 'imagen', 'descripcion')
+        }),
+        ('Cantidad y Dosis', {
+            'fields': (('cantidad', 'unidad_medida'), 'dosis_crecimiento', 'dosis_edad', 'dosis_peso')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_compra', 'fecha_vencimiento')
+        }),
+        ('Ubicación y Proveedores', {
+            'fields': ('ubicacion', 'proveedores')
+        }),
+    )
+    
+    filter_horizontal = ('proveedores',)
+
+    def cantidad_con_unidad(self, obj):
+        return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
+    cantidad_con_unidad.short_description = 'Cantidad'
+
+    def mostrar_ubicacion(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.ubicacion:
+            link = reverse("admin:caracteristicas_ubicacion_change", args=[obj.ubicacion.pk])
+            return format_html('<a href="{}">{}</a>', link, obj.ubicacion.nombre)
+        return "Sin ubicación"
+    mostrar_ubicacion.short_description = 'Ubicación'
+
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        if not proveedores_links:
+            return "Sin proveedor"
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
+
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('categoria', 'ubicacion', 'proveedor', 'fecha_vencimiento', 'etiquetas')
-    search_fields = ('nombre', 'categoria__nombre', 'proveedor__nombre', 'etiquetas__nombre')
+    list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'mostrar_proveedores', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('categoria', 'ubicacion', 'proveedores', 'fecha_vencimiento', 'etiquetas')
+    search_fields = ('nombre', 'categoria__nombre', 'proveedores__nombre', 'etiquetas__nombre')
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
     
     fieldsets = (
         (None, {
-            'fields': ('nombre', 'categoria', 'proveedor', 'ubicacion', 'imagen')
+            'fields': ('nombre', 'categoria', 'proveedores', 'ubicacion', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio (en Kg)', {
             'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio')
@@ -119,7 +235,7 @@ class AlimentoAdmin(ImagenAdminMixin):
         }),
     )
 
-    filter_horizontal = ('etiquetas',)
+    filter_horizontal = ('etiquetas', 'proveedores',)
 
     def cantidad_kg_restante(self, obj):
         return f"{obj.cantidad_kg_ingresada - obj.cantidad_kg_usada} Kg"
@@ -129,17 +245,32 @@ class AlimentoAdmin(ImagenAdminMixin):
         return ", ".join([e.nombre for e in obj.etiquetas.all()])
     mostrar_etiquetas.short_description = 'Etiquetas'
 
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        
+        if not proveedores_links:
+            return "Sin proveedor"
+            
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
+
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada_con_unidad', 'cantidad_usada_con_unidad', 'cantidad_restante_con_unidad', 'precio', 'proveedor', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
-    list_filter = ('tipo', 'proveedor', 'ubicacion', 'fecha_vencimiento')
-    search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre', 'proveedor__nombre')
+    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_filter = ('tipo', 'proveedores', 'ubicacion', 'fecha_vencimiento')
+    search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre', 'proveedores__nombre')
     
     readonly_fields = ('cantidad_usada', 'cantidad_restante')
 
     fieldsets = (
         (None, {
-            'fields': ('nombre_producto', 'tipo', 'proveedor', 'ubicacion', 'imagen')
+            'fields': ('nombre_producto', 'tipo', 'proveedores', 'ubicacion', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio', {
             'fields': (('cantidad_ingresada', 'unidad_medida'), 'cantidad_usada', 'cantidad_restante', 'precio')
@@ -148,6 +279,8 @@ class ControlPlagaAdmin(ImagenAdminMixin):
             'fields': ('fecha_compra', 'fecha_vencimiento')
         }),
     )
+    
+    filter_horizontal = ('proveedores',)
     
     def cantidad_ingresada_con_unidad(self, obj):
         return f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}"
@@ -160,19 +293,44 @@ class ControlPlagaAdmin(ImagenAdminMixin):
     def cantidad_restante_con_unidad(self, obj):
         return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
     cantidad_restante_con_unidad.short_description = 'Restante'
+    
+    def mostrar_ubicacion(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.ubicacion:
+            link = reverse("admin:caracteristicas_ubicacion_change", args=[obj.ubicacion.pk])
+            return format_html('<a href="{}">{}</a>', link, obj.ubicacion.nombre)
+        return "Sin ubicación"
+    mostrar_ubicacion.short_description = 'Ubicación'
+
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        if not proveedores_links:
+            return "Sin proveedor"
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
 
 @admin.register(Potrero)
 class PotreroAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'tamano', 'area_hectareas', 'imagen_thumbnail')
-    list_filter = ('tamano',)
+    list_display = ('nombre', 'area_hectareas', 'empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado', 'imagen_thumbnail')
+    list_filter = ('empastado', 'fumigado', 'rozado')
     search_fields = ('nombre',)
+    list_editable = ('empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado')
     
     fieldsets = (
-        (None, {
-            'fields': ('nombre', 'imagen')
+        ('Información Principal', {
+            'fields': ('nombre', 'area_hectareas', 'imagen', 'descripcion')
         }),
-        ('Detalles del Potrero', {
-            'fields': ('tamano', 'area_hectareas')
+        ('Estado Actual y Próximas Acciones', {
+            'fields': (('empastado', 'fecha_proximo_empaste'), ('fumigado', 'fecha_proxima_fumigacion'), ('rozado', 'fecha_proximo_rozado'))
+        }),
+        ('Intercambio de Potreros', {
+            'fields': ('intercambio_con_potrero', 'fecha_intercambio')
         }),
     )
 
@@ -183,50 +341,81 @@ class MantenimientoAdmin(ImagenAdminMixin):
         'fecha_ultimo_mantenimiento', 
         'fecha_proximo_mantenimiento', 
         'completado', 
-        'lugar_mantenimiento_link', 
+        'mostrar_lugares_mantenimiento', 
         'imagen_thumbnail'
     )
-    list_filter = ('completado', 'fecha_proximo_mantenimiento')
-    search_fields = ('equipo', 'lugar_mantenimiento__nombre_lugar')
+    list_filter = ('completado', 'fecha_proximo_mantenimiento', 'lugares_mantenimiento')
+    search_fields = ('equipo', 'lugares_mantenimiento__nombre_lugar')
+    list_editable = ('completado',)
+    filter_horizontal = ('lugares_mantenimiento',)
     
     fieldsets = (
         (None, {
-            'fields': ('equipo', 'lugar_mantenimiento', 'imagen')
+            'fields': ('equipo', 'lugares_mantenimiento', 'imagen', 'descripcion')
         }),
         ('Fechas y Estado', {
             'fields': ('fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado')
         }),
     )
 
-    def lugar_mantenimiento_link(self, obj):
-        if obj.lugar_mantenimiento:
-            return mark_safe(
-                f'<a href="/admin/inventario/lugarmantenimiento/{obj.lugar_mantenimiento.id}/change/">'
-                f'{obj.lugar_mantenimiento.nombre_lugar}</a>'
-            )
-        return "Sin lugar"
-    lugar_mantenimiento_link.short_description = "Lugar de Mantenimiento"
+    def mostrar_lugares_mantenimiento(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        
+        lugares_links = []
+        for lugar in obj.lugares_mantenimiento.all():
+            link = reverse("admin:inventario_lugarmantenimiento_change", args=[lugar.pk])
+            lugares_links.append(format_html('<a href="{}">{}</a>', link, lugar.nombre_lugar))
+        
+        if not lugares_links:
+            return "Sin lugar asignado"
+            
+        return format_html(", ".join(lugares_links))
+    mostrar_lugares_mantenimiento.short_description = "Lugares de Mantenimiento"
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'imagen_thumbnail')
-    list_filter = ('tipo',)
-    search_fields = ('tipo',)
+    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_filter = ('tipo', 'ubicacion', 'proveedores')
+    search_fields = ('tipo', 'ubicacion__nombre', 'proveedores__nombre')
 
     readonly_fields = ('cantidad_galones_usados', 'cantidad_galones_restantes')
 
     fieldsets = (
         (None, {
-            'fields': ('tipo', 'imagen')
+            'fields': ('tipo', 'ubicacion', 'proveedores', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio (en Galones)', {
             'fields': ('cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio')
         }),
     )
+    
+    filter_horizontal = ('proveedores',)
 
     def cantidad_galones_restantes(self, obj):
         return f"{obj.cantidad_galones_ingresada - obj.cantidad_galones_usados} gal"
     cantidad_galones_restantes.short_description = 'Galones Restantes'
+
+    def mostrar_ubicacion(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.ubicacion:
+            link = reverse("admin:caracteristicas_ubicacion_change", args=[obj.ubicacion.pk])
+            return format_html('<a href="{}">{}</a>', link, obj.ubicacion.nombre)
+        return "Sin ubicación"
+    mostrar_ubicacion.short_description = 'Ubicación'
+
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        if not proveedores_links:
+            return "Sin proveedor"
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
 
 # de acá pa abajo lo nuevo xd 
 
@@ -239,17 +428,51 @@ class TrabajadorAdmin(admin.ModelAdmin):
 class DotacionAdmin(admin.ModelAdmin):
     list_display = ("trabajador", "camisa_franela", "pantalon", "zapato", "fecha_entrega")
     list_filter = ("camisa_franela", "pantalon", "zapato")
+    list_editable = ("camisa_franela", "pantalon", "zapato")
 
 @admin.register(Pago)
 class PagoAdmin(admin.ModelAdmin):
     list_display = ("trabajador", "valor", "pago_realizado", "metodo_pago", "forma_pago", "fecha_pago")
     list_filter = ("forma_pago", "pago_realizado")
     search_fields = ("trabajador__nombre", "trabajador__apellido", "trabajador__cedula")
+    list_editable = ("pago_realizado",)
 
 @admin.register(LugarMantenimiento)
 class LugarMantenimientoAdmin(admin.ModelAdmin):
-    list_display = ("nombre_lugar", "nombre_empresa", "direccion", "correo", "numero")
-    search_fields = ("nombre_lugar", "nombre_empresa")
+    list_display = ("nombre_lugar", "nombre_empresa", "mostrar_ubicacion", "mostrar_proveedores", "correo", "numero")
+    search_fields = ("nombre_lugar", "nombre_empresa", "ubicacion__nombre", "proveedores__nombre")
+    list_filter = ("ubicacion", "proveedores")
+    filter_horizontal = ('proveedores',)
+    
+    fieldsets = (
+        ('Información del Lugar', {
+            'fields': ('nombre_lugar', 'nombre_empresa', 'direccion', 'correo', 'numero', 'descripcion')
+        }),
+        ('Asignaciones', {
+            'fields': ('ubicacion', 'proveedores')
+        }),
+    )
+    
+    def mostrar_ubicacion(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.ubicacion:
+            link = reverse("admin:caracteristicas_ubicacion_change", args=[obj.ubicacion.pk])
+            return format_html('<a href="{}">{}</a>', link, obj.ubicacion.nombre)
+        return "Sin ubicación"
+    mostrar_ubicacion.short_description = 'Ubicación'
+
+    def mostrar_proveedores(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        proveedores_links = []
+        for p in obj.proveedores.all():
+            link = reverse("admin:caracteristicas_proveedor_change", args=[p.pk])
+            proveedores_links.append(format_html('<a href="{}">{}</a>', link, p.nombre))
+        if not proveedores_links:
+            return "Sin proveedor"
+        return format_html(", ".join(proveedores_links))
+    mostrar_proveedores.short_description = 'Proveedores'
 
 
 from django.contrib.auth.admin import UserAdmin
