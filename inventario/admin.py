@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
+from django import forms
+from caracteristicas.models import Etiqueta
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
     Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento,
@@ -20,11 +22,13 @@ class ImagenAdminMixin(admin.ModelAdmin):
 class AnimalAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
+    list_per_page = 10
 
 @admin.register(Comprador)
 class CompradorAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'telefono')
     search_fields = ('nombre',)
+    list_per_page = 10
 
 class VentaProductoInline(admin.TabularInline):
     model = VentaProducto
@@ -34,6 +38,7 @@ class VentaProductoInline(admin.TabularInline):
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
     list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('categoria', 'ubicacion', 'unidad_medida')
     search_fields = ('nombre', 'categoria__nombre')
 
@@ -71,6 +76,7 @@ class RegistroVacunacionInline(admin.TabularInline):
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
     list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'parto', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('animal', 'genero', 'estado')
     search_fields = ('identificador', 'animal__nombre', 'raza')
     
@@ -128,6 +134,7 @@ class GanadoAdmin(ImagenAdminMixin):
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
     list_display = ('nombre', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'fecha_compra', 'fecha_ingreso', 'f_vencimiento', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('categoria', 'ubicacion', 'proveedores', 'fecha_vencimiento')
     search_fields = ('nombre', 'categoria__nombre', 'ubicacion__nombre', 'proveedores__nombre')
     
@@ -183,16 +190,51 @@ class MedicamentoAdmin(ImagenAdminMixin):
         return format_html(", ".join(proveedores_links))
     mostrar_proveedores.short_description = 'Proveedores'
 
+class VacunaForm(forms.ModelForm):
+    etiquetas_padre = forms.ModelMultipleChoiceField(
+        queryset=Etiqueta.objects.filter(parent__isnull=True).order_by('nombre'),
+        widget=admin.widgets.FilteredSelectMultiple('Etiquetas Padre', is_stacked=False),
+        required=False,
+        label='Etiquetas Principales'
+    )
+    sub_etiquetas = forms.ModelMultipleChoiceField(
+        queryset=Etiqueta.objects.none(),
+        widget=forms.SelectMultiple(attrs={'size': '10'}),
+        required=False,
+        label='Sub-Etiquetas'
+    )
+
+    class Meta:
+        model = Vacuna
+        exclude = ('etiquetas',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            parent_tags = self.instance.etiquetas.filter(parent__isnull=True)
+            self.fields['etiquetas_padre'].initial = parent_tags
+
+            sub_tags = self.instance.etiquetas.filter(parent__isnull=False)
+            if parent_tags.exists():
+                self.fields['sub_etiquetas'].queryset = Etiqueta.objects.filter(parent__in=parent_tags).order_by('nombre')
+            self.fields['sub_etiquetas'].initial = sub_tags
+
 @admin.register(Vacuna)
 class VacunaAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'tipo', 'disponible', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_ubicacion', 'mostrar_proveedores', 'imagen_thumbnail')
-    list_filter = ('disponible', 'tipo', 'etiqueta', 'fecha_vencimiento', 'proveedores', 'ubicacion')
-    search_fields = ('nombre', 'tipo', 'etiqueta__nombre')
+    form = VacunaForm
+    list_display = ('nombre', 'tipo', 'disponible', 'mostrar_etiquetas', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_ubicacion', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_per_page = 10
+    list_filter = ('disponible', 'tipo', 'etiquetas', 'fecha_vencimiento', 'proveedores', 'ubicacion')
+    search_fields = ('nombre', 'tipo', 'etiquetas__nombre')
     list_editable = ('disponible',)
     
     fieldsets = (
         ('Información Principal', {
-            'fields': ('nombre', 'tipo', 'etiqueta', 'disponible', 'imagen', 'descripcion')
+            'fields': ('nombre', 'tipo', 'disponible', 'imagen', 'descripcion')
+        }),
+        ('Organización', {
+            'classes': ('collapse',),
+            'fields': ('etiquetas_padre', 'sub_etiquetas')
         }),
         ('Cantidad y Dosis', {
             'fields': (('cantidad', 'unidad_medida'), 'dosis_crecimiento', 'dosis_edad', 'dosis_peso')
@@ -206,6 +248,36 @@ class VacunaAdmin(ImagenAdminMixin):
     )
     
     filter_horizontal = ('proveedores',)
+
+    class Media:
+        js = ('admin/js/admin_etiquetas.js',)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        parent_tags = form.cleaned_data.get('etiquetas_padre')
+        sub_tags = form.cleaned_data.get('sub_etiquetas')
+
+        if parent_tags is not None and sub_tags is not None:
+            obj.etiquetas.set(parent_tags | sub_tags)
+        elif parent_tags is not None:
+            obj.etiquetas.set(parent_tags)
+        elif sub_tags is not None:
+            obj.etiquetas.set(sub_tags)
+        else:
+            obj.etiquetas.clear()
+
+    def mostrar_etiquetas(self, obj):
+        parent_tags = obj.etiquetas.filter(parent__isnull=True)
+        sub_tags = obj.etiquetas.filter(parent__isnull=False)
+        
+        display_parts = []
+        if parent_tags.exists():
+            display_parts.append("Principales: " + ", ".join([e.nombre for e in parent_tags]))
+        if sub_tags.exists():
+            display_parts.append("Sub: " + ", ".join([e.nombre for e in sub_tags]))
+            
+        return " | ".join(display_parts) if display_parts else "Ninguna"
+    mostrar_etiquetas.short_description = 'Etiquetas'
 
     def cantidad_con_unidad(self, obj):
         return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
@@ -232,9 +304,43 @@ class VacunaAdmin(ImagenAdminMixin):
         return format_html(", ".join(proveedores_links))
     mostrar_proveedores.short_description = 'Proveedores'
 
+class AlimentoForm(forms.ModelForm):
+    etiquetas_padre = forms.ModelMultipleChoiceField(
+        queryset=Etiqueta.objects.filter(parent__isnull=True).order_by('nombre'),
+        widget=admin.widgets.FilteredSelectMultiple('Etiquetas Padre', is_stacked=False),
+        required=False,
+        label='Etiquetas Principales'
+    )
+    sub_etiquetas = forms.ModelMultipleChoiceField(
+        queryset=Etiqueta.objects.none(),
+        widget=forms.SelectMultiple(attrs={'size': '10'}),
+        required=False,
+        label='Sub-Etiquetas'
+    )
+
+    class Meta:
+        model = Alimento
+        exclude = ('etiquetas',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            parent_tags = self.instance.etiquetas.filter(parent__isnull=True)
+            self.fields['etiquetas_padre'].initial = parent_tags
+
+            sub_tags = self.instance.etiquetas.filter(parent__isnull=False)
+            if parent_tags.exists():
+                self.fields['sub_etiquetas'].queryset = Etiqueta.objects.filter(parent__in=parent_tags).order_by('nombre')
+            self.fields['sub_etiquetas'].initial = sub_tags
+
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
+    form = AlimentoForm
     list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'mostrar_proveedores', 'ubicacion', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_per_page = 10
+    
+    class Media:
+        js = ('admin/js/admin_etiquetas.js',)
     list_filter = ('categoria', 'ubicacion', 'proveedores', 'fecha_vencimiento', 'etiquetas')
     search_fields = ('nombre', 'categoria__nombre', 'proveedores__nombre', 'etiquetas__nombre')
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
@@ -247,21 +353,49 @@ class AlimentoAdmin(ImagenAdminMixin):
             'fields': ('cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio')
         }),
         ('Organización', {
-            'fields': ('etiquetas',)
+            'classes': ('collapse',),
+            'fields': ('etiquetas_padre', 'sub_etiquetas')
         }),
         ('Fechas', {
             'fields': ('fecha_compra', 'fecha_vencimiento')
         }),
     )
 
-    filter_horizontal = ('etiquetas', 'proveedores',)
+    filter_horizontal = ('proveedores',)
+
+    def save_model(self, request, obj, form, change):
+        # Save the main object first
+        super().save_model(request, obj, form, change)
+
+        # Get the selected parent and sub-tags from the form
+        parent_tags = form.cleaned_data.get('etiquetas_padre')
+        sub_tags = form.cleaned_data.get('sub_etiquetas')
+
+        # Combine the tags and update the ManyToManyField
+        if parent_tags is not None and sub_tags is not None:
+            obj.etiquetas.set(parent_tags | sub_tags)
+        elif parent_tags is not None:
+            obj.etiquetas.set(parent_tags)
+        elif sub_tags is not None:
+            obj.etiquetas.set(sub_tags)
+        else:
+            obj.etiquetas.clear()
 
     def cantidad_kg_restante(self, obj):
         return f"{obj.cantidad_kg_ingresada - obj.cantidad_kg_usada} Kg"
     cantidad_kg_restante.short_description = 'Cantidad Restante'
 
     def mostrar_etiquetas(self, obj):
-        return ", ".join([e.nombre for e in obj.etiquetas.all()])
+        parent_tags = obj.etiquetas.filter(parent__isnull=True)
+        sub_tags = obj.etiquetas.filter(parent__isnull=False)
+        
+        display_parts = []
+        if parent_tags.exists():
+            display_parts.append("Principales: " + ", ".join([e.nombre for e in parent_tags]))
+        if sub_tags.exists():
+            display_parts.append("Sub: " + ", ".join([e.nombre for e in sub_tags]))
+            
+        return " | ".join(display_parts) if display_parts else "Ninguna"
     mostrar_etiquetas.short_description = 'Etiquetas'
 
     def mostrar_proveedores(self, obj):
@@ -282,6 +416,7 @@ class AlimentoAdmin(ImagenAdminMixin):
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
     list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('tipo', 'proveedores', 'ubicacion', 'fecha_vencimiento')
     search_fields = ('nombre_producto', 'tipo', 'ubicacion__nombre', 'proveedores__nombre')
     
@@ -337,6 +472,7 @@ class ControlPlagaAdmin(ImagenAdminMixin):
 @admin.register(Potrero)
 class PotreroAdmin(ImagenAdminMixin):
     list_display = ('nombre', 'area_hectareas', 'empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('empastado', 'fumigado', 'rozado')
     search_fields = ('nombre',)
     list_editable = ('empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado')
@@ -363,6 +499,7 @@ class MantenimientoAdmin(ImagenAdminMixin):
         'mostrar_lugares_mantenimiento', 
         'imagen_thumbnail'
     )
+    list_per_page = 10
     list_filter = ('completado', 'fecha_proximo_mantenimiento', 'lugares_mantenimiento')
     search_fields = ('equipo', 'lugares_mantenimiento__nombre_lugar')
     list_editable = ('completado',)
@@ -395,6 +532,7 @@ class MantenimientoAdmin(ImagenAdminMixin):
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
     list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'mostrar_ubicacion', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_per_page = 10
     list_filter = ('tipo', 'ubicacion', 'proveedores')
     search_fields = ('tipo', 'ubicacion__nombre', 'proveedores__nombre')
 
@@ -442,16 +580,19 @@ class CombustibleAdmin(ImagenAdminMixin):
 class TrabajadorAdmin(admin.ModelAdmin):
     list_display = ("nombre", "apellido", "cedula", "correo", "numero")
     search_fields = ("nombre", "apellido", "cedula")
+    list_per_page = 10
 
 @admin.register(Dotacion)
 class DotacionAdmin(admin.ModelAdmin):
     list_display = ("trabajador", "camisa_franela", "pantalon", "zapato", "fecha_entrega")
+    list_per_page = 10
     list_filter = ("camisa_franela", "pantalon", "zapato")
     list_editable = ("camisa_franela", "pantalon", "zapato")
 
 @admin.register(Pago)
 class PagoAdmin(admin.ModelAdmin):
     list_display = ("trabajador", "valor", "pago_realizado", "metodo_pago", "forma_pago", "fecha_pago")
+    list_per_page = 10
     list_filter = ("forma_pago", "pago_realizado")
     search_fields = ("trabajador__nombre", "trabajador__apellido", "trabajador__cedula")
     list_editable = ("pago_realizado",)
@@ -459,6 +600,7 @@ class PagoAdmin(admin.ModelAdmin):
 @admin.register(LugarMantenimiento)
 class LugarMantenimientoAdmin(admin.ModelAdmin):
     list_display = ("nombre_lugar", "nombre_empresa", "mostrar_ubicacion", "mostrar_proveedores", "correo", "numero")
+    list_per_page = 10
     search_fields = ("nombre_lugar", "nombre_empresa", "ubicacion__nombre", "proveedores__nombre")
     list_filter = ("ubicacion", "proveedores")
     filter_horizontal = ('proveedores',)

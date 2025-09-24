@@ -6,10 +6,12 @@ from django.utils.html import mark_safe
 class CategoriaAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
+    list_per_page = 10
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'nombre_local', 'telefono', 'correo_electronico', 'ubicacion', 'imagen_thumbnail')
+    list_per_page = 10
     search_fields = ('nombre', 'nombre_local', 'telefono', 'correo_electronico')
     
     fieldsets = (
@@ -31,6 +33,7 @@ class ProveedorAdmin(admin.ModelAdmin):
 @admin.register(Ubicacion)
 class UbicacionAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'barrio', 'direccion', 'link_con_icono', 'imagen_thumbnail')
+    list_per_page = 10
     search_fields = ('nombre', 'barrio', 'direccion')
     
     fieldsets = (
@@ -66,6 +69,7 @@ class SubEtiquetaInline(admin.TabularInline):
 @admin.register(Etiqueta)
 class EtiquetaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'mostrar_sub_etiquetas')
+    list_per_page = 10
     search_fields = ('nombre',)
     inlines = [SubEtiquetaInline]
 

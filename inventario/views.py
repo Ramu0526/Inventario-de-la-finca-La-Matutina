@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
 from decimal import Decimal
+from django.contrib.admin.views.decorators import staff_member_required
 
 def custom_login_view(request):
     if request.user.is_authenticated:
@@ -123,3 +124,17 @@ def gestionar_etiqueta_alimento(request):
         return JsonResponse({'status': 'success', 'message': message, 'etiquetas': etiquetas_actualizadas})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@staff_member_required
+def get_sub_etiquetas(request):
+    parent_ids_str = request.GET.get('parent_ids')
+    if not parent_ids_str:
+        return JsonResponse({}, status=400)
+
+    try:
+        parent_ids = [int(id) for id in parent_ids_str.split(',')]
+        sub_etiquetas = Etiqueta.objects.filter(parent__id__in=parent_ids).order_by('nombre')
+        data = {etiqueta.id: etiqueta.nombre for etiqueta in sub_etiquetas}
+        return JsonResponse(data)
+    except (ValueError, TypeError):
+        return JsonResponse({}, status=400)

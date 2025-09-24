@@ -126,7 +126,7 @@ class Vacuna(models.Model):
 
     nombre = models.CharField(max_length=100)
     tipo = models.CharField(max_length=100, blank=True)
-    etiqueta = models.ForeignKey('caracteristicas.Etiqueta', on_delete=models.SET_NULL, null=True, blank=True)
+    etiquetas = models.ManyToManyField('caracteristicas.Etiqueta', blank=True)
     disponible = models.BooleanField(default=True)
     
     cantidad = models.DecimalField("Cantidad", max_digits=10, decimal_places=2, default=0.0)
