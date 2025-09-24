@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const proveedor = proveedorFilter.value;
         const itemsPerPage = window.innerWidth <= 768 ? 6 : 8;
 
-        const url = `/lista_productos/?page=${page}&nombre=${nombre}&categoria=${categoria}&proveedor=${proveedor}&items_per_page=${itemsPerPage}`;
+        const url = `/?page=${page}&nombre=${nombre}&categoria=${categoria}&proveedor=${proveedor}&items_per_page=${itemsPerPage}`;
         
         try {
             const response = await fetch(url, {
@@ -49,6 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    const attachDetailButtonListener = (button) => {
+        button.addEventListener('click', async () => {
+            const alimentoId = button.dataset.id;
+            try {
+                const response = await fetch(`/alimento/detalles/${alimentoId}/`);
+                if (!response.ok) throw new Error('Error al cargar datos del alimento.');
+                const data = await response.json();
+                renderDetailsModal(data);
+                detailsModal.style.display = 'block';
+            } catch (error) {
+                console.error("Error fetching details:", error);
+                alert(error.message);
+            }
+        });
+    };
+
     const renderAlimentosGrid = (alimentos) => {
         const noAlimentosMsg = document.getElementById('no-alimentos-msg');
         gridContainer.innerHTML = '';
@@ -117,22 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeDetailsModal = () => { detailsModal.style.display = 'none'; detailsContent.innerHTML = ''; };
     const closeInfoModal = () => { infoModal.style.display = 'none'; infoContent.innerHTML = ''; };
 
-    mainModal.querySelectorAll('.details-btn').forEach(button => {
-        button.addEventListener('click', async () => {
-            const alimentoId = button.dataset.id;
-            try {
-                const response = await fetch(`/alimento/detalles/${alimentoId}/`);
-                if (!response.ok) throw new Error('Error al cargar datos.');
-                const data = await response.json();
-                renderDetailsModal(data);
-                detailsModal.style.display = 'block';
-            } catch (error) {
-                console.error("Error:", error);
-                alert('No se pudieron cargar los detalles.');
-            }
-        });
-    });
-
     function renderDetailsModal(data) {
         // --- Helper functions for rendering sections ---
         const renderInventarioSection = (d) => `
@@ -149,14 +149,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderDespachoSection = (d) => `
             <div class="details-section">
                 <h4>Despacho</h4>
-                <form id="dispatch-form" data-id="${d.id}" class="dispatch-form-group">
-                    <label>Usar Cantidad (Kg):</label>
-                    <div class="form-row"><input type="number" step="0.01" min="0" id="dispatch-qty" required><button type="submit">Aceptar</button></div>
-                </form>
-                <form id="add-stock-form" data-id="${d.id}" class="dispatch-form-group">
-                    <label>Añadir Cantidad (Kg):</label>
-                    <div class="form-row"><input type="number" step="0.01" min="0" id="add-qty" required><button type="submit">Añadir</button></div>
-                </form>
+                <div class="management-grid">
+                    <form id="dispatch-form" data-id="${d.id}" class="additional-form">
+                        <label>Usar Cantidad (Kg):</label>
+                        <div class="form-row"><input type="number" step="0.01" min="0" id="dispatch-qty" required><button type="submit">Aceptar</button></div>
+                    </form>
+                    <form id="add-stock-form" data-id="${d.id}" class="additional-form">
+                        <label>Añadir Cantidad (Kg):</label>
+                        <div class="form-row"><input type="number" step="0.01" min="0" id="add-qty" required><button type="submit">Añadir</button></div>
+                    </form>
+                </div>
             </div>`;
 
         const renderInfoSection = (d) => {
@@ -176,38 +178,60 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const renderAdicionalSection = (d) => {
-            const renderTags = () => {
-                const mainTags = d.etiquetas.filter(t => t.parent_id === null);
-                const subTags = d.etiquetas.filter(t => t.parent_id !== null);
-                return mainTags.map(tag => {
-                    const childrenHtml = subTags.filter(st => st.parent_id === tag.id).map(st => `<li class="info-list-item sub-item">${st.nombre} <button class="remove-tag-btn" data-tag-id="${st.id}" data-alimento-id="${d.id}">&times;</button></li>`).join('');
-                    return `<li class="info-list-item main-item">${tag.nombre} <button class="remove-tag-btn" data-tag-id="${tag.id}" data-alimento-id="${d.id}">&times;</button></li>${childrenHtml ? `<ul>${childrenHtml}</ul>` : ''}`;
-                }).join('');
-            };
-            const renderTagOptions = () => d.todas_las_etiquetas_principales.filter(tag => !d.etiquetas.some(assigned => assigned.id === tag.id && assigned.parent_id === null)).map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
-            const renderMainTagOptions = (assignedTags) => assignedTags.filter(tag => tag.parent_id === null).map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
+            const mainTags = d.etiquetas.filter(t => t.parent_id === null);
+            const subTags = d.etiquetas.filter(t => t.parent_id !== null);
+            const mainTagsHtml = mainTags.map(tag => `<li class="info-list-item">${tag.nombre} <button class="remove-tag-btn" data-tag-id="${tag.id}" data-alimento-id="${d.id}">&times;</button></li>`).join('') || '<li>Ninguna</li>';
+            const subTagsHtml = subTags.map(tag => `<li class="info-list-item">${tag.nombre} <button class="remove-tag-btn" data-tag-id="${tag.id}" data-alimento-id="${d.id}">&times;</button></li>`).join('') || '<li>Ninguna</li>';
+
+            const renderAvailableMainTags = () => d.todas_las_etiquetas_principales.filter(tag => !mainTags.some(assigned => assigned.id === tag.id)).map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
+            const renderAssignedMainTags = () => mainTags.map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
+            const renderAvailableCategories = () => d.todas_las_categorias.filter(cat => !d.categoria || d.categoria.id !== cat.id).map(cat => `<option value="${cat.id}">${cat.nombre}</option>`).join('');
 
             return `
                 <div class="details-section tags-section">
                     <h4>Adicional</h4>
-                    <p><strong>Etiquetas y Sub-Etiquetas:</strong></p>
-                    <ul class="tag-list" id="tag-list-container">${renderTags()}</ul>
-                    <form id="add-tag-form" data-id="${d.id}" class="additional-form"><label>Añadir Etiqueta Principal:</label><div class="form-row"><select id="tag-select"><option value="">Seleccione...</option>${renderTagOptions()}</select><button type="submit">Añadir</button></div></form>
-                    <hr class="thin-separator">
-                    <form id="create-tag-form" data-id="${d.id}" class="additional-form"><label>Crear Etiqueta Principal:</label><div class="form-row"><input type="text" id="new-tag-name" placeholder="Nombre nueva etiqueta" required><button type="submit">Crear</button></div></form>
-                    <hr class="thin-separator">
-                    <form id="create-subtag-form" data-id="${d.id}" class="additional-form"><label>Crear Sub-Etiqueta:</label><div class="form-row"><input type="text" id="new-subtag-name" placeholder="Nombre sub-etiqueta" required><select id="parent-tag-select" required><option value="">Asociar a...</option>${renderMainTagOptions(d.etiquetas)}</select><button type="submit">Crear</button></div></form>
-                    <hr class="thin-separator">
-                    <form id="add-subtag-form" data-id="${d.id}" class="additional-form">
-                        <label>Añadir Sub-Etiqueta Existente:</label>
-                        <div class="form-row">
-                            <select id="add-subtag-parent-select" required><option value="">Seleccione Etiqueta Principal</option>${renderMainTagOptions(d.etiquetas)}</select>
-                            <select id="add-subtag-select" required><option value="">Seleccione Sub-Etiqueta</option></select>
-                            <button type="submit">Añadir</button>
-                        </div>
-                    </form>
-                    <hr class="thin-separator">
-                    <form id="create-category-form" data-id="${d.id}" class="additional-form"><label>Crear y Asignar Categoría:</label><div class="form-row"><input type="text" id="new-category-name" placeholder="Nombre nueva categoría" required><button type="submit">Crear</button></div></form>
+                    <p><strong>Etiquetas:</strong></p>
+                    <ul class="tag-list">${mainTagsHtml}</ul>
+                    <p><strong>Sub-Etiquetas:</strong></p>
+                    <ul class="tag-list">${subTagsHtml}</ul>
+
+                    <div class="management-grid">
+                        <form id="assign-category-form" data-id="${d.id}" class="additional-form">
+                            <label>Añadir Categoría:</label>
+                            <div class="form-row">
+                                <select id="category-select" required><option value="">Seleccione...</option>${renderAvailableCategories()}</select>
+                                <button type="submit">Añadir</button>
+                            </div>
+                        </form>
+                        <form id="create-category-form" data-id="${d.id}" class="additional-form">
+                            <label>Crear Categoría:</label>
+                            <div class="form-row"><input type="text" id="new-category-name" placeholder="Nombre..." required><button type="submit">Crear</button></div>
+                        </form>
+                        <form id="add-tag-form" data-id="${d.id}" class="additional-form">
+                            <label>Añadir Etiqueta:</label>
+                            <div class="form-row"><select id="tag-select"><option value="">Seleccione...</option>${renderAvailableMainTags()}</select><button type="submit">Añadir</button></div>
+                        </form>
+                        <form id="create-tag-form" data-id="${d.id}" class="additional-form">
+                            <label>Crear Etiqueta:</label>
+                            <div class="form-row"><input type="text" id="new-tag-name" placeholder="Nombre..." required><button type="submit">Crear</button></div>
+                        </form>
+                        <form id="add-subtag-form" data-id="${d.id}" class="additional-form">
+                            <label>Añadir Sub-Etiqueta:</label>
+                            <div class="form-row">
+                                <select id="add-subtag-parent-select" required><option value="">Etiqueta Padre...</option>${renderAssignedMainTags()}</select>
+                                <select id="add-subtag-select" required><option value="">Sub-Etiqueta...</option></select>
+                                <button type="submit">Añadir</button>
+                            </div>
+                        </form>
+                        <form id="create-subtag-form" data-id="${d.id}" class="additional-form">
+                            <label>Crear Sub-Etiqueta:</label>
+                            <div class="form-row">
+                                <input type="text" id="new-subtag-name" placeholder="Nombre..." required>
+                                <select id="parent-tag-select" required><option value="">Asociar a...</option>${renderAssignedMainTags()}</select>
+                                <button type="submit">Crear</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>`;
         };
 
@@ -239,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', handleTagManagement));
         detailsContent.querySelector('#create-tag-form').addEventListener('submit', handleCreateTag);
         detailsContent.querySelector('#create-subtag-form').addEventListener('submit', handleCreateTag);
+        detailsContent.querySelector('#assign-category-form').addEventListener('submit', handleAssignCategory);
         detailsContent.querySelector('#create-category-form').addEventListener('submit', handleCreateCategory);
         
         const addSubtagParentSelect = detailsContent.querySelector('#add-subtag-parent-select');
@@ -252,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 try {
-                    const response = await fetch(`/get_sub_etiquetas/?parent_ids=${parentId}`);
+                    const response = await fetch(`/admin/get_sub_etiquetas/?parent_ids=${parentId}`);
                     const subEtiquetasExistentes = await response.json();
                     
                     let options = '<option value="">Seleccione Sub-Etiqueta</option>';
@@ -319,6 +344,39 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error al crear etiqueta:", error);
             alert('Ocurrió un error al crear la etiqueta.');
+        }
+    }
+
+    async function handleAssignCategory(event) {
+        event.preventDefault();
+        const form = event.target;
+        const alimentoId = form.dataset.id;
+        const categoriaId = form.querySelector('#category-select').value;
+        if (!categoriaId) {
+            alert('Por favor, seleccione una categoría.');
+            return;
+        }
+        const csrfToken = document.querySelector('form [name=csrfmiddlewaretoken]').value;
+        try {
+            const response = await fetch('/alimento/asignar_categoria/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ 
+                    alimento_id: alimentoId, 
+                    categoria_id: categoriaId 
+                })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                const updatedDetails = await (await fetch(`/alimento/detalles/${alimentoId}/`)).json();
+                renderDetailsModal(updatedDetails);
+            } else {
+                alert(`Error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error("Error al asignar categoría:", error);
+            alert('Ocurrió un error al asignar la categoría.');
         }
     }
 

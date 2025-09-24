@@ -11,4 +11,5 @@ urlpatterns = [
     path('alimento/anadir_stock/', views.anadir_stock_alimento, name='anadir_stock_alimento'),
     path('alimento/crear_etiqueta/', views.crear_etiqueta_ajax, name='crear_etiqueta_ajax'),
     path('alimento/crear_categoria/', views.crear_categoria_ajax, name='crear_categoria_ajax'),
+    path('alimento/asignar_categoria/', views.asignar_categoria_ajax, name='asignar_categoria_ajax'),
 ]

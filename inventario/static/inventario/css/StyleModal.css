@@ -237,6 +237,52 @@ body.dark-mode .dispatch-form input {
     font-size: 0.9em;
 }
 
+@media (max-width: 600px) {
+    .management-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* --- Styles for Management Grid Layout --- */
+.management-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 1.5rem; /* row-gap column-gap */
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.additional-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.additional-form label {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.additional-form .form-row {
+    display: flex;
+}
+
+.additional-form .form-row select,
+.additional-form .form-row input {
+    flex-grow: 1;
+    min-width: 80px; /* Prevent shrinking too much */
+    width: 100%;
+}
+
+.additional-form .form-row button {
+    flex-shrink: 0;
+    margin-left: 8px;
+    width: auto;
+    padding: 0 12px;
+}
+
 .info-btn {
     margin-left: 10px;
     padding: 3px 8px;

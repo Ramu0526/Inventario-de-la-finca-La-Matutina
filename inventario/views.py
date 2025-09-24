@@ -13,6 +13,19 @@ from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 
+def get_safe_image_url(image_field):
+    """
+    Safely gets the image URL from a CloudinaryField.
+    Returns None if the image does not exist or if there's an error generating the URL.
+    """
+    if not image_field:
+        return None
+    try:
+        return image_field.url
+    except Exception:
+        # Could log the error here if needed
+        return None
+
 def custom_login_view(request):
     if request.user.is_authenticated:
         return redirect('user_redirect')
@@ -64,8 +77,8 @@ def lista_productos(request):
             alimentos_data.append({
                 'id': alimento.id,
                 'nombre': alimento.nombre,
-                'cantidad_kg_ingresada': alimento.cantidad_kg_ingresada,
-                'imagen_url': alimento.imagen.url if alimento.imagen else None,
+                'cantidad_kg_ingresada': str(alimento.cantidad_kg_ingresada),
+                'imagen_url': get_safe_image_url(alimento.imagen),
             })
         
         return JsonResponse({
@@ -101,6 +114,7 @@ def alimento_detalles_json(request, alimento_id):
 
     etiquetas_del_alimento = list(alimento.etiquetas.values('id', 'nombre', 'parent_id'))
     todas_las_etiquetas_principales = list(Etiqueta.objects.filter(parent__isnull=True).values('id', 'nombre'))
+    todas_las_categorias = list(Categoria.objects.values('id', 'nombre'))
     
     proveedores_data = []
     for proveedor in alimento.proveedores.all():
@@ -109,7 +123,7 @@ def alimento_detalles_json(request, alimento_id):
             'nombre_local': getattr(proveedor, 'nombre_local', ''),
             'correo': getattr(proveedor, 'correo_electronico', ''),
             'telefono': getattr(proveedor, 'telefono', ''),
-            'imagen_url': proveedor.imagen.url if hasattr(proveedor, 'imagen') and proveedor.imagen else ''
+            'imagen_url': get_safe_image_url(getattr(proveedor, 'imagen', None))
         })
 
     ubicaciones_data = []
@@ -117,7 +131,7 @@ def alimento_detalles_json(request, alimento_id):
         ubicaciones_data.append({
             'nombre': ubicacion.nombre, 'barrio': ubicacion.barrio,
             'direccion': ubicacion.direccion, 'link': ubicacion.link,
-            'imagen_url': ubicacion.imagen.url if ubicacion.imagen else ''
+            'imagen_url': get_safe_image_url(getattr(ubicacion, 'imagen', None))
         })
     
     estado = "Disponible" if alimento.cantidad_kg_restante > 0 else "Agotado"
@@ -125,19 +139,20 @@ def alimento_detalles_json(request, alimento_id):
     data = {
         'id': alimento.id,
         'nombre': alimento.nombre,
-        'cantidad_ingresada': alimento.cantidad_kg_ingresada,
-        'cantidad_usada': alimento.cantidad_kg_usada,
-        'cantidad_restante': alimento.cantidad_kg_restante,
-        'precio': alimento.precio,
+        'cantidad_ingresada': str(alimento.cantidad_kg_ingresada),
+        'cantidad_usada': str(alimento.cantidad_kg_usada),
+        'cantidad_restante': str(alimento.cantidad_kg_restante),
+        'precio': str(alimento.precio),
         'estado': estado,
         'fecha_compra': alimento.fecha_compra.strftime('%d/%m/%Y'),
         'fecha_vencimiento': alimento.fecha_vencimiento.strftime('%d/%m/%Y'),
-        'imagen_url': alimento.imagen.url if alimento.imagen else '',
+        'imagen_url': get_safe_image_url(alimento.imagen),
         'categoria': { 'id': alimento.categoria.id, 'nombre': alimento.categoria.nombre } if alimento.categoria else None,
         'proveedores': proveedores_data,
         'ubicaciones': ubicaciones_data,
         'etiquetas': etiquetas_del_alimento,
         'todas_las_etiquetas_principales': todas_las_etiquetas_principales,
+        'todas_las_categorias': todas_las_categorias,
     }
     return JsonResponse(data)
 
@@ -253,6 +268,30 @@ def crear_etiqueta_ajax(request):
         return JsonResponse({
             'status': 'success',
             'message': 'Etiqueta creada y añadida correctamente. Refrescando detalles...',
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def asignar_categoria_ajax(request):
+    try:
+        data = json.loads(request.body)
+        alimento_id = data.get('alimento_id')
+        categoria_id = data.get('categoria_id')
+
+        if not categoria_id:
+            return JsonResponse({'status': 'error', 'message': 'Debe seleccionar una categoría.'}, status=400)
+
+        alimento = get_object_or_404(Alimento, pk=alimento_id)
+        categoria = get_object_or_404(Categoria, pk=categoria_id)
+
+        alimento.categoria = categoria
+        alimento.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Categoría asignada correctamente. Refrescando detalles...',
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

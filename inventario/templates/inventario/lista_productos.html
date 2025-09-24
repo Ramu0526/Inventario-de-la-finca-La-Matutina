@@ -65,32 +65,13 @@
                     </select>
                 </div>
 
-                {% if alimentos %}
-                    <div class="modal-grid">
-                        {% for alimento in alimentos %}
-                            <div class="item-card">
-                                {% if alimento.imagen %}
-                                    <img src="{{ alimento.imagen.url }}" alt="Imagen de {{ alimento.nombre }}" class="item-card-img">
-                                {% elif alimento.imagen_url %}
-                                    <img src="{{ alimento.imagen_url }}" alt="Imagen de {{ alimento.nombre }}" class="item-card-img">
-                                {% else %}
-                                    <div class="item-card-img-placeholder">Sin imagen</div>
-                                {% endif %}
-                                <div class="item-card-body">
-                                    <h3 class="item-card-title">{{ alimento.nombre }}</h3>
-                                    <p class="item-card-text">Cantidad: {{ alimento.cantidad_kg_ingresada }} Kg</p>
-                                    <button class="details-btn" data-id="{{ alimento.id }}">Ver detalles</button>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="pagination-controls"></div>
-
-                {% else %}
-                    <div class="modal-grid"></div>
-                    <p id="no-alimentos-msg">No hay alimentos registrados en el inventario.</p>
-                {% endif %}
+                <div class="modal-grid">
+                    <!-- The content of this div is populated by JsModal.js -->
+                </div>
+                <div class="pagination-controls">
+                    <!-- The content of this div is populated by JsModal.js -->
+                </div>
+                <p id="no-alimentos-msg">No hay alimentos registrados en el inventario.</p>
             </div>
         </div>
     </div>
