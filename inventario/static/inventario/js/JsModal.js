@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-header"><h2>${data.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
             <hr class="separator">
             <div class="modal-body">
-                <div class="details-main-grid">
+                <div class="details-grid"> 
                     <div class="details-left-column">
                         ${data.imagen_url ? `<img src="${data.imagen_url}" alt="Vista previa de ${data.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
                     </div>
