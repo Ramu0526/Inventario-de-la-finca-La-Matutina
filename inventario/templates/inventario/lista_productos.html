@@ -24,7 +24,7 @@
 
         <div class="panel-buttons">
             <button class="panel-btn" id="alimentos-btn">Alimentos</button>
-            <button class="panel-btn">Combustibles</button>
+            <button class="panel-btn" id="combustible-btn">Combustibles</button>
             <button class="panel-btn">Control Plagas</button>
             <button class="panel-btn">Ganado</button>
             <button class="panel-btn">Mantenimiento</button>
@@ -69,12 +69,42 @@
                     <!-- The content of this div is populated by JsModal.js -->
                 </div>
                 <div class="pagination-controls">
-                    <!-- The content of this div is populated by JsModal.js -->
+                    <!-- The content of this div is populated by modalManager.js -->
                 </div>
-                <p id="no-alimentos-msg">No hay alimentos registrados en el inventario.</p>
+                <p class="no-items-msg">No hay alimentos registrados en el inventario.</p>
             </div>
         </div>
     </div>
+
+    <div id="combustible-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gestión de los combustibles de la finca La Matutina</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <hr class="separator">
+            <div class="modal-body">
+                <div class="filters-container">
+                    <input type="text" id="filtro-nombre-combustible" class="filter-input filtro-nombre" placeholder="Buscar por tipo...">
+                    <select id="filtro-proveedor-combustible" class="filter-select filtro-proveedor">
+                        <option value="">Todos los proveedores</option>
+                        {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="modal-grid">
+                    <!-- The content of this div is populated by modalManager.js -->
+                </div>
+                <div class="pagination-controls">
+                    <!-- The content of this div is populated by modalManager.js -->
+                </div>
+                <p class="no-items-msg">No hay combustibles registrados en el inventario.</p>
+            </div>
+        </div>
+    </div>
+
     <div id="details-modal" class="modal">
         <div class="modal-content details-content">
             </div>
@@ -84,6 +114,6 @@
             </div>
     </div>
     <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
-    <script src="{% static 'inventario/js/JsModal.js' %}"></script>
+    <script src="{% static 'inventario/js/modalManager.js' %}"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # inventario/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Producto, Alimento
+from .models import Producto, Alimento, Combustible
 from caracteristicas.models import Etiqueta, Categoria, Proveedor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
@@ -45,10 +45,21 @@ def custom_login_view(request):
 
 @login_required
 def lista_productos(request):
-    # This view now handles both initial load and AJAX requests for filtering/pagination
+    # This view now only handles the initial page load.
+    # The modals will be populated by their own dedicated views.
+    categorias = Categoria.objects.all()
+    proveedores = Proveedor.objects.all()
+    
+    context = {
+        'categorias': categorias,
+        'proveedores': proveedores,
+    }
+    return render(request, 'inventario/lista_productos.html', context)
+
+@login_required
+def lista_alimentos(request):
     alimentos_list = Alimento.objects.select_related('categoria').prefetch_related('proveedores', 'ubicaciones').order_by('nombre')
 
-    # Get filter parameters
     nombre_query = request.GET.get('nombre', '')
     categoria_id = request.GET.get('categoria', '')
     proveedor_id = request.GET.get('proveedor', '')
@@ -60,7 +71,6 @@ def lista_productos(request):
     if proveedor_id:
         alimentos_list = alimentos_list.filter(proveedores__id=proveedor_id)
 
-    # The JS will send the items per page based on screen size
     try:
         items_per_page = int(request.GET.get('items_per_page', 8))
     except (ValueError, TypeError):
@@ -70,7 +80,6 @@ def lista_productos(request):
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
-    # For AJAX requests, return JSON
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         alimentos_data = []
         for alimento in page_obj.object_list:
@@ -82,31 +91,19 @@ def lista_productos(request):
             })
         
         return JsonResponse({
-            'alimentos': alimentos_data,
+            'items': alimentos_data,
             'has_next': page_obj.has_next(),
             'has_previous': page_obj.has_previous(),
             'total_pages': paginator.num_pages,
             'current_page': page_obj.number,
         })
 
-    # For initial page load, render the template but let JS fetch the aliments
-    categorias = Categoria.objects.all()
-    proveedores = Proveedor.objects.all()
-    
-    context = {
-        'alimentos': [], # Pass an empty list, JS will fetch the first page
-        'categorias': categorias,
-        'proveedores': proveedores,
-        'productos': Producto.objects.all(), # Keep for compatibility if used elsewhere
-    }
-    return render(request, 'inventario/lista_productos.html', context)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 @login_required
 def user_redirect(request):
-    if request.user.is_staff or request.user.is_superuser:
-        return redirect('admin:index')
-    else:
-        return redirect('lista_productos')
+    print("Redirecting to lista_productos")
+    return redirect('lista_productos')
 
 @login_required
 def alimento_detalles_json(request, alimento_id):
@@ -175,6 +172,130 @@ def actualizar_cantidad_alimento(request):
             'nueva_cantidad_usada': alimento.cantidad_kg_usada,
             'nueva_cantidad_restante': alimento.cantidad_kg_restante,
         })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def lista_combustibles(request):
+    combustibles_list = Combustible.objects.prefetch_related('proveedores', 'ubicaciones').order_by('tipo')
+
+    nombre_query = request.GET.get('nombre', '')
+    proveedor_id = request.GET.get('proveedor', '')
+
+    if nombre_query:
+        combustibles_list = combustibles_list.filter(tipo__icontains=nombre_query)
+    if proveedor_id:
+        combustibles_list = combustibles_list.filter(proveedores__id=proveedor_id)
+
+    try:
+        items_per_page = int(request.GET.get('items_per_page', 8))
+    except (ValueError, TypeError):
+        items_per_page = 8
+
+    paginator = Paginator(combustibles_list, items_per_page)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        combustibles_data = []
+        for combustible in page_obj.object_list:
+            combustibles_data.append({
+                'id': combustible.id,
+                'tipo': combustible.tipo,
+                'cantidad_galones_ingresada': str(combustible.cantidad_galones_ingresada),
+                'imagen_url': get_safe_image_url(combustible.imagen),
+            })
+        
+        return JsonResponse({
+            'items': combustibles_data,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'total_pages': paginator.num_pages,
+            'current_page': page_obj.number,
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+@login_required
+def combustible_detalles_json(request, combustible_id):
+    combustible = get_object_or_404(Combustible, pk=combustible_id)
+
+    proveedores_data = []
+    for proveedor in combustible.proveedores.all():
+        proveedores_data.append({
+            'nombre': proveedor.nombre,
+            'nombre_local': getattr(proveedor, 'nombre_local', ''),
+            'correo': getattr(proveedor, 'correo_electronico', ''),
+            'telefono': getattr(proveedor, 'telefono', ''),
+            'imagen_url': get_safe_image_url(getattr(proveedor, 'imagen', None))
+        })
+
+    ubicaciones_data = []
+    for ubicacion in combustible.ubicaciones.all():
+        ubicaciones_data.append({
+            'nombre': ubicacion.nombre, 'barrio': ubicacion.barrio,
+            'direccion': ubicacion.direccion, 'link': ubicacion.link,
+            'imagen_url': get_safe_image_url(getattr(ubicacion, 'imagen', None))
+        })
+
+    data = {
+        'id': combustible.id,
+        'tipo': combustible.tipo,
+        'cantidad_galones_ingresada': str(combustible.cantidad_galones_ingresada),
+        'cantidad_galones_usados': str(combustible.cantidad_galones_usados),
+        'cantidad_galones_restantes': str(combustible.cantidad_galones_restantes),
+        'precio': str(combustible.precio),
+        'proveedores': proveedores_data,
+        'ubicaciones': ubicaciones_data,
+        'imagen_url': get_safe_image_url(combustible.imagen),
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def actualizar_cantidad_combustible(request):
+    try:
+        data = json.loads(request.body)
+        combustible_id = data.get('combustible_id')
+        cantidad_a_usar = Decimal(data.get('cantidad_a_usar'))
+        combustible = get_object_or_404(Combustible, pk=combustible_id)
+        if cantidad_a_usar <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser mayor a cero.'}, status=400)
+        if cantidad_a_usar > combustible.cantidad_galones_restantes:
+            return JsonResponse({'status': 'error', 'message': 'No hay suficiente cantidad en inventario.'}, status=400)
+        combustible.cantidad_galones_usados += cantidad_a_usar
+        combustible.save()
+        return JsonResponse({
+            'status': 'success', 'message': 'Cantidad actualizada correctamente.',
+            'nueva_cantidad_usada': combustible.cantidad_galones_usados,
+            'nueva_cantidad_restante': combustible.cantidad_galones_restantes,
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def anadir_stock_combustible(request):
+    try:
+        data = json.loads(request.body)
+        combustible_id = data.get('combustible_id')
+        cantidad_a_anadir = Decimal(data.get('cantidad_a_anadir'))
+        
+        if not isinstance(cantidad_a_anadir, Decimal) or cantidad_a_anadir <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser un número positivo.'}, status=400)
+
+        combustible = get_object_or_404(Combustible, pk=combustible_id)
+        combustible.cantidad_galones_ingresada += cantidad_a_anadir
+        combustible.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Stock añadido correctamente.',
+            'nueva_cantidad_ingresada': combustible.cantidad_galones_ingresada,
+            'nueva_cantidad_restante': combustible.cantidad_galones_restantes,
+        })
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Datos inválidos.'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 

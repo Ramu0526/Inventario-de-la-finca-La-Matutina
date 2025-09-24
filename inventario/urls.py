@@ -12,4 +12,9 @@ urlpatterns = [
     path('alimento/crear_etiqueta/', views.crear_etiqueta_ajax, name='crear_etiqueta_ajax'),
     path('alimento/crear_categoria/', views.crear_categoria_ajax, name='crear_categoria_ajax'),
     path('alimento/asignar_categoria/', views.asignar_categoria_ajax, name='asignar_categoria_ajax'),
+    path('alimentos/', views.lista_alimentos, name='lista_alimentos'),
+    path('combustible/', views.lista_combustibles, name='lista_combustibles'),
+    path('combustible/detalles/<int:combustible_id>/', views.combustible_detalles_json, name='combustible_detalles_json'),
+    path('combustible/actualizar_cantidad/', views.actualizar_cantidad_combustible, name='actualizar_cantidad_combustible'),
+    path('combustible/anadir_stock/', views.anadir_stock_combustible, name='anadir_stock_combustible'),
 ]
