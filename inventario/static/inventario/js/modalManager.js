@@ -4,17 +4,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsContent = detailsModal.querySelector('.details-content');
     const infoContent = infoModal.querySelector('.info-content');
 
-    const setupModal = (itemType) => {
+    // Hacemos que esta función sea global para que el HTML pueda llamarla.
+    window.setupModal = (itemType) => {
         const openBtn = document.getElementById(`${itemType}-btn`);
         const mainModal = document.getElementById(`${itemType}-modal`);
         if (!openBtn || !mainModal) return;
 
         const mainCloseBtn = mainModal.querySelector('.close-btn');
+        const gridContainer = mainModal.querySelector('.modal-grid');
+        const paginationContainer = mainModal.querySelector('.pagination-controls');
+        
+        // Obtenemos los filtros de forma segura
         const nombreFilter = mainModal.querySelector('.filtro-nombre');
         const categoriaFilter = mainModal.querySelector('.filtro-categoria');
         const proveedorFilter = mainModal.querySelector('.filtro-proveedor');
-        const gridContainer = mainModal.querySelector('.modal-grid');
-        const paginationContainer = mainModal.querySelector('.pagination-controls');
+        const animalFilter = mainModal.querySelector('.filtro-animal'); // Nuevo filtro
 
         openBtn.addEventListener('click', () => {
             mainModal.style.display = 'block';
@@ -30,12 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const fetchItems = async (page = 1) => {
-            const nombre = nombreFilter.value;
+            // CORRECCIÓN: Verificamos si cada filtro existe antes de obtener su valor.
+            const nombre = nombreFilter ? nombreFilter.value : '';
             const categoria = categoriaFilter ? categoriaFilter.value : '';
-            const proveedor = proveedorFilter.value;
+            const proveedor = proveedorFilter ? proveedorFilter.value : '';
+            const animal = animalFilter ? animalFilter.value : ''; // Nuevo
             const itemsPerPage = window.innerWidth <= 768 ? 6 : 8;
             
-            const url = `/${itemType}/?page=${page}&nombre=${nombre}&categoria=${categoria}&proveedor=${proveedor}&items_per_page=${itemsPerPage}`;
+            // Construimos la URL con los filtros que sí existen.
+            const params = new URLSearchParams({
+                page,
+                nombre,
+                categoria,
+                proveedor,
+                animal, // Nuevo
+                items_per_page: itemsPerPage,
+            });
+
+            const url = `/${itemType}/?${params.toString()}`;
 
             try {
                 const response = await fetch(url, {
@@ -46,72 +62,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderPagination(data);
             } catch (error) {
                 console.error(`Error fetching ${itemType}:`, error);
-                gridContainer.innerHTML = `<p>Error al cargar los ${itemType}. Por favor, intente de nuevo.</p>`;
+                gridContainer.innerHTML = `<p>Error al cargar los ${itemType}.</p>`;
             }
-        };
-
-        const attachDetailButtonListener = (button) => {
-            button.addEventListener('click', async () => {
-                const itemId = button.dataset.id;
-                try {
-                    const singleItemType = itemType === 'alimentos' ? 'alimento' : itemType;
-                    const response = await fetch(`/${singleItemType}/detalles/${itemId}/`);
-                    if (!response.ok) throw new Error(`Error al cargar datos del ${itemType}.`);
-                    const data = await response.json();
-                    renderDetailsModal(data, itemType);
-                    detailsModal.style.display = 'block';
-                } catch (error) {
-                    console.error("Error fetching details:", error);
-                    alert(error.message);
-                }
-            });
         };
 
         const renderGrid = (items) => {
             const noItemsMsg = mainModal.querySelector('.no-items-msg');
             gridContainer.innerHTML = '';
 
-            if (items.length === 0) {
+            if (!items || items.length === 0) {
                 if (noItemsMsg) noItemsMsg.style.display = 'block';
-                gridContainer.innerHTML = `<p>No se encontraron ${itemType} con los filtros seleccionados.</p>`;
+                gridContainer.innerHTML = `<p>No se encontraron ${itemType.replace('-', ' ')}.</p>`;
                 return;
             }
 
             if (noItemsMsg) noItemsMsg.style.display = 'none';
+            
             items.forEach(item => {
                 const itemCard = document.createElement('div');
                 itemCard.className = 'item-card';
+                // Usamos item.detalle que viene desde la vista
+                const detalleHTML = item.detalle ? `<p class="item-card-text">${item.detalle}</p>` : '';
+
                 itemCard.innerHTML = `
                     ${item.imagen_url ? 
-                        `<img src="${item.imagen_url}" alt="Imagen de ${item.nombre || item.tipo}" class="item-card-img">` : 
+                        `<img src="${item.imagen_url}" alt="Imagen de ${item.nombre}" class="item-card-img">` : 
                         '<div class="item-card-img-placeholder">Sin imagen</div>'
                     }
                     <div class="item-card-body">
-                        <h3 class="item-card-title">${item.nombre || item.tipo}</h3>
-                        <p class="item-card-text">Cantidad: ${item.cantidad_kg_ingresada || item.cantidad_galones_ingresada} ${itemType === 'alimentos' ? 'Kg' : 'Gal'}</p>
+                        <h3 class="item-card-title">${item.nombre}</h3>
+                        ${detalleHTML}
                         <button class="details-btn" data-id="${item.id}">Ver detalles</button>
                     </div>
                 `;
                 gridContainer.appendChild(itemCard);
             });
-            gridContainer.querySelectorAll('.details-btn').forEach(attachDetailButtonListener);
+            // NOTA: La funcionalidad de "Ver detalles" para los nuevos modales aún no está creada.
+            // Por ahora, solo se mostrará la lista.
         };
-
+        
         const renderPagination = (data) => {
             paginationContainer.innerHTML = '';
             if (data.total_pages > 1) {
                 for (let i = 1; i <= data.total_pages; i++) {
                     const button = document.createElement('button');
                     button.className = 'pagination-btn';
-                    if (i === data.current_page) {
-                        button.classList.add('active');
-                    }
+                    if (i === data.current_page) button.classList.add('active');
                     button.innerText = i;
-                    button.dataset.page = i;
-                    button.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        fetchItems(i);
-                    });
+                    button.addEventListener('click', () => fetchItems(i));
                     paginationContainer.appendChild(button);
                 }
             }
@@ -124,13 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeout = setTimeout(() => func.apply(this, args), delay);
             };
         };
-
-        nombreFilter.addEventListener('keyup', debounce(() => fetchItems(1), 300));
-        if (categoriaFilter) {
-            categoriaFilter.addEventListener('change', () => fetchItems(1));
-        }
-        proveedorFilter.addEventListener('change', () => fetchItems(1));
-        window.addEventListener('resize', debounce(() => fetchItems(1), 200));
+        
+        // Agregamos listeners solo si los filtros existen
+        if (nombreFilter) nombreFilter.addEventListener('keyup', debounce(() => fetchItems(1), 300));
+        if (categoriaFilter) categoriaFilter.addEventListener('change', () => fetchItems(1));
+        if (proveedorFilter) proveedorFilter.addEventListener('change', () => fetchItems(1));
+        if (animalFilter) animalFilter.addEventListener('change', () => fetchItems(1));
     };
 
     const closeDetailsModal = () => { detailsModal.style.display = 'none'; detailsContent.innerHTML = ''; };
@@ -140,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let content = '';
         if (itemType === 'alimentos') {
             content = renderAlimentoDetails(data);
-        } else if (itemType === 'combustible') {
+        } else if (itemType === 'combustibles') { // CAMBIO AQUÍ: Compara con el plural 'combustibles'.
             content = renderCombustibleDetails(data);
         }
         detailsContent.innerHTML = content;
@@ -319,18 +316,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachCommonListeners(data, itemType) {
         detailsContent.querySelector('#details-close-btn').addEventListener('click', closeDetailsModal);
 
-        if (itemType === 'alimento' || itemType === 'combustible') {
-            detailsContent.querySelector('#dispatch-form').addEventListener('submit', (e) => handleDispatchSubmit(e, itemType));
-            detailsContent.querySelector('#add-stock-form').addEventListener('submit', (e) => handleAddStockSubmit(e, itemType));
+        const singleItemType = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
+
+        if (singleItemType === 'alimento' || singleItemType === 'combustible') {
+            detailsContent.querySelector('#dispatch-form').addEventListener('submit', (e) => handleDispatchSubmit(e, singleItemType));
+            detailsContent.querySelector('#add-stock-form').addEventListener('submit', (e) => handleAddStockSubmit(e, singleItemType));
         }
 
-        if (itemType === 'alimento') {
-            detailsContent.querySelector('#add-tag-form').addEventListener('submit', (e) => handleTagManagement(e, itemType));
-            detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', (e) => handleTagManagement(e, itemType)));
-            detailsContent.querySelector('#create-tag-form').addEventListener('submit', (e) => handleCreateTag(e, itemType));
-            detailsContent.querySelector('#create-subtag-form').addEventListener('submit', (e) => handleCreateTag(e, itemType));
-            detailsContent.querySelector('#assign-category-form').addEventListener('submit', (e) => handleAssignCategory(e, itemType));
-            detailsContent.querySelector('#create-category-form').addEventListener('submit', (e) => handleCreateCategory(e, itemType));
+        if (singleItemType === 'alimento') {
+            detailsContent.querySelector('#add-tag-form').addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
+            detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', (e) => handleTagManagement(e, singleItemType)));
+            detailsContent.querySelector('#create-tag-form').addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
+            detailsContent.querySelector('#create-subtag-form').addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
+            detailsContent.querySelector('#assign-category-form').addEventListener('submit', (e) => handleAssignCategory(e, singleItemType));
+            detailsContent.querySelector('#create-category-form').addEventListener('submit', (e) => handleCreateCategory(e, singleItemType));
             
             const addSubtagParentSelect = detailsContent.querySelector('#add-subtag-parent-select');
             if (addSubtagParentSelect) {
@@ -359,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
-            detailsContent.querySelector('#add-subtag-form').addEventListener('submit', (e) => handleTagManagement(e, itemType));
+            detailsContent.querySelector('#add-subtag-form').addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
         }
 
         detailsContent.querySelectorAll('.info-btn').forEach(button => {
@@ -381,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = event.target;
         const itemId = form.dataset.id;
         const isSubTag = form.id === 'create-subtag-form';
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType === 'alimentos' ? 'alimento' : itemType;
         const nombreEtiqueta = form.querySelector(isSubTag ? '#new-subtag-name' : '#new-tag-name').value;
         const parentId = isSubTag ? form.querySelector('#parent-tag-select').value : null;
 
@@ -405,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 const updatedDetails = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-                renderDetailsModal(updatedDetails, itemType);
+                renderDetailsModal(updatedDetails, itemType + 's');
             } else {
                 alert(`Error: ${result.message}`);
             }
@@ -419,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const form = event.target;
         const itemId = form.dataset.id;
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType === 'alimentos' ? 'alimento' : itemType;
         const categoriaId = form.querySelector('#category-select').value;
         if (!categoriaId) {
             alert('Por favor, seleccione una categoría.');
@@ -439,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 const updatedDetails = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-                renderDetailsModal(updatedDetails, itemType);
+                renderDetailsModal(updatedDetails, itemType + 's');
             } else {
                 alert(`Error: ${result.message}`);
             }
@@ -453,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const form = event.target;
         const itemId = form.dataset.id;
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType === 'alimentos' ? 'alimento' : itemType;
         const nombreCategoria = form.querySelector('#new-category-name').value;
         const csrfToken = document.querySelector('form [name=csrfmiddlewaretoken]').value;
 
@@ -470,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 const updatedDetails = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-                renderDetailsModal(updatedDetails, itemType);
+                renderDetailsModal(updatedDetails, itemType + 's');
             } else {
                 alert(`Error: ${result.message}`);
             }
@@ -484,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const form = event.target;
         const itemId = form.dataset.id;
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType; // Ya es singular aquí
         const cantidad = form.querySelector('#add-qty').value;
         const csrfToken = document.querySelector('form [name=csrfmiddlewaretoken]').value;
 
@@ -498,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 const updatedDetails = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-                renderDetailsModal(updatedDetails, itemType);
+                renderDetailsModal(updatedDetails, itemType + 's'); // Vuelve a plural para renderizar
             } else {
                 alert(`Error: ${result.message}`);
             }
@@ -525,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const form = event.target;
         const itemId = form.dataset.id;
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType; // Ya es singular aquí
         const cantidad = form.querySelector('#dispatch-qty').value;
         const csrfToken = document.querySelector('form [name=csrfmiddlewaretoken]').value;
         try {
@@ -538,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 const updatedDetails = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-                renderDetailsModal(updatedDetails, itemType);
+                renderDetailsModal(updatedDetails, itemType + 's'); // Vuelve a plural para renderizar
             } else {
                 alert(`Error: ${result.message}`);
             }
@@ -554,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let itemId, etiquetaId, accion;
         accion = 'add';
         itemId = event.currentTarget.dataset.id;
-        const singleItemType = itemType === 'alimento' ? 'alimento' : itemType;
+        const singleItemType = itemType; // Ya es singular
 
         if (event.currentTarget.id === 'add-tag-form') {
             etiquetaId = document.getElementById('tag-select').value;
@@ -580,13 +579,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
             const data = await (await fetch(`/${singleItemType}/detalles/${itemId}/`)).json();
-            renderDetailsModal(data, itemType);
+            renderDetailsModal(data, itemType + 's'); // Vuelve a plural
         } catch (error) {
             console.error("Error al gestionar etiqueta:", error);
             alert(`Error: ${error.message}`);
         }
     }
 
-    setupModal('alimento');
-    setupModal('combustible');
+    setupModal('alimentos');
+    setupModal('combustibles');
 });

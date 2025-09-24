@@ -1,6 +1,6 @@
 # inventario/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Producto, Alimento, Combustible
+from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal
 from caracteristicas.models import Etiqueta, Categoria, Proveedor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
@@ -49,10 +49,12 @@ def lista_productos(request):
     # The modals will be populated by their own dedicated views.
     categorias = Categoria.objects.all()
     proveedores = Proveedor.objects.all()
-    
+    animales = Animal.objects.all() # AÑADE ESTA LÍNEA
+
     context = {
         'categorias': categorias,
         'proveedores': proveedores,
+        'animales': animales, # AÑADE ESTA LÍNEA
     }
     return render(request, 'inventario/lista_productos.html', context)
 
@@ -443,3 +445,165 @@ def crear_categoria_ajax(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@login_required
+def lista_control_plagas(request):
+    items_list = ControlPlaga.objects.order_by('nombre_producto')
+    
+    nombre_query = request.GET.get('nombre', '')
+    if nombre_query:
+        items_list = items_list.filter(nombre_producto__icontains=nombre_query)
+
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.nombre_producto,
+            'detalle': f"Quedan: {item.cantidad_restante} {item.get_unidad_medida_display()}",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+        
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def lista_ganado(request):
+    items_list = Ganado.objects.select_related('animal').order_by('identificador')
+
+    nombre_query = request.GET.get('nombre', '')
+    animal_id = request.GET.get('animal', '')
+
+    if nombre_query:
+        items_list = items_list.filter(identificador__icontains=nombre_query)
+    if animal_id:
+        items_list = items_list.filter(animal__id=animal_id)
+
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.identificador,
+            'detalle': f"{item.animal.nombre if item.animal else 'N/A'} - {item.get_estado_display()}",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def lista_mantenimientos(request):
+    items_list = Mantenimiento.objects.order_by('equipo')
+
+    nombre_query = request.GET.get('nombre', '')
+    if nombre_query:
+        items_list = items_list.filter(equipo__icontains=nombre_query)
+
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.equipo,
+            'detalle': f"Próximo: {item.fecha_proximo_mantenimiento.strftime('%d/%m/%Y')}",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+        
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def lista_medicamentos(request):
+    items_list = Medicamento.objects.select_related('categoria').order_by('nombre')
+    
+    nombre_query = request.GET.get('nombre', '')
+    categoria_id = request.GET.get('categoria', '')
+
+    if nombre_query:
+        items_list = items_list.filter(nombre__icontains=nombre_query)
+    if categoria_id:
+        items_list = items_list.filter(categoria__id=categoria_id)
+
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.nombre,
+            'detalle': f"Quedan: {item.cantidad_restante} {item.get_unidad_medida_display()}",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+        
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def lista_potreros(request):
+    items_list = Potrero.objects.order_by('nombre')
+    
+    nombre_query = request.GET.get('nombre', '')
+    if nombre_query:
+        items_list = items_list.filter(nombre__icontains=nombre_query)
+    
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.nombre,
+            'detalle': f"Área: {item.area_hectareas} ha",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+        
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def lista_productos_view(request):
+    items_list = Producto.objects.select_related('categoria').order_by('nombre')
+    
+    nombre_query = request.GET.get('nombre', '')
+    categoria_id = request.GET.get('categoria', '')
+
+    if nombre_query:
+        items_list = items_list.filter(nombre__icontains=nombre_query)
+    if categoria_id:
+        items_list = items_list.filter(categoria__id=categoria_id)
+        
+    paginator = Paginator(items_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = [{
+            'id': item.id,
+            'nombre': item.nombre,
+            'detalle': f"Cantidad: {item.cantidad} {item.get_unidad_medida_display()}",
+            'imagen_url': get_safe_image_url(item.imagen),
+        } for item in page_obj.object_list]
+        
+        return JsonResponse({
+            'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
+        })
+    return JsonResponse({'status': 'error'}, status=400)
