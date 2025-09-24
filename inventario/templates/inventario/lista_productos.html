@@ -49,12 +49,30 @@
             </div>
             <hr class="separator">
             <div class="modal-body">
+                <div class="filters-container">
+                    <input type="text" id="filtro-nombre" class="filter-input" placeholder="Buscar por nombre...">
+                    <select id="filtro-categoria" class="filter-select">
+                        <option value="">Todas las categorías</option>
+                        {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="filtro-proveedor" class="filter-select">
+                        <option value="">Todos los proveedores</option>
+                        {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 {% if alimentos %}
                     <div class="modal-grid">
                         {% for alimento in alimentos %}
                             <div class="item-card">
                                 {% if alimento.imagen %}
                                     <img src="{{ alimento.imagen.url }}" alt="Imagen de {{ alimento.nombre }}" class="item-card-img">
+                                {% elif alimento.imagen_url %}
+                                    <img src="{{ alimento.imagen_url }}" alt="Imagen de {{ alimento.nombre }}" class="item-card-img">
                                 {% else %}
                                     <div class="item-card-img-placeholder">Sin imagen</div>
                                 {% endif %}
@@ -70,7 +88,8 @@
                     <div class="pagination-controls"></div>
 
                 {% else %}
-                    <p>No hay alimentos registrados en el inventario.</p>
+                    <div class="modal-grid"></div>
+                    <p id="no-alimentos-msg">No hay alimentos registrados en el inventario.</p>
                 {% endif %}
             </div>
         </div>

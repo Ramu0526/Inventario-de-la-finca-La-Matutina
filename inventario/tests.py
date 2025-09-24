@@ -15,9 +15,10 @@ class AlimentoModelTest(TestCase):
         """
         alimento = Alimento(
             nombre="Heno",
-            cantidad_kg_ingresada=-10.5,
-            ubicacion=self.ubicacion
+            cantidad_kg_ingresada=-10.5
         )
+        # The test is for the validator, which runs on full_clean before saving.
+        # The ManyToMany relationship for ubicaciones is not relevant for this validation test.
 
         with self.assertRaises(ValidationError):
             alimento.full_clean()
