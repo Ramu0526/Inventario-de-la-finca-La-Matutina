@@ -56,8 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const attachDetailButtonListener = (button) => {
             button.addEventListener('click', async () => {
                 const itemId = button.dataset.id;
-                // CORRECCIÓN: Añadido 'medicamentos' a la lista de tipos soportados
-                const supportedTypes = ['alimentos', 'combustibles', 'control-plagas', 'mantenimientos', 'potreros', 'productos', 'medicamentos'];
+                const supportedTypes = ['alimentos', 'combustibles', 'control-plagas', 'mantenimientos', 'potreros', 'productos', 'medicamentos', 'ganado'];
                 if (!supportedTypes.includes(itemType)) {
                     alert('La vista de detalles para esta sección aún no está implementada.');
                     return;
@@ -120,6 +119,56 @@ document.addEventListener('DOMContentLoaded', () => {
         if (animalFilter) animalFilter.addEventListener('change', () => fetchItems(1));
     };
 
+    window.setupCreateVacunaModal = () => {
+        const openBtn = document.getElementById('crear-vacuna-btn');
+        const modal = document.getElementById('crear-vacuna-modal');
+        const form = modal.querySelector('#create-vacuna-form');
+        const closeBtn = modal.querySelector('.close-btn');
+
+        openBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/vacuna/form-data/');
+                const data = await response.json();
+                
+                const allProveedoresOptions = data.proveedores.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                const allUbicacionesOptions = data.ubicaciones.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+                const allEtiquetasOptions = data.etiquetas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+
+                form.innerHTML = `
+                    <div class="form-grid-columns">
+                        <div class="form-column">
+                            <div class="form-field"><label for="vacuna-nombre">Nombre:</label><input type="text" id="vacuna-nombre" required></div>
+                            <div class="form-field"><label for="vacuna-tipo">Tipo:</label><input type="text" id="vacuna-tipo"></div>
+                            <div class="form-field"><label for="vacuna-precio">Precio:</label><input type="number" step="0.01" id="vacuna-precio" value="0.00" required></div>
+                            <div class="form-field"><label for="vacuna-cantidad">Cantidad:</label><input type="number" step="0.01" id="vacuna-cantidad" required></div>
+                            <div class="form-field"><label for="vacuna-unidad">Unidad Medida:</label><select id="vacuna-unidad"><option value="U">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option></select></div>
+                            <div class="form-field"><label for="vacuna-fecha-compra">Fecha Compra:</label><input type="date" id="vacuna-fecha-compra" required></div>
+                            <div class="form-field"><label for="vacuna-fecha-vencimiento">Fecha Vencimiento:</label><input type="date" id="vacuna-fecha-vencimiento" required></div>
+                            <div class="form-field-checkbox"><input type="checkbox" id="vacuna-disponible" checked><label for="vacuna-disponible">Disponible</label></div>
+                        </div>
+                        <div class="form-column">
+                            <div class="form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div>
+                            <div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div>
+                            <div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div>
+                            <div class="form-field-full"><label for="vacuna-proveedores">Proveedores:</label><select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select></div>
+                            <div class="form-field-full"><label for="vacuna-ubicaciones">Ubicaciones:</label><select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select></div>
+                            <div class="form-field-full"><label for="vacuna-etiquetas">Etiquetas:</label><select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select></div>
+                        </div>
+                    </div>
+                    <div class="form-field-full"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div>
+                    <button type="submit" class="panel-btn" style="margin-top: 1rem;">Crear Vacuna</button>
+                `;
+                modal.style.display = 'block';
+            } catch (error) {
+                console.error("Error fetching form data for vacuna:", error);
+                alert("No se pudo abrir el formulario para crear vacunas.");
+            }
+        });
+
+        closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+        form.addEventListener('submit', handleCreateVacuna);
+    };
+
     const closeDetailsModal = () => { detailsModal.style.display = 'none'; detailsContent.innerHTML = ''; };
     const closeInfoModal = () => { infoModal.style.display = 'none'; infoContent.innerHTML = ''; };
 
@@ -131,7 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (itemType === 'mantenimientos') content = renderMantenimientoDetails(data);
         else if (itemType === 'potreros') content = renderPotreroDetails(data);
         else if (itemType === 'productos') content = renderProductoDetails(data);
-        else if (itemType === 'medicamentos') content = renderMedicamentoDetails(data); // CORRECCIÓN AQUÍ
+        else if (itemType === 'medicamentos') content = renderMedicamentoDetails(data);
+        else if (itemType === 'ganado') content = renderGanadoDetails(data);
         
         detailsContent.innerHTML = content;
         attachCommonListeners(data, itemType);
@@ -193,6 +243,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><div class="details-grid"><div class="details-left-column">${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}<div class="details-section"><h4>Inventario</h4><p><strong>Cantidad:</strong> ${d.cantidad_ingresada} ${d.unidad_medida}</p><p><strong>Usado:</strong> ${d.cantidad_usada} ${d.unidad_medida}</p><p><strong>Restante:</strong> ${d.cantidad_restante} ${d.unidad_medida}</p><p><strong>Precio:</strong> $${d.precio}</p></div><div class="details-section"><h4>Despacho</h4><div class="management-grid"><form id="dispatch-form" data-id="${d.id}" class="additional-form"><label>Usar Cantidad:</label><div class="form-row"><input type="number" step="0.01" min="0" id="dispatch-qty" required><button type="submit">Aceptar</button></div></form><form id="add-stock-form" data-id="${d.id}" class="additional-form"><label>Añadir Cantidad:</label><div class="form-row"><input type="number" step="0.01" min="0" id="add-qty" required><button type="submit">Añadir</button></div></form></div></div></div><div class="details-right-column"><div class="details-section"><h4>Información</h4><p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p><p><strong>Descripción:</strong> ${d.descripcion}</p><p><strong>Proveedores:</strong></p><ul class="info-list">${proveedoresHtml}</ul><p><strong>Ubicaciones:</strong></p><ul class="info-list">${ubicacionesHtml}</ul><p><strong>Fechas:</strong> Compra: ${d.fecha_compra} | Ingreso: ${d.fecha_ingreso} | Vence: ${d.fecha_vencimiento}</p></div></div></div><div class="details-bottom-grid"><div class="details-section"><h4>Crear Vacuna Asociada</h4><form id="create-vacuna-form"><div class="management-grid"><div class="form-field"><label for="vacuna-nombre">Nombre:</label><input type="text" id="vacuna-nombre" required></div><div class="form-field"><label for="vacuna-tipo">Tipo:</label><input type="text" id="vacuna-tipo"></div><div class="form-field"><label for="vacuna-cantidad">Cantidad:</label><input type="number" step="0.01" id="vacuna-cantidad" required></div><div class="form-field"><label for="vacuna-unidad">Unidad Medida:</label><select id="vacuna-unidad"><option value="U">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option></select></div><div class="form-field"><label for="vacuna-fecha-compra">Fecha Compra:</label><input type="date" id="vacuna-fecha-compra" required></div><div class="form-field"><label for="vacuna-fecha-vencimiento">Fecha Vencimiento:</label><input type="date" id="vacuna-fecha-vencimiento" required></div><div class="form-field-full"><label for="vacuna-proveedores">Proveedores:</label><select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select></div><div class="form-field-full"><label for="vacuna-ubicaciones">Ubicaciones:</label><select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select></div><div class="form-field-full"><label for="vacuna-etiquetas">Etiquetas:</label><select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select></div><div class="form-field-full"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div><div class="form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div><div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div><div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div><div class="form-field-checkbox"><input type="checkbox" id="vacuna-disponible" checked><label for="vacuna-disponible">Disponible</label></div></div><button type="submit" class="panel-btn" style="margin-top: 1rem;">Crear Vacuna</button></form></div></div></div>`;
     }
 
+    function renderGanadoDetails(d) {
+        const historialHtml = d.historial_vacunacion.length > 0 ? 
+            d.historial_vacunacion.map(v => `<li>${v.fecha_aplicacion}: ${v.vacuna_nombre} (Próx: ${v.fecha_proxima_dosis})</li>`).join('') :
+            '<li>Sin registros.</li>';
+        
+        const vacunasOptions = d.todas_las_vacunas.map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
+
+        return `
+            <div class="modal-header"><h2>${d.identificador} - ${d.animal}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
+            <hr class="separator">
+            <div class="modal-body">
+                <div class="details-grid">
+                    <div class="details-left-column">
+                        ${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.identificador}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
+                        <div class="details-section">
+                            <h4>Información Principal</h4>
+                            <p><strong>Raza:</strong> ${d.raza || 'N/A'}</p>
+                            <p><strong>Género:</strong> ${d.genero}</p>
+                            <p><strong>Peso:</strong> ${d.peso_kg} Kg</p>
+                            <p><strong>Edad:</strong> ${d.edad}</p>
+                            <p><strong>Fecha de Nacimiento:</strong> ${d.fecha_nacimiento}</p>
+                            <p><strong>Estado:</strong> ${d.estado}</p>
+                            <p><strong>Tipo de Parto:</strong> ${d.parto}</p>
+                            <p><strong>Descripción:</strong> ${d.descripcion}</p>
+                        </div>
+                    </div>
+                    <div class="details-right-column">
+                        <div class="details-section">
+                            <h4>Historial de Vacunación</h4>
+                            <ul class="info-list">${historialHtml}</ul>
+                        </div>
+                        <div class="details-section">
+                            <h4>Registrar Nueva Vacunación</h4>
+                            <form id="registrar-vacunacion-form" data-id="${d.id}">
+                                <div class="form-field"><label for="vacuna-select">Vacuna a aplicar:</label><select id="vacuna-select" required><option value="">Seleccione...</option>${vacunasOptions}</select></div>
+                                <div class="form-field"><label for="fecha-aplicacion">Fecha de Aplicación:</label><input type="date" id="fecha-aplicacion" required></div>
+                                <div class="form-field"><label for="fecha-proxima">Próxima Dosis (Opcional):</label><input type="date" id="fecha-proxima"></div>
+                                <button type="submit" class="panel-btn">Registrar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
     // --- MANEJO DE EVENTOS ---
     
     function attachCommonListeners(data, itemType) {
@@ -252,6 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+        }
+        if (singleItemType === 'ganado') {
+            detailsContent.querySelector('#registrar-vacunacion-form').addEventListener('submit', handleRegistrarVacunacion);
         }
         detailsContent.querySelectorAll('.info-btn').forEach(button => {
             button.addEventListener('click', async () => {
@@ -455,6 +553,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await handleApiRequest('/vacuna/crear/', body);
         form.reset();
+    }
+    
+    async function handleRegistrarVacunacion(event) {
+        event.preventDefault();
+        const form = event.target;
+        const body = {
+            ganado_id: form.dataset.id,
+            vacuna_id: form.querySelector('#vacuna-select').value,
+            fecha_aplicacion: form.querySelector('#fecha-aplicacion').value,
+            fecha_proxima_dosis: form.querySelector('#fecha-proxima').value,
+        };
+        handleApiRequest('/ganado/registrar_vacunacion/', body, form.dataset.id, 'ganado');
     }
 
     function renderInfoModal(title, details) {

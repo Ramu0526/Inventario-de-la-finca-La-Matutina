@@ -13,7 +13,7 @@ from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from .models import Comprador # Asegúrate de importar Comprador
-from .models import Vacuna # Asegúrate de que Vacuna esté importado
+from .models import Vacuna, RegistroVacunacion # Asegúrate de que Vacuna esté importado
 
 
 from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
@@ -1051,3 +1051,63 @@ def get_vacuna_form_data(request):
         'etiquetas': list(Etiqueta.objects.filter(parent__isnull=True).values('id', 'nombre')),
     }
     return JsonResponse(data)
+
+# AÑADE ESTE CÓDIGO AL FINAL DE TUS VISTAS
+
+@login_required
+def ganado_detalles_json(request, ganado_id):
+    ganado = get_object_or_404(Ganado, pk=ganado_id)
+    
+    # Historial de vacunación del animal
+    vacunaciones = ganado.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
+    historial_vacunacion = [{
+        'vacuna_nombre': reg.vacuna.nombre,
+        'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+        'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
+    } for reg in vacunaciones]
+
+    data = {
+        'id': ganado.id,
+        'identificador': ganado.identificador,
+        'animal': ganado.animal.nombre if ganado.animal else 'N/A',
+        'raza': ganado.raza,
+        'genero': ganado.get_genero_display(),
+        'peso_kg': str(ganado.peso_kg),
+        'edad': ganado.edad,
+        'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d'),
+        'estado': ganado.estado,
+        'parto': ganado.parto,
+        'descripcion': ganado.descripcion or "No hay descripción.",
+        'imagen_url': get_safe_image_url(ganado.imagen),
+        'historial_vacunacion': historial_vacunacion,
+        # Datos para los formularios
+        'todos_los_tipos_animal': list(Animal.objects.values('id', 'nombre')),
+        'todas_las_vacunas': list(Vacuna.objects.filter(disponible=True).values('id', 'nombre')),
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def registrar_vacunacion_ajax(request):
+    try:
+        data = json.loads(request.body)
+        ganado_id = data.get('ganado_id')
+        vacuna_id = data.get('vacuna_id')
+        fecha_aplicacion = data.get('fecha_aplicacion')
+        fecha_proxima_dosis = data.get('fecha_proxima_dosis') or None
+        
+        ganado = get_object_or_404(Ganado, pk=ganado_id)
+        vacuna = get_object_or_404(Vacuna, pk=vacuna_id)
+
+        registro = RegistroVacunacion.objects.create(
+            ganado=ganado,
+            vacuna=vacuna,
+            fecha_aplicacion=fecha_aplicacion,
+            fecha_proxima_dosis=fecha_proxima_dosis
+        )
+        
+        log_user_action(request, registro, ADDITION, f"Registró vacunación de {vacuna.nombre} a {ganado.identificador}.")
+        
+        return JsonResponse({'status': 'success', 'message': 'Vacunación registrada correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
