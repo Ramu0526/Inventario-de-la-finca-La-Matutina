@@ -1,7 +1,7 @@
 # inventario/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal, VentaProducto
-from caracteristicas.models import Etiqueta, Categoria, Proveedor
+from caracteristicas.models import Etiqueta, Categoria, Proveedor, Ubicacion
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
@@ -13,6 +13,8 @@ from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from .models import Comprador # Asegúrate de importar Comprador
+from .models import Vacuna # Asegúrate de que Vacuna esté importado
+
 
 from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
 from django.contrib.contenttypes.models import ContentType
@@ -934,3 +936,118 @@ def crear_comprador_ajax(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@login_required
+def medicamento_detalles_json(request, medicamento_id):
+    medicamento = get_object_or_404(Medicamento, pk=medicamento_id)
+    
+    proveedores_data = [{'nombre': p.nombre, 'id': p.id} for p in Proveedor.objects.all()]
+    ubicaciones_data = [{'nombre': u.nombre, 'id': u.id} for u in Ubicacion.objects.all()]
+    etiquetas_data = [{'nombre': e.nombre, 'id': e.id} for e in Etiqueta.objects.filter(parent__isnull=True)]
+
+    data = {
+        'id': medicamento.id,
+        'nombre': medicamento.nombre,
+        'cantidad_ingresada': str(medicamento.cantidad_ingresada),
+        'cantidad_usada': str(medicamento.cantidad_usada),
+        'cantidad_restante': str(medicamento.cantidad_restante),
+        'categoria': {'nombre': medicamento.categoria.nombre} if medicamento.categoria else None,
+        'precio': str(medicamento.precio),
+        'proveedores': list(medicamento.proveedores.values('id', 'nombre')),
+        'ubicaciones': list(medicamento.ubicaciones.values('id', 'nombre')),
+        'fecha_compra': medicamento.fecha_compra.strftime('%Y-%m-%d'),
+        'fecha_ingreso': medicamento.fecha_ingreso.strftime('%Y-%m-%d'),
+        'fecha_vencimiento': medicamento.fecha_vencimiento.strftime('%Y-%m-%d'),
+        'imagen_url': get_safe_image_url(medicamento.imagen),
+        'descripcion': medicamento.descripcion or "No hay descripción.",
+        'unidad_medida': medicamento.get_unidad_medida_display(),
+        # Datos para el formulario de vacunas
+        'all_proveedores': proveedores_data,
+        'all_ubicaciones': ubicaciones_data,
+        'all_etiquetas': etiquetas_data,
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def actualizar_cantidad_medicamento(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('medicamento_id')
+        cantidad = Decimal(data.get('cantidad_a_usar'))
+        item = get_object_or_404(Medicamento, pk=item_id)
+
+        if cantidad <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser positiva.'}, status=400)
+        if cantidad > item.cantidad_restante:
+            return JsonResponse({'status': 'error', 'message': 'No hay suficiente stock.'}, status=400)
+        
+        item.cantidad_usada += cantidad
+        item.save()
+        log_user_action(request, item, CHANGE, f"Usó {cantidad} desde el panel de usuario.")
+        return JsonResponse({'status': 'success', 'message': 'Cantidad actualizada.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def anadir_stock_medicamento(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('medicamento_id')
+        cantidad = Decimal(data.get('cantidad_a_anadir'))
+        item = get_object_or_404(Medicamento, pk=item_id)
+
+        if cantidad <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser positiva.'}, status=400)
+        
+        item.cantidad_ingresada += cantidad
+        item.save()
+        log_user_action(request, item, CHANGE, f"Añadió {cantidad} al stock desde el panel de usuario.")
+        return JsonResponse({'status': 'success', 'message': 'Stock añadido.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def crear_vacuna_ajax(request):
+    try:
+        data = json.loads(request.body)
+        
+        # Crear la vacuna
+        nueva_vacuna = Vacuna.objects.create(
+            nombre=data.get('nombre'),
+            tipo=data.get('tipo'),
+            disponible=data.get('disponible', True),
+            cantidad=Decimal(data.get('cantidad', 0)),
+            unidad_medida=data.get('unidad_medida'),
+            dosis_crecimiento=data.get('dosis_crecimiento', ''),
+            dosis_edad=data.get('dosis_edad', ''),
+            dosis_peso=data.get('dosis_peso', ''),
+            fecha_compra=data.get('fecha_compra'),
+            fecha_vencimiento=data.get('fecha_vencimiento'),
+            descripcion=data.get('descripcion', '')
+        )
+
+        # Añadir relaciones ManyToMany
+        if data.get('proveedores'):
+            nueva_vacuna.proveedores.set(data.get('proveedores'))
+        if data.get('ubicaciones'):
+            nueva_vacuna.ubicaciones.set(data.get('ubicaciones'))
+        if data.get('etiquetas'):
+            nueva_vacuna.etiquetas.set(data.get('etiquetas'))
+            
+        log_user_action(request, nueva_vacuna, ADDITION, "Vacuna creada desde el panel de usuario.")
+        
+        return JsonResponse({'status': 'success', 'message': 'Vacuna creada correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@login_required
+def get_vacuna_form_data(request):
+    data = {
+        'proveedores': list(Proveedor.objects.values('id', 'nombre')),
+        'ubicaciones': list(Ubicacion.objects.values('id', 'nombre')),
+        'etiquetas': list(Etiqueta.objects.filter(parent__isnull=True).values('id', 'nombre')),
+    }
+    return JsonResponse(data)

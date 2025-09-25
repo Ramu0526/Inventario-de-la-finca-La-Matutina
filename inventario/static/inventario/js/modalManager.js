@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const attachDetailButtonListener = (button) => {
             button.addEventListener('click', async () => {
                 const itemId = button.dataset.id;
-                const supportedTypes = ['alimentos', 'combustibles', 'control-plagas', 'mantenimientos', 'potreros', 'productos'];
+                // CORRECCIÓN: Añadido 'medicamentos' a la lista de tipos soportados
+                const supportedTypes = ['alimentos', 'combustibles', 'control-plagas', 'mantenimientos', 'potreros', 'productos', 'medicamentos'];
                 if (!supportedTypes.includes(itemType)) {
                     alert('La vista de detalles para esta sección aún no está implementada.');
                     return;
@@ -130,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (itemType === 'mantenimientos') content = renderMantenimientoDetails(data);
         else if (itemType === 'potreros') content = renderPotreroDetails(data);
         else if (itemType === 'productos') content = renderProductoDetails(data);
+        else if (itemType === 'medicamentos') content = renderMedicamentoDetails(data); // CORRECCIÓN AQUÍ
         
         detailsContent.innerHTML = content;
         attachCommonListeners(data, itemType);
@@ -179,60 +181,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderProductoDetails(d) {
         const ubicacionesHtml = d.ubicaciones.map((u, index) => `<li class="info-list-item">${u.nombre} <button class="info-btn" data-type="ubicacion" data-index="${index}">Ver más</button></li>`).join('') || '<li>N/A</li>';
         const compradoresOptions = d.todos_los_compradores.map(c => `<option value="${c.id}" ${d.comprador_info && d.comprador_info.id === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('');
+        return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><div class="details-grid"><div class="details-left-column">${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}<div class="details-section"><h4>Información</h4><p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p><p><strong>Descripción:</strong> ${d.descripcion}</p></div><div class="details-section"><h4>Ubicaciones del Producto</h4><ul class="info-list">${ubicacionesHtml}</ul></div></div><div class="details-right-column"><div class="details-section"><h4>Inventario y Venta</h4><form id="update-producto-form" data-id="${d.id}"><p><strong>Cantidad:</strong> ${d.cantidad} ${d.unidad_medida}</p><p><strong>Precio Unitario:</strong> $${d.precio}</p><p><strong>Precio Total:</strong> $${d.precio_total}</p><p><strong>Fecha Producción:</strong> ${d.fecha_produccion}</p><div class="form-field"><label for="fecha-venta">Fecha de Venta:</label><input type="date" id="fecha-venta" value="${d.fecha_venta}"></div><div class="form-field"><label for="estado-producto">Estado:</label><select id="estado-producto"><option value="DISPONIBLE" ${d.estado === 'DISPONIBLE' ? 'selected' : ''}>Disponible</option><option value="APARTADO" ${d.estado === 'APARTADO' ? 'selected' : ''}>Apartado</option><option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option></select></div><hr class="separator"><h4>Comprador</h4><div class="comprador-info" style="${!d.comprador_info ? 'display: none;' : ''}"><p><strong>Asignado a:</strong> <span id="comprador-nombre">${d.comprador_info ? d.comprador_info.nombre : ''}</span> <button type="button" class="info-btn" id="ver-comprador-btn">Ver más</button></p></div><div class="form-field"><label for="comprador">Asignar a:</label><select id="comprador"><option value="">Ninguno</option>${compradoresOptions}</select></div><div class="form-field"><label for="valor-abono">Valor de Abono:</label><input type="number" step="0.01" id="valor-abono" value="${d.comprador_info ? d.comprador_info.valor_abono : '0.00'}"></div><div class="form-field"><label for="valor-compra">Valor de Compra:</label><input type="number" step="0.01" id="valor-compra" value="${d.comprador_info ? d.comprador_info.valor_compra : ''}"></div><button type="submit" class="panel-btn">Guardar Cambios</button></form></div><div class="details-section"><h4>Crear Nuevo Comprador</h4><form id="create-comprador-form"><div class="form-field"><label for="nuevo-comprador-nombre">Nombre:</label><input type="text" id="nuevo-comprador-nombre" required></div><div class="form-field"><label for="nuevo-comprador-telefono">Teléfono:</label><input type="text" id="nuevo-comprador-telefono"></div><button type="submit" class="panel-btn">Crear Comprador</button></form></div></div></div></div>`;
+    }
 
-        return `
-            <div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
-            <hr class="separator">
-            <div class="modal-body">
-                <div class="details-grid">
-                    <div class="details-left-column">
-                        ${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
-                        <div class="details-section">
-                            <h4>Información</h4>
-                            <p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p>
-                            <p><strong>Descripción:</strong> ${d.descripcion}</p>
-                        </div>
-                        <div class="details-section">
-                            <h4>Ubicaciones del Producto</h4>
-                            <ul class="info-list">${ubicacionesHtml}</ul>
-                        </div>
-                    </div>
-                    <div class="details-right-column">
-                        <div class="details-section">
-                            <h4>Inventario y Venta</h4>
-                            <form id="update-producto-form" data-id="${d.id}">
-                                <p><strong>Cantidad:</strong> ${d.cantidad} ${d.unidad_medida}</p>
-                                <p><strong>Precio Unitario:</strong> $${d.precio}</p>
-                                <p><strong>Precio Total:</strong> $${d.precio_total}</p>
-                                <p><strong>Fecha Producción:</strong> ${d.fecha_produccion}</p>
-                                <div class="form-field"><label for="fecha-venta">Fecha de Venta:</label><input type="date" id="fecha-venta" value="${d.fecha_venta}"></div>
-                                <div class="form-field"><label for="estado-producto">Estado:</label><select id="estado-producto">
-                                    <option value="DISPONIBLE" ${d.estado === 'DISPONIBLE' ? 'selected' : ''}>Disponible</option>
-                                    <option value="APARTADO" ${d.estado === 'APARTADO' ? 'selected' : ''}>Apartado</option>
-                                    <option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option>
-                                </select></div>
-                                <hr class="separator">
-                                <h4>Comprador</h4>
-                                <div class="comprador-info" style="${!d.comprador_info ? 'display: none;' : ''}">
-                                    <p><strong>Asignado a:</strong> <span id="comprador-nombre">${d.comprador_info ? d.comprador_info.nombre : ''}</span> <button type="button" class="info-btn" id="ver-comprador-btn">Ver más</button></p>
-                                </div>
-                                <div class="form-field"><label for="comprador">Asignar a:</label><select id="comprador"><option value="">Ninguno</option>${compradoresOptions}</select></div>
-                                <div class="form-field"><label for="valor-abono">Valor de Abono:</label><input type="number" step="0.01" id="valor-abono" value="${d.comprador_info ? d.comprador_info.valor_abono : '0.00'}"></div>
-                                <div class="form-field"><label for="valor-compra">Valor de Compra:</label><input type="number" step="0.01" id="valor-compra" value="${d.comprador_info ? d.comprador_info.valor_compra : ''}"></div>
-                                <button type="submit" class="panel-btn">Guardar Cambios</button>
-                            </form>
-                        </div>
-                        <div class="details-section">
-                            <h4>Crear Nuevo Comprador</h4>
-                            <form id="create-comprador-form">
-                                <div class="form-field"><label for="nuevo-comprador-nombre">Nombre:</label><input type="text" id="nuevo-comprador-nombre" required></div>
-                                <div class="form-field"><label for="nuevo-comprador-telefono">Teléfono:</label><input type="text" id="nuevo-comprador-telefono"></div>
-                                <button type="submit" class="panel-btn">Crear Comprador</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+    function renderMedicamentoDetails(d) {
+        const proveedoresHtml = d.proveedores.map(p => `<li class="info-list-item">${p.nombre}</li>`).join('') || '<li>N/A</li>';
+        const ubicacionesHtml = d.ubicaciones.map(u => `<li class="info-list-item">${u.nombre}</li>`).join('') || '<li>N/A</li>';
+        const allProveedoresOptions = d.all_proveedores.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        const allUbicacionesOptions = d.all_ubicaciones.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+        const allEtiquetasOptions = d.all_etiquetas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+        return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><div class="details-grid"><div class="details-left-column">${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}<div class="details-section"><h4>Inventario</h4><p><strong>Cantidad:</strong> ${d.cantidad_ingresada} ${d.unidad_medida}</p><p><strong>Usado:</strong> ${d.cantidad_usada} ${d.unidad_medida}</p><p><strong>Restante:</strong> ${d.cantidad_restante} ${d.unidad_medida}</p><p><strong>Precio:</strong> $${d.precio}</p></div><div class="details-section"><h4>Despacho</h4><div class="management-grid"><form id="dispatch-form" data-id="${d.id}" class="additional-form"><label>Usar Cantidad:</label><div class="form-row"><input type="number" step="0.01" min="0" id="dispatch-qty" required><button type="submit">Aceptar</button></div></form><form id="add-stock-form" data-id="${d.id}" class="additional-form"><label>Añadir Cantidad:</label><div class="form-row"><input type="number" step="0.01" min="0" id="add-qty" required><button type="submit">Añadir</button></div></form></div></div></div><div class="details-right-column"><div class="details-section"><h4>Información</h4><p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p><p><strong>Descripción:</strong> ${d.descripcion}</p><p><strong>Proveedores:</strong></p><ul class="info-list">${proveedoresHtml}</ul><p><strong>Ubicaciones:</strong></p><ul class="info-list">${ubicacionesHtml}</ul><p><strong>Fechas:</strong> Compra: ${d.fecha_compra} | Ingreso: ${d.fecha_ingreso} | Vence: ${d.fecha_vencimiento}</p></div></div></div><div class="details-bottom-grid"><div class="details-section"><h4>Crear Vacuna Asociada</h4><form id="create-vacuna-form"><div class="management-grid"><div class="form-field"><label for="vacuna-nombre">Nombre:</label><input type="text" id="vacuna-nombre" required></div><div class="form-field"><label for="vacuna-tipo">Tipo:</label><input type="text" id="vacuna-tipo"></div><div class="form-field"><label for="vacuna-cantidad">Cantidad:</label><input type="number" step="0.01" id="vacuna-cantidad" required></div><div class="form-field"><label for="vacuna-unidad">Unidad Medida:</label><select id="vacuna-unidad"><option value="U">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option></select></div><div class="form-field"><label for="vacuna-fecha-compra">Fecha Compra:</label><input type="date" id="vacuna-fecha-compra" required></div><div class="form-field"><label for="vacuna-fecha-vencimiento">Fecha Vencimiento:</label><input type="date" id="vacuna-fecha-vencimiento" required></div><div class="form-field-full"><label for="vacuna-proveedores">Proveedores:</label><select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select></div><div class="form-field-full"><label for="vacuna-ubicaciones">Ubicaciones:</label><select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select></div><div class="form-field-full"><label for="vacuna-etiquetas">Etiquetas:</label><select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select></div><div class="form-field-full"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div><div class="form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div><div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div><div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div><div class="form-field-checkbox"><input type="checkbox" id="vacuna-disponible" checked><label for="vacuna-disponible">Disponible</label></div></div><button type="submit" class="panel-btn" style="margin-top: 1rem;">Crear Vacuna</button></form></div></div></div>`;
     }
 
     // --- MANEJO DE EVENTOS ---
@@ -241,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsContent.querySelector('#details-close-btn').addEventListener('click', closeDetailsModal);
         const singleItemType = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
 
-        if (['alimento', 'combustible', 'control-plaga'].includes(singleItemType)) {
+        if (['alimento', 'combustible', 'control-plaga', 'medicamento'].includes(singleItemType)) {
             detailsContent.querySelector('#dispatch-form').addEventListener('submit', (e) => handleDispatchSubmit(e, singleItemType));
             detailsContent.querySelector('#add-stock-form').addEventListener('submit', (e) => handleAddStockSubmit(e, singleItemType));
         }
@@ -263,7 +221,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
-
+        if (singleItemType === 'medicamento') {
+            detailsContent.querySelector('#create-vacuna-form').addEventListener('submit', handleCreateVacuna);
+        }
         if (singleItemType === 'alimento') {
             detailsContent.querySelector('#add-tag-form').addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
             detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', (e) => handleTagManagement(e, singleItemType, 'remove')));
@@ -312,7 +272,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleApiRequest(url, body, itemId, singleItemType) {
-        const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+        const csrfTokenElement = document.querySelector('input[name=csrfmiddlewaretoken]');
+        if (!csrfTokenElement) {
+            console.error('CSRF token not found!');
+            alert('Error de seguridad. Recargue la página.');
+            return;
+        }
+        const csrfToken = csrfTokenElement.value;
+
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -462,6 +429,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = event.target;
         const body = { [`${singleItemType}_id`]: form.dataset.id, nombre_categoria: form.querySelector('#new-category-name').value };
         handleApiRequest(`/${singleItemType}/crear_categoria/`, body, form.dataset.id, singleItemType);
+    }
+
+    async function handleCreateVacuna(event) {
+        event.preventDefault();
+        const form = event.target;
+        const getMultiSelectValues = (id) => Array.from(form.querySelector(id).selectedOptions).map(option => option.value);
+
+        const body = {
+            nombre: form.querySelector('#vacuna-nombre').value,
+            tipo: form.querySelector('#vacuna-tipo').value,
+            cantidad: form.querySelector('#vacuna-cantidad').value,
+            unidad_medida: form.querySelector('#vacuna-unidad').value,
+            fecha_compra: form.querySelector('#vacuna-fecha-compra').value,
+            fecha_vencimiento: form.querySelector('#vacuna-fecha-vencimiento').value,
+            proveedores: getMultiSelectValues('#vacuna-proveedores'),
+            ubicaciones: getMultiSelectValues('#vacuna-ubicaciones'),
+            etiquetas: getMultiSelectValues('#vacuna-etiquetas'),
+            descripcion: form.querySelector('#vacuna-descripcion').value,
+            dosis_crecimiento: form.querySelector('#vacuna-dosis-crecimiento').value,
+            dosis_edad: form.querySelector('#vacuna-dosis-edad').value,
+            dosis_peso: form.querySelector('#vacuna-dosis-peso').value,
+            disponible: form.querySelector('#vacuna-disponible').checked
+        };
+        
+        await handleApiRequest('/vacuna/crear/', body);
+        form.reset();
     }
 
     function renderInfoModal(title, details) {

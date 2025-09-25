@@ -139,7 +139,8 @@ class Vacuna(models.Model):
     tipo = models.CharField(max_length=100, blank=True)
     etiquetas = models.ManyToManyField('caracteristicas.Etiqueta', blank=True)
     disponible = models.BooleanField(default=True)
-    
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+
     cantidad = models.DecimalField("Cantidad", max_digits=10, decimal_places=2, default=0.0)
     unidad_medida = models.CharField(max_length=2, choices=UnidadMedida.choices, default=UnidadMedida.UNIDAD)
     

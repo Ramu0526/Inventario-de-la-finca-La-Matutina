@@ -39,6 +39,11 @@ urlpatterns = [
     path('comprador/detalles/<int:comprador_id>/', views.comprador_detalles_json, name='comprador_detalles_json'),
     path('comprador/crear/', views.crear_comprador_ajax, name='crear_comprador_ajax'),
 
+    # AÑADE ESTAS LÍNEAS PARA MEDICAMENTOS Y VACUNAS
+    path('medicamento/detalles/<int:medicamento_id>/', views.medicamento_detalles_json, name='medicamento_detalles_json'),
+    path('medicamento/actualizar_cantidad/', views.actualizar_cantidad_medicamento, name='actualizar_cantidad_medicamento'),
+    path('medicamento/anadir_stock/', views.anadir_stock_medicamento, name='anadir_stock_medicamento'),
+    path('vacuna/crear/', views.crear_vacuna_ajax, name='crear_vacuna_ajax'),
 
     # URLs para las listas de los modales
     path('alimentos/', views.lista_alimentos, name='lista_alimentos'),
