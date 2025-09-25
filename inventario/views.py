@@ -145,6 +145,7 @@ def alimento_detalles_json(request, alimento_id):
         'estado': estado,
         'fecha_compra': alimento.fecha_compra.strftime('%d/%m/%Y'),
         'fecha_vencimiento': alimento.fecha_vencimiento.strftime('%d/%m/%Y'),
+        'descripcion': alimento.descripcion or "No hay descripción.", # AÑADE ESTA LÍNEA
         'imagen_url': get_safe_image_url(alimento.imagen),
         'categoria': { 'id': alimento.categoria.id, 'nombre': alimento.categoria.nombre } if alimento.categoria else None,
         'proveedores': proveedores_data,
@@ -249,6 +250,7 @@ def combustible_detalles_json(request, combustible_id):
         'precio': str(combustible.precio),
         'proveedores': proveedores_data,
         'ubicaciones': ubicaciones_data,
+        'descripcion': combustible.descripcion or "No hay descripción.", # AÑADE ESTA LÍNEA
         'imagen_url': get_safe_image_url(combustible.imagen),
     }
     return JsonResponse(data)
@@ -607,3 +609,143 @@ def lista_productos_view(request):
             'items': data, 'total_pages': paginator.num_pages, 'current_page': page_obj.number
         })
     return JsonResponse({'status': 'error'}, status=400)
+
+# AÑADE ESTE CÓDIGO AL FINAL DE TUS VISTAS
+
+@login_required
+def control_plaga_detalles_json(request, control_plaga_id):
+    item = get_object_or_404(ControlPlaga, pk=control_plaga_id)
+
+    proveedores_data = [{
+        'nombre': p.nombre, 'nombre_local': p.nombre_local, 'correo': p.correo_electronico,
+        'telefono': p.telefono, 'imagen_url': get_safe_image_url(p.imagen)
+    } for p in item.proveedores.all()]
+
+    ubicaciones_data = [{
+        'nombre': u.nombre, 'barrio': u.barrio, 'direccion': u.direccion,
+        'link': u.link, 'imagen_url': get_safe_image_url(u.imagen)
+    } for u in item.ubicaciones.all()]
+
+    data = {
+        'id': item.id,
+        'nombre': item.nombre_producto,
+        'tipo': item.tipo,
+        'cantidad_ingresada': str(item.cantidad_ingresada),
+        'cantidad_usada': str(item.cantidad_usada),
+        'cantidad_restante': str(item.cantidad_restante),
+        'unidad_medida': item.get_unidad_medida_display(),
+        'precio': str(item.precio),
+        'proveedores': proveedores_data,
+        'ubicaciones': ubicaciones_data,
+        'fecha_compra': item.fecha_compra.strftime('%d/%m/%Y'),
+        'fecha_vencimiento': item.fecha_vencimiento.strftime('%d/%m/%Y'),
+        'descripcion': item.descripcion or "No hay descripción.", # AÑADE ESTA LÍNEA
+        'imagen_url': get_safe_image_url(item.imagen),
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def actualizar_cantidad_control_plaga(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('control_plaga_id')
+        cantidad_a_usar = Decimal(data.get('cantidad_a_usar'))
+        item = get_object_or_404(ControlPlaga, pk=item_id)
+
+        if cantidad_a_usar <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser mayor a cero.'}, status=400)
+        if cantidad_a_usar > item.cantidad_restante:
+            return JsonResponse({'status': 'error', 'message': 'No hay suficiente cantidad en inventario.'}, status=400)
+        
+        item.cantidad_usada += cantidad_a_usar
+        item.save()
+        return JsonResponse({
+            'status': 'success', 'message': 'Cantidad actualizada correctamente.'
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def anadir_stock_control_plaga(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('control_plaga_id')
+        cantidad_a_anadir = Decimal(data.get('cantidad_a_anadir'))
+
+        if cantidad_a_anadir <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad a añadir debe ser positiva.'}, status=400)
+        
+        item = get_object_or_404(ControlPlaga, pk=item_id)
+        item.cantidad_ingresada += cantidad_a_anadir
+        item.save()
+        return JsonResponse({
+            'status': 'success', 'message': 'Stock añadido correctamente.'
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+# AÑADE ESTE CÓDIGO AL FINAL DE TUS VISTAS
+from .models import LugarMantenimiento # Asegúrate de que LugarMantenimiento esté importado
+
+@login_required
+def mantenimiento_detalles_json(request, mantenimiento_id):
+    mantenimiento = get_object_or_404(Mantenimiento, pk=mantenimiento_id)
+    
+    lugares_data = []
+    for lugar in mantenimiento.lugares_mantenimiento.all():
+        lugares_data.append({
+            'id': lugar.id,
+            'nombre': lugar.nombre_lugar,
+        })
+
+    data = {
+        'id': mantenimiento.id,
+        'equipo': mantenimiento.equipo,
+        'fecha_ultimo_mantenimiento': mantenimiento.fecha_ultimo_mantenimiento.strftime('%Y-%m-%d'),
+        'fecha_proximo_mantenimiento': mantenimiento.fecha_proximo_mantenimiento.strftime('%Y-%m-%d'),
+        'completado': mantenimiento.completado,
+        'descripcion': mantenimiento.descripcion,
+        'lugares_mantenimiento': lugares_data,
+        'imagen_url': get_safe_image_url(mantenimiento.imagen),
+    }
+    return JsonResponse(data)
+
+@login_required
+def lugar_mantenimiento_detalles_json(request, lugar_id):
+    lugar = get_object_or_404(LugarMantenimiento, pk=lugar_id)
+
+    proveedores_data = [{'nombre': p.nombre} for p in lugar.proveedores.all()]
+    ubicaciones_data = [{'link': u.link} for u in lugar.ubicaciones.all() if u.link]
+
+    data = {
+        'nombre_lugar': lugar.nombre_lugar,
+        'nombre_empresa': lugar.nombre_empresa,
+        'correo': lugar.correo,
+        'numero': lugar.numero,
+        'descripcion': lugar.descripcion,
+        'proveedores': proveedores_data,
+        'ubicaciones': ubicaciones_data,
+    }
+    return JsonResponse(data)
+
+
+@require_POST
+@login_required
+def actualizar_mantenimiento(request):
+    try:
+        data = json.loads(request.body)
+        mantenimiento_id = data.get('mantenimiento_id')
+        
+        mantenimiento = get_object_or_404(Mantenimiento, pk=mantenimiento_id)
+        
+        mantenimiento.fecha_ultimo_mantenimiento = data.get('fecha_ultimo', mantenimiento.fecha_ultimo_mantenimiento)
+        mantenimiento.fecha_proximo_mantenimiento = data.get('fecha_proximo', mantenimiento.fecha_proximo_mantenimiento)
+        mantenimiento.completado = data.get('completado', mantenimiento.completado)
+        
+        mantenimiento.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'Mantenimiento actualizado correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

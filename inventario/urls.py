@@ -19,6 +19,16 @@ urlpatterns = [
     path('combustible/actualizar_cantidad/', views.actualizar_cantidad_combustible, name='actualizar_cantidad_combustible'),
     path('combustible/anadir_stock/', views.anadir_stock_combustible, name='anadir_stock_combustible'),
 
+    # AÑADE ESTAS LÍNEAS PARA CONTROL DE PLAGAS
+    path('control-plaga/detalles/<int:control_plaga_id>/', views.control_plaga_detalles_json, name='control_plaga_detalles_json'),
+    path('control-plaga/actualizar_cantidad/', views.actualizar_cantidad_control_plaga, name='actualizar_cantidad_control_plaga'),
+    path('control-plaga/anadir_stock/', views.anadir_stock_control_plaga, name='anadir_stock_control_plaga'),
+
+    # AÑADE ESTAS LÍNEAS PARA MANTENIMIENTO
+    path('mantenimiento/detalles/<int:mantenimiento_id>/', views.mantenimiento_detalles_json, name='mantenimiento_detalles_json'),
+    path('lugar-mantenimiento/detalles/<int:lugar_id>/', views.lugar_mantenimiento_detalles_json, name='lugar_mantenimiento_detalles_json'),
+    path('mantenimiento/actualizar/', views.actualizar_mantenimiento, name='actualizar_mantenimiento'),
+
     # URLs para las listas de los modales
     path('alimentos/', views.lista_alimentos, name='lista_alimentos'),
     path('combustibles/', views.lista_combustibles, name='lista_combustibles'),
