@@ -212,6 +212,20 @@
     <div id="details-modal" class="modal"><div class="modal-content details-content"></div></div>
     <div id="info-modal" class="modal"><div class="modal-content info-content"></div></div>
 
+    <!-- AÑADIR ESTE NUEVO MODAL PARA CREAR VACUNAS -->
+    <div id="crear-vacuna-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Crear Nueva Vacuna</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <hr class="separator">
+            <div class="modal-body">
+                <form id="create-vacuna-form"></form>
+            </div>
+        </div>
+    </div>
+
     <script src="{% static 'inventario/js/theme-toggle.js' %}"></script>
     <script src="{% static 'inventario/js/modalManager.js' %}"></script>
     <script>

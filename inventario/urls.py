@@ -44,10 +44,15 @@ urlpatterns = [
     path('medicamento/actualizar_cantidad/', views.actualizar_cantidad_medicamento, name='actualizar_cantidad_medicamento'),
     path('medicamento/anadir_stock/', views.anadir_stock_medicamento, name='anadir_stock_medicamento'),
     path('vacuna/crear/', views.crear_vacuna_ajax, name='crear_vacuna_ajax'),
+    path('vacuna/detalles/<int:vacuna_id>/', views.vacuna_detalles_json, name='vacuna_detalles_json'),
 
     # AÑADE ESTAS LÍNEAS PARA GANADO
     path('ganado/detalles/<int:ganado_id>/', views.ganado_detalles_json, name='ganado_detalles_json'),
     path('ganado/registrar_vacunacion/', views.registrar_vacunacion_ajax, name='registrar_vacunacion_ajax'),
+    path('ganado/editar_vacunacion/', views.editar_registro_vacunacion, name='editar_registro_vacunacion'),
+    path('ganado/eliminar_vacunacion/', views.eliminar_registro_vacunacion, name='eliminar_registro_vacunacion'),
+    path('ganado/actualizar/', views.actualizar_ganado_ajax, name='actualizar_ganado_ajax'),
+    path('get_vacuna_form_data/', views.get_vacuna_form_data, name='get_vacuna_form_data'),
     
 
     # URLs para las listas de los modales

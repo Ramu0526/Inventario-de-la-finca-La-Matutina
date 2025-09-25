@@ -178,6 +178,24 @@ def alimento_detalles_json(request, alimento_id):
 
 @require_POST
 @login_required
+def actualizar_ganado_ajax(request):
+    try:
+        data = json.loads(request.body)
+        ganado_id = data.get('ganado_id')
+        ganado = get_object_or_404(Ganado, pk=ganado_id)
+
+        ganado.peso_kg = data.get('peso_kg', ganado.peso_kg)
+        ganado.estado = data.get('estado', ganado.estado)
+        ganado.pene = data.get('pene', ganado.pene)
+        ganado.save()
+
+        log_user_action(request, ganado, CHANGE, "Datos del ganado actualizados desde el panel de usuario.")
+        return JsonResponse({'status': 'success', 'message': 'Datos del ganado actualizados.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
 def actualizar_cantidad_alimento(request):
     try:
         data = json.loads(request.body)
@@ -1052,6 +1070,31 @@ def get_vacuna_form_data(request):
     }
     return JsonResponse(data)
 
+@login_required
+def vacuna_detalles_json(request, vacuna_id):
+    vacuna = get_object_or_404(Vacuna, pk=vacuna_id)
+    
+    data = {
+        'id': vacuna.id,
+        'nombre': vacuna.nombre,
+        'tipo': vacuna.tipo,
+        'cantidad': str(vacuna.cantidad),
+        'unidad_medida': vacuna.get_unidad_medida_display(),
+        'dosis_crecimiento': vacuna.dosis_crecimiento,
+        'dosis_edad': vacuna.dosis_edad,
+        'dosis_peso': vacuna.dosis_peso,
+        'descripcion': vacuna.descripcion or "No hay descripción.",
+        'disponible': vacuna.disponible,  # Devuelve booleano
+        'precio': str(vacuna.precio),  # Devuelve número como cadena
+        'fecha_compra': vacuna.fecha_compra.strftime('%d/%m/%Y') if vacuna.fecha_compra else '',
+        'fecha_vencimiento': vacuna.fecha_vencimiento.strftime('%d/%m/%Y') if vacuna.fecha_vencimiento else '',
+        'proveedores': list(vacuna.proveedores.values('id', 'nombre')),  # Devuelve lista de objetos
+        'ubicaciones': list(vacuna.ubicaciones.values('id', 'nombre')),  # Devuelve lista de objetos
+        'etiquetas': list(vacuna.etiquetas.values('id', 'nombre')),  # Devuelve lista de objetos
+        'imagen_url': get_safe_image_url(vacuna.imagen),
+    }
+    return JsonResponse(data)
+
 # AÑADE ESTE CÓDIGO AL FINAL DE TUS VISTAS
 
 @login_required
@@ -1061,9 +1104,12 @@ def ganado_detalles_json(request, ganado_id):
     # Historial de vacunación del animal
     vacunaciones = ganado.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
     historial_vacunacion = [{
+        'id': reg.id,
+        'vacuna_id': reg.vacuna.id,
         'vacuna_nombre': reg.vacuna.nombre,
         'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
         'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
+        'notas': reg.notas or 'No hay notas.',
     } for reg in vacunaciones]
 
     data = {
@@ -1073,10 +1119,10 @@ def ganado_detalles_json(request, ganado_id):
         'raza': ganado.raza,
         'genero': ganado.get_genero_display(),
         'peso_kg': str(ganado.peso_kg),
-        'edad': ganado.edad,
-        'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d'),
+        'edad': ganado.edad if ganado.fecha_nacimiento else 'N/A', # Comprobación añadida
+        'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d') if ganado.fecha_nacimiento else '', # Comprobación añadida
         'estado': ganado.estado,
-        'parto': ganado.parto,
+        'pene': ganado.pene,
         'descripcion': ganado.descripcion or "No hay descripción.",
         'imagen_url': get_safe_image_url(ganado.imagen),
         'historial_vacunacion': historial_vacunacion,
@@ -1095,7 +1141,8 @@ def registrar_vacunacion_ajax(request):
         vacuna_id = data.get('vacuna_id')
         fecha_aplicacion = data.get('fecha_aplicacion')
         fecha_proxima_dosis = data.get('fecha_proxima_dosis') or None
-        
+        notas = data.get('notas', '')
+
         ganado = get_object_or_404(Ganado, pk=ganado_id)
         vacuna = get_object_or_404(Vacuna, pk=vacuna_id)
 
@@ -1103,11 +1150,51 @@ def registrar_vacunacion_ajax(request):
             ganado=ganado,
             vacuna=vacuna,
             fecha_aplicacion=fecha_aplicacion,
-            fecha_proxima_dosis=fecha_proxima_dosis
+            fecha_proxima_dosis=fecha_proxima_dosis,
+            notas=notas
         )
         
         log_user_action(request, registro, ADDITION, f"Registró vacunación de {vacuna.nombre} a {ganado.identificador}.")
         
         return JsonResponse({'status': 'success', 'message': 'Vacunación registrada correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def editar_registro_vacunacion(request):
+    try:
+        data = json.loads(request.body)
+        registro_id = data.get('registro_id')
+        registro = get_object_or_404(RegistroVacunacion, pk=registro_id)
+
+        registro.fecha_aplicacion = data.get('fecha_aplicacion', registro.fecha_aplicacion)
+        registro.fecha_proxima_dosis = data.get('fecha_proxima_dosis', registro.fecha_proxima_dosis)
+        registro.notas = data.get('notas', registro.notas)
+        registro.save()
+
+        log_user_action(request, registro, CHANGE, "Registro de vacunación actualizado.")
+        return JsonResponse({'status': 'success', 'message': 'Registro actualizado.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def eliminar_registro_vacunacion(request):
+    try:
+        data = json.loads(request.body)
+        registro_id = data.get('registro_id')
+        registro = get_object_or_404(RegistroVacunacion, pk=registro_id)
+        
+        # Guardar una referencia antes de eliminar para el log
+        ganado_identificador = registro.ganado.identificador
+        vacuna_nombre = registro.vacuna.nombre
+        
+        registro.delete()
+        
+        # No se puede usar log_user_action porque el objeto ya no existe.
+        # Podrías crear un log manual si es necesario.
+        
+        return JsonResponse({'status': 'success', 'message': f'Se eliminó el registro de {vacuna_nombre} para {ganado_identificador}.'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

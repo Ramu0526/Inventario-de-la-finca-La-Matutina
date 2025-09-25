@@ -364,3 +364,36 @@ body.dark-mode .tag-item {
         grid-column: 1 / -1;
     }
 }
+
+/* --- ESTILOS MEJORADOS PARA FILTROS --- */
+.filters-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-input, .filter-select {
+    padding: 0.6rem 1rem;
+    border: 1px solid #444;
+    background-color: #2a2a2a;
+    color: #f1f1f1;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    flex-grow: 1;
+}
+
+.filter-input::placeholder {
+    color: #888;
+}
+
+.filter-input:focus, .filter-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.filter-select {
+    cursor: pointer;
+}

@@ -69,13 +69,14 @@ class ProductoAdmin(ImagenAdminMixin):
 class RegistroVacunacionInline(admin.TabularInline):
     model = RegistroVacunacion
     fields = ('vacuna', 'fecha_aplicacion', 'fecha_proxima_dosis', 'notas')
+    readonly_fields = ()
     can_delete = True
     extra = 1
     autocomplete_fields = ['vacuna']
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'parto', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'pene', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('animal', 'genero', 'estado')
     search_fields = ('identificador', 'animal__nombre', 'raza')
@@ -87,7 +88,7 @@ class GanadoAdmin(ImagenAdminMixin):
             'fields': ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'imagen', 'descripcion')
         }),
         ('Fechas y Estado', {
-            'fields': ('fecha_nacimiento', 'edad', 'estado', 'parto')
+            'fields': ('fecha_nacimiento', 'edad', 'estado', 'pene')
         }),
     )
 

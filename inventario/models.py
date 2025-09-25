@@ -68,7 +68,7 @@ class Ganado(models.Model):
         FALLECIDO = 'FALLECIDO', 'Fallecido'
         VENDIDO = 'VENDIDO', 'Vendido'
 
-    class TipoParto(models.TextChoices):
+    class Pene(models.TextChoices):
         NATURAL = 'NATURAL', 'Natural'
         INSEMINACION = 'INSEMINACION', 'Inseminación'
         ARTIFICIAL = 'ARTIFICIAL', 'Artificial'
@@ -83,7 +83,7 @@ class Ganado(models.Model):
     fecha_nacimiento = models.DateField()
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
     
-    parto = models.CharField(max_length=15, choices=TipoParto.choices, default=TipoParto.NO_APLICA)
+    pene = models.CharField(max_length=15, choices=Pene.choices, default=Pene.NO_APLICA)
 
     imagen = CloudinaryField('image', folder='ganado', null=True, blank=True)
     descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Notas o descripción del animal.")
