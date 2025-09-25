@@ -29,6 +29,17 @@ urlpatterns = [
     path('lugar-mantenimiento/detalles/<int:lugar_id>/', views.lugar_mantenimiento_detalles_json, name='lugar_mantenimiento_detalles_json'),
     path('mantenimiento/actualizar/', views.actualizar_mantenimiento, name='actualizar_mantenimiento'),
 
+    # AÑADE ESTAS LÍNEAS PARA POTREROS
+    path('potrero/detalles/<int:potrero_id>/', views.potrero_detalles_json, name='potrero_detalles_json'),
+    path('potrero/actualizar/', views.actualizar_potrero, name='actualizar_potrero'),
+
+    # AÑADE ESTAS LÍNEAS PARA PRODUCTOS
+    path('producto/detalles/<int:producto_id>/', views.producto_detalles_json, name='producto_detalles_json'),
+    path('producto/actualizar/', views.actualizar_producto, name='actualizar_producto'),
+    path('comprador/detalles/<int:comprador_id>/', views.comprador_detalles_json, name='comprador_detalles_json'),
+    path('comprador/crear/', views.crear_comprador_ajax, name='crear_comprador_ajax'),
+
+
     # URLs para las listas de los modales
     path('alimentos/', views.lista_alimentos, name='lista_alimentos'),
     path('combustibles/', views.lista_combustibles, name='lista_combustibles'),

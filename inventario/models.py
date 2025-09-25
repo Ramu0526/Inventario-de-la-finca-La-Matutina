@@ -7,16 +7,28 @@ from django.utils import timezone
 import datetime
 from dateutil.relativedelta import relativedelta
 
+# inventario/models.py
+
 class Producto(models.Model):
     class UnidadMedida(models.TextChoices):
         UNIDADES = 'U', 'Unidades'
         KILOGRAMOS = 'Kg', 'Kilogramos (Kg)'
         LITROS = 'L', 'Litros (L)'
-    
+
+    # AÑADE ESTA SECCIÓN PARA EL ESTADO
+    class EstadoProducto(models.TextChoices):
+        DISPONIBLE = 'DISPONIBLE', 'Disponible'
+        APARTADO = 'APARTADO', 'Apartado'
+        VENDIDO = 'VENDIDO', 'Vendido'
+
     nombre = models.CharField(max_length=100)
     categoria = models.ForeignKey('caracteristicas.Categoria', on_delete=models.SET_NULL, null=True)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     unidad_medida = models.CharField(max_length=2, choices=UnidadMedida.choices, default=UnidadMedida.UNIDADES)
+    
+    # AÑADE EL NUEVO CAMPO 'estado'
+    estado = models.CharField(max_length=10, choices=EstadoProducto.choices, default=EstadoProducto.DISPONIBLE)
+
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     ubicaciones = models.ManyToManyField('caracteristicas.Ubicacion', blank=True, related_name="productos_ubicados")
     fecha_produccion = models.DateField(default=timezone.now)
@@ -33,7 +45,6 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.cantidad} {self.get_unidad_medida_display()})"
-
 
 class Animal(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -357,6 +368,8 @@ class VentaProducto(models.Model):
     producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
     comprador = models.ForeignKey('Comprador', on_delete=models.CASCADE)
     valor_compra = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_abono = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+
     
     class Meta:
         verbose_name = 'Venta de Producto'

@@ -37,19 +37,19 @@ class VentaProductoInline(admin.TabularInline):
 
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
+    # CAMBIA la línea 'list_display' para incluir el estado
+    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'estado', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
     list_per_page = 10
-    list_filter = ('categoria', 'ubicaciones', 'unidad_medida')
+    # AÑADE 'estado' a los filtros
+    list_filter = ('categoria', 'estado', 'ubicaciones', 'unidad_medida')
     search_fields = ('nombre', 'categoria__nombre')
-
-    readonly_fields = ('precio_total_display',)
 
     fieldsets = (
         (None, {
             'fields': ('nombre', 'categoria', 'ubicaciones', 'imagen', 'descripcion')
         }),
         ('Cantidad y Precio', {
-            'fields': (('cantidad', 'unidad_medida'), 'precio', 'precio_total_display')
+            'fields': (('cantidad', 'unidad_medida'), 'precio')
         }),
         ('Fechas', {
             'fields': ('fecha_produccion', 'fecha_venta')

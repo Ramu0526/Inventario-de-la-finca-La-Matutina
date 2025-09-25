@@ -1,6 +1,6 @@
 # inventario/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal
+from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal, VentaProducto
 from caracteristicas.models import Etiqueta, Categoria, Proveedor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
@@ -12,6 +12,24 @@ import json
 from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
+from .models import Comprador # Asegúrate de importar Comprador
+
+from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
+from django.contrib.contenttypes.models import ContentType
+
+# --- FUNCIÓN AUXILIAR NUEVA PARA CREAR REGISTROS EN EL HISTORIAL ---
+def log_user_action(request, obj, action_flag, message):
+    """
+    Crea una entrada en el historial (LogEntry) para una acción específica.
+    """
+    LogEntry.objects.log_action(
+        user_id=request.user.id,
+        content_type_id=ContentType.objects.get_for_model(obj).pk,
+        object_id=obj.pk,
+        object_repr=str(obj),
+        action_flag=action_flag,
+        change_message=message
+    )
 
 def get_safe_image_url(image_field):
     """
@@ -168,8 +186,13 @@ def actualizar_cantidad_alimento(request):
             return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser mayor a cero.'}, status=400)
         if cantidad_a_usar > alimento.cantidad_kg_restante:
             return JsonResponse({'status': 'error', 'message': 'No hay suficiente cantidad en inventario.'}, status=400)
+        
         alimento.cantidad_kg_usada += cantidad_a_usar
         alimento.save()
+        
+        # AÑADIDO: Registrar en el historial
+        log_user_action(request, alimento, CHANGE, f"Usó {cantidad_a_usar} Kg desde el panel de usuario.")
+
         return JsonResponse({
             'status': 'success', 'message': 'Cantidad actualizada correctamente.',
             'nueva_cantidad_usada': alimento.cantidad_kg_usada,
@@ -347,7 +370,6 @@ def anadir_stock_alimento(request):
         data = json.loads(request.body)
         alimento_id = data.get('alimento_id')
         cantidad_a_anadir = Decimal(data.get('cantidad_a_anadir'))
-        
         if not isinstance(cantidad_a_anadir, Decimal) or cantidad_a_anadir <= 0:
             return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser un número positivo.'}, status=400)
 
@@ -355,17 +377,18 @@ def anadir_stock_alimento(request):
         alimento.cantidad_kg_ingresada += cantidad_a_anadir
         alimento.save()
 
+        # AÑADIDO: Registrar en el historial
+        log_user_action(request, alimento, CHANGE, f"Añadió {cantidad_a_anadir} Kg de stock desde el panel de usuario.")
+
         return JsonResponse({
             'status': 'success',
             'message': 'Stock añadido correctamente.',
             'nueva_cantidad_ingresada': alimento.cantidad_kg_ingresada,
             'nueva_cantidad_restante': alimento.cantidad_kg_restante,
         })
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({'status': 'error', 'message': 'Datos inválidos.'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
+        
 @require_POST
 @login_required
 def crear_etiqueta_ajax(request):
@@ -737,15 +760,177 @@ def actualizar_mantenimiento(request):
     try:
         data = json.loads(request.body)
         mantenimiento_id = data.get('mantenimiento_id')
-        
         mantenimiento = get_object_or_404(Mantenimiento, pk=mantenimiento_id)
         
         mantenimiento.fecha_ultimo_mantenimiento = data.get('fecha_ultimo', mantenimiento.fecha_ultimo_mantenimiento)
         mantenimiento.fecha_proximo_mantenimiento = data.get('fecha_proximo', mantenimiento.fecha_proximo_mantenimiento)
         mantenimiento.completado = data.get('completado', mantenimiento.completado)
-        
         mantenimiento.save()
         
+        # AÑADIDO: Registrar en el historial
+        log_user_action(request, mantenimiento, CHANGE, "Mantenimiento actualizado desde el panel de usuario.")
+        
         return JsonResponse({'status': 'success', 'message': 'Mantenimiento actualizado correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+# AÑADE ESTE CÓDIGO AL FINAL DE TUS VISTAS
+@login_required
+def potrero_detalles_json(request, potrero_id):
+    potrero = get_object_or_404(Potrero, pk=potrero_id)
+    
+    # Obtenemos todos los potreros excepto el actual para la lista de intercambio
+    otros_potreros = Potrero.objects.exclude(pk=potrero_id).values('id', 'nombre')
+
+    data = {
+        'id': potrero.id,
+        'nombre': potrero.nombre,
+        'area_hectareas': str(potrero.area_hectareas),
+        'empastado': potrero.empastado,
+        'fumigado': potrero.fumigado,
+        'rozado': potrero.rozado,
+        'fecha_proximo_empaste': potrero.fecha_proximo_empaste.strftime('%Y-%m-%d') if potrero.fecha_proximo_empaste else '',
+        'fecha_proxima_fumigacion': potrero.fecha_proxima_fumigacion.strftime('%Y-%m-%d') if potrero.fecha_proxima_fumigacion else '',
+        'fecha_proximo_rozado': potrero.fecha_proximo_rozado.strftime('%Y-%m-%d') if potrero.fecha_proximo_rozado else '',
+        'intercambio_con_potrero_id': potrero.intercambio_con_potrero.id if potrero.intercambio_con_potrero else None,
+        'fecha_intercambio': potrero.fecha_intercambio.strftime('%Y-%m-%d') if potrero.fecha_intercambio else '',
+        'descripcion': potrero.descripcion,
+        'imagen_url': get_safe_image_url(potrero.imagen),
+        'otros_potreros': list(otros_potreros),
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def actualizar_potrero(request):
+    try:
+        data = json.loads(request.body)
+        potrero_id = data.get('potrero_id')
+        potrero = get_object_or_404(Potrero, pk=potrero_id)
+        
+        potrero.empastado = data.get('empastado', potrero.empastado)
+        potrero.fumigado = data.get('fumigado', potrero.fumigado)
+        potrero.rozado = data.get('rozado', potrero.rozado)
+        potrero.fecha_proximo_empaste = data.get('fecha_proximo_empaste') or None
+        potrero.fecha_proxima_fumigacion = data.get('fecha_proxima_fumigacion') or None
+        potrero.fecha_proximo_rozado = data.get('fecha_proximo_rozado') or None
+        potrero.fecha_intercambio = data.get('fecha_intercambio') or None
+        
+        intercambio_id = data.get('intercambio_con_potrero_id')
+        if intercambio_id:
+            potrero.intercambio_con_potrero = get_object_or_404(Potrero, pk=intercambio_id)
+        else:
+            potrero.intercambio_con_potrero = None
+            
+        potrero.save()
+        
+        # AÑADIDO: Registrar en el historial
+        log_user_action(request, potrero, CHANGE, "Potrero actualizado desde el panel de usuario.")
+
+        return JsonResponse({'status': 'success', 'message': 'Potrero actualizado correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def producto_detalles_json(request, producto_id):
+    producto = get_object_or_404(Producto, pk=producto_id)
+    
+    venta = producto.ventaproducto_set.first()
+    comprador_info = None
+    if venta:
+        comprador_info = {
+            'id': venta.comprador.id,
+            'nombre': venta.comprador.nombre,
+            'valor_compra': str(venta.valor_compra),
+            'valor_abono': str(venta.valor_abono)  # AÑADE ESTA LÍNEA
+        }
+
+    data = {
+        'id': producto.id,
+        'nombre': producto.nombre,
+        'categoria': {'nombre': producto.categoria.nombre} if producto.categoria else None,
+        'descripcion': producto.descripcion or "No hay descripción.",
+        'cantidad': str(producto.cantidad),
+        'unidad_medida': producto.get_unidad_medida_display(),
+        'estado': producto.estado,
+        'precio': str(producto.precio),
+        'precio_total': str(producto.precio_total),
+        'fecha_produccion': producto.fecha_produccion.strftime('%Y-%m-%d'),
+        'fecha_venta': producto.fecha_venta.strftime('%Y-%m-%d') if producto.fecha_venta else '',
+        'comprador_info': comprador_info,
+        'ubicaciones': list(producto.ubicaciones.values('nombre', 'barrio', 'direccion', 'link', 'imagen')),
+        'imagen_url': get_safe_image_url(producto.imagen),
+        'todos_los_compradores': list(Comprador.objects.values('id', 'nombre')),
+    }
+    return JsonResponse(data)
+
+@login_required
+def comprador_detalles_json(request, comprador_id):
+    comprador = get_object_or_404(Comprador, pk=comprador_id)
+    data = {
+        'nombre': comprador.nombre,
+        'telefono': comprador.telefono
+    }
+    return JsonResponse(data)
+
+@require_POST
+@login_required
+def actualizar_producto(request):
+    try:
+        data = json.loads(request.body)
+        producto_id = data.get('producto_id')
+        producto = get_object_or_404(Producto, pk=producto_id)
+
+        producto.estado = data.get('estado', producto.estado)
+        producto.fecha_venta = data.get('fecha_venta') or None
+        
+        comprador_id = data.get('comprador_id')
+        valor_compra = data.get('valor_compra')
+        valor_abono = data.get('valor_abono', 0.0)
+
+        producto.ventaproducto_set.all().delete()
+
+        if comprador_id and valor_compra:
+            comprador = get_object_or_404(Comprador, pk=comprador_id)
+            VentaProducto.objects.create(
+                producto=producto,
+                comprador=comprador,
+                valor_compra=Decimal(valor_compra),
+                valor_abono=Decimal(valor_abono)
+            )
+        
+        producto.save()
+        
+        # AÑADIDO: Registrar en el historial
+        log_user_action(request, producto, CHANGE, "Producto actualizado desde el panel de usuario.")
+
+        return JsonResponse({'status': 'success', 'message': 'Producto actualizado.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def crear_comprador_ajax(request):
+    try:
+        data = json.loads(request.body)
+        nombre = data.get('nombre', '').strip()
+        telefono = data.get('telefono', '').strip()
+
+        if not nombre:
+            return JsonResponse({'status': 'error', 'message': 'El nombre no puede estar vacío.'}, status=400)
+        
+        if Comprador.objects.filter(nombre__iexact=nombre).exists():
+            return JsonResponse({'status': 'error', 'message': 'Ya existe un comprador con este nombre.'}, status=400)
+
+        nuevo_comprador = Comprador.objects.create(nombre=nombre, telefono=telefono)
+        
+        # AÑADIDO: Registrar la creación en el historial
+        log_user_action(request, nuevo_comprador, ADDITION, "Comprador creado desde el panel de usuario.")
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Comprador creado correctamente.',
+            'nuevo_comprador': { 'id': nuevo_comprador.id, 'nombre': nuevo_comprador.nombre }
+        })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
