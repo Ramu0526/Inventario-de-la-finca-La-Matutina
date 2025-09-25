@@ -5,7 +5,7 @@ from caracteristicas.models import Etiqueta
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
     Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento,
-    Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto
+    Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto, RegistroMedicamento
 )
 
 class ImagenAdminMixin(admin.ModelAdmin):
@@ -74,12 +74,19 @@ class RegistroVacunacionInline(admin.TabularInline):
     extra = 1
     autocomplete_fields = ['vacuna']
 
+class RegistroMedicamentoInline(admin.TabularInline):
+    model = RegistroMedicamento
+    fields = ('medicamento', 'fecha_aplicacion', 'notas')
+    autocomplete_fields = ['medicamento']
+    extra = 1
+
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'pene', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'estado_salud', 'pene', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
-    list_filter = ('animal', 'genero', 'estado')
+    list_filter = ('animal', 'genero', 'estado', 'estado_salud')
     search_fields = ('identificador', 'animal__nombre', 'raza')
+    list_editable = ('estado_salud',)
     
     readonly_fields = ('edad',)
 
@@ -88,11 +95,11 @@ class GanadoAdmin(ImagenAdminMixin):
             'fields': ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'imagen', 'descripcion')
         }),
         ('Fechas y Estado', {
-            'fields': ('fecha_nacimiento', 'edad', 'estado', 'pene')
+            'fields': ('fecha_nacimiento', 'edad', 'estado', 'estado_salud', 'pene')
         }),
     )
 
-    inlines = [RegistroVacunacionInline]
+    inlines = [RegistroVacunacionInline, RegistroMedicamentoInline]
 
     def edad(self, obj):
         return obj.edad

@@ -51,6 +51,9 @@ urlpatterns = [
     path('ganado/registrar_vacunacion/', views.registrar_vacunacion_ajax, name='registrar_vacunacion_ajax'),
     path('ganado/editar_vacunacion/', views.editar_registro_vacunacion, name='editar_registro_vacunacion'),
     path('ganado/eliminar_vacunacion/', views.eliminar_registro_vacunacion, name='eliminar_registro_vacunacion'),
+    path('ganado/registrar_medicamento/', views.registrar_medicamento_ajax, name='registrar_medicamento_ajax'),
+    path('ganado/editar_medicamento/', views.editar_registro_medicamento, name='editar_registro_medicamento'),
+    path('ganado/eliminar_medicamento/', views.eliminar_registro_medicamento, name='eliminar_registro_medicamento'),
     path('ganado/actualizar/', views.actualizar_ganado_ajax, name='actualizar_ganado_ajax'),
     path('get_vacuna_form_data/', views.get_vacuna_form_data, name='get_vacuna_form_data'),
     

@@ -295,26 +295,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderGanadoDetails(d) {
-        const historialHtml = d.historial_vacunacion.length > 0 ?
+        const historialVacunacionHtml = d.historial_vacunacion.length > 0 ?
             d.historial_vacunacion.map(v => `
                 <li class="info-list-item">
                     <span>${v.fecha_aplicacion}: ${v.vacuna_nombre} (Próx: ${v.fecha_proxima_dosis})</span>
                     <div class="historial-acciones">
                         <button class="panel-btn-sm view-vacuna-btn" data-id="${v.vacuna_id}">Ver Vacuna</button>
-                        <button class="panel-btn-sm view-note-btn" data-id="${v.id}" data-notas="${v.notas}">Ver Nota</button>
+                        <button class="panel-btn-sm view-note-btn" data-notas="${v.notas}">Ver Nota</button>
                         <button class="panel-btn-sm edit-vacunacion-btn" data-id="${v.id}">Editar</button>
                         <button class="panel-btn-sm delete-vacunacion-btn" data-id="${v.id}">Eliminar</button>
                     </div>
-                </li>`).join('') :
-            '<li>Sin registros.</li>';
-    
+                </li>`).join('') : '<li>Sin registros.</li>';
+
+        const historialMedicamentosHtml = d.historial_medicamentos.length > 0 ?
+            d.historial_medicamentos.map(m => `
+                <li class="info-list-item">
+                    <span>${m.fecha_aplicacion}: ${m.medicamento_nombre}</span>
+                    <div class="historial-acciones">
+                        <button class="panel-btn-sm view-medicamento-btn" data-id="${m.medicamento_id}">Ver Medicamento</button>
+                        <button class="panel-btn-sm view-note-btn" data-notas="${m.notas}">Ver Nota</button>
+                        <button class="panel-btn-sm edit-medicamento-btn" data-id="${m.id}">Editar</button>
+                        <button class="panel-btn-sm delete-medicamento-btn" data-id="${m.id}">Eliminar</button>
+                    </div>
+                </li>`).join('') : '<li>Sin registros.</li>';
+
         const vacunasOptions = d.todas_las_vacunas.map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
-    
+        const medicamentosOptions = d.todos_los_medicamentos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+        const estadosSaludOptions = d.todos_los_estados_salud.map(e => `<option value="${e.value}" ${d.estado_salud === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
+
         return `
             <div class="modal-header"><h2>${d.identificador} - ${d.animal}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
             <hr class="separator">
             <div class="modal-body">
-                <div class="details-grid">
+                <div class="details-grid-ganado">
                     <div class="details-left-column">
                         ${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.identificador}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
                         <div class="details-section">
@@ -326,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <p><strong>Edad:</strong> ${d.edad}</p>
                                 <p><strong>Fecha de Nacimiento:</strong> ${d.fecha_nacimiento}</p>
                                 <div class="form-field"><label for="ganado-estado">Estado:</label><select id="ganado-estado"><option value="VIVO" ${d.estado === 'VIVO' ? 'selected' : ''}>Vivo</option><option value="FALLECIDO" ${d.estado === 'FALLECIDO' ? 'selected' : ''}>Fallecido</option><option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option></select></div>
+                                <div class="form-field"><label for="ganado-estado-salud">Estado de Salud:</label><select id="ganado-estado-salud">${estadosSaludOptions}</select></div>
                                 <div class="form-field"><label for="ganado-pene">Peñe:</label><select id="ganado-pene"><option value="NATURAL" ${d.pene === 'NATURAL' ? 'selected' : ''}>Natural</option><option value="INSEMINACION" ${d.pene === 'INSEMINACION' ? 'selected' : ''}>Inseminación</option><option value="ARTIFICIAL" ${d.pene === 'ARTIFICIAL' ? 'selected' : ''}>Artificial</option><option value="NO_APLICA" ${d.pene === 'NO_APLICA' ? 'selected' : ''}>No Aplica</option></select></div>
                                 <p><strong>Descripción:</strong> ${d.descripcion}</p>
                                 <button type="submit" class="panel-btn">Guardar Cambios</button>
@@ -335,22 +349,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="details-right-column">
                         <div class="details-section">
                             <h4>Historial de Vacunación</h4>
-                            <ul class="info-list">${historialHtml}</ul>
+                            <ul class="info-list">${historialVacunacionHtml}</ul>
                         </div>
                         <div class="details-section">
                             <h4>Registrar Nueva Vacunación</h4>
                             <form id="registrar-vacunacion-form" data-id="${d.id}">
-                                <div class="form-field">
-                                    <label for="vacuna-select">Vacuna a aplicar:</label>
-                                    <select id="vacuna-select" required>
-                                        <option value="">Seleccione...</option>${vacunasOptions}
-                                    </select>
-                                </div>
+                                <div class="form-field"><label for="vacuna-select">Vacuna:</label><select id="vacuna-select" required><option value="">Seleccione...</option>${vacunasOptions}</select></div>
                                 <div id="vacuna-details-preview" class="details-preview"></div>
-                                <div class="form-field"><label for="fecha-aplicacion">Fecha de Aplicación:</label><input type="date" id="fecha-aplicacion" required></div>
-                                <div class="form-field"><label for="fecha-proxima">Próxima Dosis (Opcional):</label><input type="date" id="fecha-proxima"></div>
+                                <div class="form-field"><label for="fecha-aplicacion-vacuna">Fecha Aplicación:</label><input type="date" id="fecha-aplicacion-vacuna" required></div>
+                                <div class="form-field"><label for="fecha-proxima-vacuna">Próxima Dosis:</label><input type="date" id="fecha-proxima-vacuna"></div>
                                 <div class="form-field"><label for="vacunacion-notas">Notas:</label><textarea id="vacunacion-notas"></textarea></div>
-                                <button type="submit" class="panel-btn">Registrar</button>
+                                <button type="submit" class="panel-btn">Registrar Vacuna</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="details-bottom-column">
+                        <div class="details-section">
+                            <h4>Historial de Medicamentos</h4>
+                            <ul class="info-list">${historialMedicamentosHtml}</ul>
+                        </div>
+                        <div class="details-section">
+                            <h4>Registrar Nuevo Medicamento</h4>
+                            <form id="registrar-medicamento-form" data-id="${d.id}">
+                                <div class="form-field"><label for="medicamento-select">Medicamento:</label><select id="medicamento-select" required><option value="">Seleccione...</option>${medicamentosOptions}</select></div>
+                                <div class="form-field"><label for="fecha-aplicacion-medicamento">Fecha Aplicación:</label><input type="date" id="fecha-aplicacion-medicamento" required></div>
+                                <div class="form-field"><label for="medicamento-notas">Notas:</label><textarea id="medicamento-notas"></textarea></div>
+                                <button type="submit" class="panel-btn">Registrar Medicamento</button>
                             </form>
                         </div>
                     </div>
@@ -361,91 +385,121 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MANEJO DE EVENTOS ---
     
     function attachCommonListeners(data, itemType) {
-        detailsContent.querySelector('#details-close-btn').addEventListener('click', closeDetailsModal);
-        const singleItemType = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
+        const closeBtn = detailsContent.querySelector('#details-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closeDetailsModal);
 
-        if (['alimento', 'combustible', 'control-plaga', 'medicamento'].includes(singleItemType)) {
-            detailsContent.querySelector('#dispatch-form').addEventListener('submit', (e) => handleDispatchSubmit(e, singleItemType));
-            detailsContent.querySelector('#add-stock-form').addEventListener('submit', (e) => handleAddStockSubmit(e, singleItemType));
-        }
-        if (singleItemType === 'mantenimiento') detailsContent.querySelector('#update-mantenimiento-form').addEventListener('submit', handleUpdateMantenimiento);
-        if (singleItemType === 'potrero') detailsContent.querySelector('#update-potrero-form').addEventListener('submit', handleUpdatePotrero);
-        if (singleItemType === 'producto') {
-            detailsContent.querySelector('#update-producto-form').addEventListener('submit', handleUpdateProducto);
-            detailsContent.querySelector('#create-comprador-form').addEventListener('submit', handleCreateComprador);
-            const verCompradorBtn = detailsContent.querySelector('#ver-comprador-btn');
-            if(verCompradorBtn) {
-                verCompradorBtn.addEventListener('click', async () => {
-                    if (data.comprador_info && data.comprador_info.id) {
-                        try {
-                            const response = await fetch(`/comprador/detalles/${data.comprador_info.id}/`);
-                            const compradorData = await response.json();
-                            renderCompradorInfoModal(compradorData, data.comprador_info.valor_compra);
-                        } catch(e) { console.error(e); alert("Error al cargar detalles del comprador."); }
-                    }
-                });
-            }
-        }
-        if (singleItemType === 'medicamento') {
-            const crearVacunaBtn = detailsContent.querySelector('#crear-vacuna-btn');
-            if (crearVacunaBtn) {
-                crearVacunaBtn.addEventListener('click', () => {
-                    const crearVacunaModal = document.getElementById('crear-vacuna-modal');
-                    if (crearVacunaModal) {
-                        setupCreateVacunaModal(); // Llama a la configuración del modal de creación de vacunas
-                        crearVacunaModal.style.display = 'block';
-                    }
-                });
-            }
-        }
-        if (singleItemType === 'alimento') {
-            detailsContent.querySelector('#add-tag-form').addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
-            detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', (e) => handleTagManagement(e, singleItemType, 'remove')));
-            detailsContent.querySelector('#create-tag-form').addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
-            detailsContent.querySelector('#create-subtag-form').addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
-            detailsContent.querySelector('#assign-category-form').addEventListener('submit', (e) => handleAssignCategory(e, singleItemType));
-            detailsContent.querySelector('#create-category-form').addEventListener('submit', (e) => handleCreateCategory(e, singleItemType));
-            detailsContent.querySelector('#add-subtag-form').addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
-            const addSubtagParentSelect = detailsContent.querySelector('#add-subtag-parent-select');
-            if (addSubtagParentSelect) {
-                addSubtagParentSelect.addEventListener('change', async (e) => {
-                    const parentId = e.target.value;
-                    const subtagSelect = detailsContent.querySelector('#add-subtag-select');
-                    subtagSelect.innerHTML = '<option value="">Cargando...</option>';
-                    if (!parentId) { subtagSelect.innerHTML = '<option value="">Sub-Etiqueta...</option>'; return; }
+        const singleItemType = itemType.endsWith('s') && itemType !== 'ganado' ? itemType.slice(0, -1) : itemType;
+
+        const dispatchForm = detailsContent.querySelector('#dispatch-form');
+        if (dispatchForm) dispatchForm.addEventListener('submit', (e) => handleDispatchSubmit(e, singleItemType));
+
+        const addStockForm = detailsContent.querySelector('#add-stock-form');
+        if (addStockForm) addStockForm.addEventListener('submit', (e) => handleAddStockSubmit(e, singleItemType));
+
+        const updateMantenimientoForm = detailsContent.querySelector('#update-mantenimiento-form');
+        if (updateMantenimientoForm) updateMantenimientoForm.addEventListener('submit', handleUpdateMantenimiento);
+
+        const updatePotreroForm = detailsContent.querySelector('#update-potrero-form');
+        if (updatePotreroForm) updatePotreroForm.addEventListener('submit', handleUpdatePotrero);
+        
+        const updateProductoForm = detailsContent.querySelector('#update-producto-form');
+        if (updateProductoForm) updateProductoForm.addEventListener('submit', handleUpdateProducto);
+
+        const createCompradorForm = detailsContent.querySelector('#create-comprador-form');
+        if (createCompradorForm) createCompradorForm.addEventListener('submit', handleCreateComprador);
+
+        const verCompradorBtn = detailsContent.querySelector('#ver-comprador-btn');
+        if (verCompradorBtn) {
+            verCompradorBtn.addEventListener('click', async () => {
+                if (data.comprador_info && data.comprador_info.id) {
                     try {
-                        const response = await fetch(`/admin/get_sub_etiquetas/?parent_ids=${parentId}`);
-                        const subEtiquetas = await response.json();
-                        let options = '<option value="">Seleccione...</option>';
-                        for (const [id, nombre] of Object.entries(subEtiquetas)) {
-                            if (!data.etiquetas.some(t => t.id === parseInt(id))) options += `<option value="${id}">${nombre}</option>`;
-                        }
-                        subtagSelect.innerHTML = options;
-                    } catch (error) {
-                        subtagSelect.innerHTML = '<option value="">Error</option>';
+                        const response = await fetch(`/comprador/detalles/${data.comprador_info.id}/`);
+                        const compradorData = await response.json();
+                        renderCompradorInfoModal(compradorData, data.comprador_info.valor_compra);
+                    } catch(e) { console.error(e); alert("Error al cargar detalles del comprador."); }
+                }
+            });
+        }
+        
+        const crearVacunaBtn = detailsContent.querySelector('#crear-vacuna-btn');
+        if (crearVacunaBtn) {
+            crearVacunaBtn.addEventListener('click', () => {
+                const crearVacunaModal = document.getElementById('crear-vacuna-modal');
+                if (crearVacunaModal) {
+                    setupCreateVacunaModal();
+                    crearVacunaModal.style.display = 'block';
+                }
+            });
+        }
+
+        const addTagForm = detailsContent.querySelector('#add-tag-form');
+        if (addTagForm) addTagForm.addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
+        detailsContent.querySelectorAll('.remove-tag-btn').forEach(btn => btn.addEventListener('click', (e) => handleTagManagement(e, singleItemType, 'remove')));
+        const createTagForm = detailsContent.querySelector('#create-tag-form');
+        if(createTagForm) createTagForm.addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
+        const createSubtagForm = detailsContent.querySelector('#create-subtag-form');
+        if(createSubtagForm) createSubtagForm.addEventListener('submit', (e) => handleCreateTag(e, singleItemType));
+        const assignCategoryForm = detailsContent.querySelector('#assign-category-form');
+        if(assignCategoryForm) assignCategoryForm.addEventListener('submit', (e) => handleAssignCategory(e, singleItemType));
+        const createCategoryForm = detailsContent.querySelector('#create-category-form');
+        if(createCategoryForm) createCategoryForm.addEventListener('submit', (e) => handleCreateCategory(e, singleItemType));
+        const addSubtagForm = detailsContent.querySelector('#add-subtag-form');
+        if(addSubtagForm) addSubtagForm.addEventListener('submit', (e) => handleTagManagement(e, singleItemType));
+
+        const addSubtagParentSelect = detailsContent.querySelector('#add-subtag-parent-select');
+        if (addSubtagParentSelect) {
+            addSubtagParentSelect.addEventListener('change', async (e) => {
+                const parentId = e.target.value;
+                const subtagSelect = detailsContent.querySelector('#add-subtag-select');
+                if (!subtagSelect) return;
+                subtagSelect.innerHTML = '<option value="">Cargando...</option>';
+                if (!parentId) { subtagSelect.innerHTML = '<option value="">Sub-Etiqueta...</option>'; return; }
+                try {
+                    const response = await fetch(`/admin/get_sub_etiquetas/?parent_ids=${parentId}`);
+                    const subEtiquetas = await response.json();
+                    let options = '<option value="">Seleccione...</option>';
+                    for (const [id, nombre] of Object.entries(subEtiquetas)) {
+                        if (!data.etiquetas.some(t => t.id === parseInt(id))) options += `<option value="${id}">${nombre}</option>`;
                     }
-                });
-            }
+                    subtagSelect.innerHTML = options;
+                } catch (error) {
+                    subtagSelect.innerHTML = '<option value="">Error</option>';
+                }
+            });
         }
-        if (singleItemType === 'ganado') {
-            detailsContent.querySelector('#registrar-vacunacion-form').addEventListener('submit', handleRegistrarVacunacion);
-            detailsContent.querySelectorAll('.view-note-btn').forEach(btn => btn.addEventListener('click', handleViewNote));
-            detailsContent.querySelector('#update-ganado-form').addEventListener('submit', handleUpdateGanado);
-            detailsContent.querySelectorAll('.view-vacuna-btn').forEach(btn => btn.addEventListener('click', handleViewVacuna));
-            detailsContent.querySelectorAll('.edit-vacunacion-btn').forEach(btn => btn.addEventListener('click', (event) => handleEditVacunacion(event, data)));
-            detailsContent.querySelectorAll('.delete-vacunacion-btn').forEach(btn => btn.addEventListener('click', (event) => handleDeleteVacunacion(event, data)));
-            const vacunaSelect = detailsContent.querySelector('#vacuna-select');
-            if (vacunaSelect) {
-                vacunaSelect.addEventListener('change', handleVacunaSelectChange);
-            }
+
+        // Ganado-specific listeners
+        const updateGanadoForm = detailsContent.querySelector('#update-ganado-form');
+        if (updateGanadoForm) updateGanadoForm.addEventListener('submit', handleUpdateGanado);
+
+        detailsContent.querySelectorAll('.view-note-btn').forEach(btn => btn.addEventListener('click', handleViewNote));
+        
+        const registrarVacunacionForm = detailsContent.querySelector('#registrar-vacunacion-form');
+        if(registrarVacunacionForm) registrarVacunacionForm.addEventListener('submit', handleRegistrarVacunacion);
+        
+        detailsContent.querySelectorAll('.view-vacuna-btn').forEach(btn => btn.addEventListener('click', handleViewVacuna));
+        detailsContent.querySelectorAll('.edit-vacunacion-btn').forEach(btn => btn.addEventListener('click', (event) => handleEditVacunacion(event, data)));
+        detailsContent.querySelectorAll('.delete-vacunacion-btn').forEach(btn => btn.addEventListener('click', (event) => handleDeleteVacunacion(event, data)));
+        
+        const vacunaSelect = detailsContent.querySelector('#vacuna-select');
+        if (vacunaSelect) {
+            vacunaSelect.addEventListener('change', handleVacunaSelectChange);
         }
+
+        const registrarMedicamentoForm = detailsContent.querySelector('#registrar-medicamento-form');
+        if(registrarMedicamentoForm) registrarMedicamentoForm.addEventListener('submit', (event) => handleRegistrarMedicamento(event, data));
+        
+        detailsContent.querySelectorAll('.view-medicamento-btn').forEach(btn => btn.addEventListener('click', (event) => handleViewMedicamento(event)));
+        detailsContent.querySelectorAll('.edit-medicamento-btn').forEach(btn => btn.addEventListener('click', (event) => handleEditMedicamento(event, data)));
+        detailsContent.querySelectorAll('.delete-medicamento-btn').forEach(btn => btn.addEventListener('click', (event) => handleDeleteMedicamento(event, data)));
+        
         detailsContent.querySelectorAll('.info-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const type = button.dataset.type;
                 const id = button.dataset.id;
                 const index = button.dataset.index;
-                if (type === 'proveedor') renderInfoModal('Proveedor', data.proveedores[index]);
-                if (type === 'ubicacion') renderInfoModal('Ubicación', data.ubicaciones[index]);
+                if (type === 'proveedor' && data.proveedores) renderInfoModal('Proveedor', data.proveedores[index]);
+                if (type === 'ubicacion' && data.ubicaciones) renderInfoModal('Ubicación', data.ubicaciones[index]);
                 if (type === 'lugar-mantenimiento') {
                     try {
                         const response = await fetch(`/lugar-mantenimiento/detalles/${id}/`);
@@ -476,13 +530,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert(result.message);
                 if (itemId && singleItemType) {
-                    // Force a full reload of the details modal to re-attach all listeners
-                    const response = await fetch(`/${singleItemType}/detalles/${itemId}/`);
-                    if (!response.ok) throw new Error('Error al recargar los datos del item.');
-                    const updatedDetails = await response.json();
-                    renderDetailsModal(updatedDetails, singleItemType.endsWith('s') ? singleItemType : singleItemType + 's');
+                    const detailsResponse = await fetch(`/${singleItemType}/detalles/${itemId}/`);
+                    if (!detailsResponse.ok) throw new Error('Error al recargar los datos del item.');
+                    const updatedDetails = await detailsResponse.json();
+                    const pluralItemType = singleItemType === 'ganado' ? 'ganado' : singleItemType + 's';
+                    renderDetailsModal(updatedDetails, pluralItemType);
                 } else {
-                    // If no item ID is available, simply close the modal as a fallback
                     closeDetailsModal();
                 }
             } else {
@@ -655,8 +708,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = {
             ganado_id: form.dataset.id,
             vacuna_id: form.querySelector('#vacuna-select').value,
-            fecha_aplicacion: form.querySelector('#fecha-aplicacion').value,
-            fecha_proxima_dosis: form.querySelector('#fecha-proxima').value,
+            fecha_aplicacion: form.querySelector('#fecha-aplicacion-vacuna').value,
+            fecha_proxima_dosis: form.querySelector('#fecha-proxima-vacuna').value,
             notas: form.querySelector('#vacunacion-notas').value,
         };
         handleApiRequest('/ganado/registrar_vacunacion/', body, form.dataset.id, 'ganado');
@@ -664,34 +717,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleViewNote(event) {
         const notas = event.target.dataset.notas;
-        alert(notas);
+        infoContent.innerHTML = `<div class="modal-header"><h2>Nota</h2><span class="close-btn" id="info-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><p>${notas}</p></div>`;
+        infoModal.style.display = 'block';
+        infoContent.querySelector('#info-close-btn').addEventListener('click', closeInfoModal);
     }
 
     function handleEditVacunacion(event, ganadoData) {
         const registroId = event.target.dataset.id;
         const registro = ganadoData.historial_vacunacion.find(r => r.id == registroId);
+        if (!registro) return alert('No se encontró el registro de vacunación.');
 
-        if (!registro) {
-            alert('No se encontró el registro de vacunación.');
-            return;
-        }
-
-        // Convert dd/mm/yyyy to yyyy-mm-dd for the prompt default value
-        const fechaAplicacionParts = registro.fecha_aplicacion.split('/');
-        const fechaAplicacionISO = `${fechaAplicacionParts[2]}-${fechaAplicacionParts[1]}-${fechaAplicacionParts[0]}`;
-        
+        const fechaAplicacionISO = registro.fecha_aplicacion.split('/').reverse().join('-');
         let fechaProximaDosisISO = '';
         if (registro.fecha_proxima_dosis && registro.fecha_proxima_dosis !== 'N/A') {
-            const fechaProximaParts = registro.fecha_proxima_dosis.split('/');
-            fechaProximaDosisISO = `${fechaProximaParts[2]}-${fechaProximaParts[1]}-${fechaProximaParts[0]}`;
+            fechaProximaDosisISO = registro.fecha_proxima_dosis.split('/').reverse().join('-');
         }
 
         const nuevaFechaAplicacion = prompt("Editar Fecha de Aplicación (YYYY-MM-DD):", fechaAplicacionISO);
         if (nuevaFechaAplicacion === null) return;
-
         const nuevaFechaProxima = prompt("Editar Próxima Dosis (YYYY-MM-DD, opcional):", fechaProximaDosisISO);
         if (nuevaFechaProxima === null) return;
-
         const nuevasNotas = prompt("Editar Notas:", registro.notas === 'No hay notas.' ? '' : registro.notas);
         if (nuevasNotas === null) return;
         
@@ -701,7 +746,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fecha_proxima_dosis: nuevaFechaProxima || null,
             notas: nuevasNotas,
         };
-
         handleApiRequest('/ganado/editar_vacunacion/', body, ganadoData.id, 'ganado');
     }
 
@@ -711,59 +755,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/vacuna/detalles/${vacunaId}/`);
             if (!response.ok) throw new Error('No se pudo cargar la información de la vacuna.');
             const data = await response.json();
-    
             const formatList = (items) => items.length > 0 ? `<ul class="info-list">${items.map(item => `<li class="info-list-item">${item.nombre}</li>`).join('')}</ul>` : '<p>N/A</p>';
-    
             let contentHtml = `
                 <div class="details-grid">
                     <div class="details-left-column">
                         ${data.imagen_url ? `<img src="${data.imagen_url}" alt="${data.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
-                        <div class="details-section">
-                            <h4>Información Principal</h4>
-                            <p><strong>Nombre:</strong> ${data.nombre}</p>
-                            <p><strong>Tipo:</strong> ${data.tipo || 'N/A'}</p>
-                            <p><strong>Cantidad Restante:</strong> ${data.cantidad} ${data.unidad_medida}</p>
-                            <p><strong>Precio:</strong> $${parseFloat(data.precio).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            <p><strong>Disponible:</strong> <span class="status-${data.disponible ? 'disponible' : 'agotado'}">${data.disponible ? 'Sí' : 'No'}</span></p>
-                        </div>
-                        <div class="details-section">
-                            <h4>Dosis Recomendadas</h4>
-                            <p><strong>Crecimiento:</strong> ${data.dosis_crecimiento || 'N/A'}</p>
-                            <p><strong>Edad:</strong> ${data.dosis_edad || 'N/A'}</p>
-                            <p><strong>Peso:</strong> ${data.dosis_peso || 'N/A'}</p>
-                        </div>
+                        <div class="details-section"><h4>Información Principal</h4><p><strong>Nombre:</strong> ${data.nombre}</p><p><strong>Tipo:</strong> ${data.tipo || 'N/A'}</p><p><strong>Cantidad Restante:</strong> ${data.cantidad} ${data.unidad_medida}</p><p><strong>Precio:</strong> $${parseFloat(data.precio).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p><strong>Disponible:</strong> <span class="status-${data.disponible ? 'disponible' : 'agotado'}">${data.disponible ? 'Sí' : 'No'}</span></p></div>
+                        <div class="details-section"><h4>Dosis Recomendadas</h4><p><strong>Crecimiento:</strong> ${data.dosis_crecimiento || 'N/A'}</p><p><strong>Edad:</strong> ${data.dosis_edad || 'N/A'}</p><p><strong>Peso:</strong> ${data.dosis_peso || 'N/A'}</p></div>
                     </div>
                     <div class="details-right-column">
-                        <div class="details-section">
-                            <h4>Información Adicional</h4>
-                            <p><strong>Fechas:</strong> Compra: ${data.fecha_compra || 'N/A'} | Vence: ${data.fecha_vencimiento || 'N/A'}</p>
-                            <p><strong>Descripción:</strong></p>
-                            <p>${data.descripcion || 'No hay descripción.'}</p>
-                        </div>
-                        <div class="details-section">
-                            <h4>Proveedores</h4>
-                            ${formatList(data.proveedores)}
-                        </div>
-                        <div class="details-section">
-                            <h4>Ubicaciones</h4>
-                            ${formatList(data.ubicaciones)}
-                        </div>
-                        <div class="details-section">
-                            <h4>Etiquetas</h4>
-                            ${formatList(data.etiquetas)}
-                        </div>
+                        <div class="details-section"><h4>Información Adicional</h4><p><strong>Fechas:</strong> Compra: ${data.fecha_compra || 'N/A'} | Vence: ${data.fecha_vencimiento || 'N/A'}</p><p><strong>Descripción:</strong></p><p>${data.descripcion || 'No hay descripción.'}</p></div>
+                        <div class="details-section"><h4>Proveedores</h4>${formatList(data.proveedores)}</div>
+                        <div class="details-section"><h4>Ubicaciones</h4>${formatList(data.ubicaciones)}</div>
+                        <div class="details-section"><h4>Etiquetas</h4>${formatList(data.etiquetas)}</div>
                     </div>
-                </div>
-            `;
-    
-            infoContent.innerHTML = `
-                <div class="modal-header"><h2>Detalles de la Vacuna</h2><span class="close-btn" id="info-close-btn">&times;</span></div>
-                <hr class="separator">
-                <div class="modal-body">${contentHtml}</div>
-            `;
+                </div>`;
+            infoContent.innerHTML = `<div class="modal-header"><h2>Detalles de la Vacuna</h2><span class="close-btn" id="info-close-btn">&times;</span></div><hr class="separator"><div class="modal-body">${contentHtml}</div>`;
             infoModal.style.display = 'block';
             infoContent.querySelector('#info-close-btn').addEventListener('click', closeInfoModal);
+        } catch (error) {
+            alert(error.message);
+        }
+    }
     
+    async function handleViewMedicamento(event) {
+        const medicamentoId = event.target.dataset.id;
+        try {
+            const response = await fetch(`/medicamento/detalles/${medicamentoId}/`);
+            if (!response.ok) throw new Error('No se pudo cargar la información del medicamento.');
+            const data = await response.json();
+            let contentHtml = `
+                <div class="details-grid">
+                    <div class="details-left-column">
+                        ${data.imagen_url ? `<img src="${data.imagen_url}" alt="${data.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
+                        <div class="details-section"><h4>Información</h4><p><strong>Categoría:</strong> ${data.categoria ? data.categoria.nombre : 'N/A'}</p><p><strong>Descripción:</strong> ${data.descripcion}</p><p><strong>Fechas:</strong> Compra: ${data.fecha_compra} | Vence: ${data.fecha_vencimiento}</p></div>
+                    </div>
+                    <div class="details-right-column">
+                        <div class="details-section"><h4>Inventario</h4><p><strong>Restante:</strong> ${data.cantidad_restante} ${data.unidad_medida}</p><p><strong>Precio:</strong> $${data.precio}</p></div>
+                    </div>
+                </div>`;
+            infoContent.innerHTML = `<div class="modal-header"><h2>Detalles del Medicamento</h2><span class="close-btn" id="info-close-btn">&times;</span></div><hr class="separator"><div class="modal-body">${contentHtml}</div>`;
+            infoModal.style.display = 'block';
+            infoContent.querySelector('#info-close-btn').addEventListener('click', closeInfoModal);
         } catch (error) {
             alert(error.message);
         }
@@ -776,6 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ganado_id: form.dataset.id,
             peso_kg: form.querySelector('#ganado-peso').value,
             estado: form.querySelector('#ganado-estado').value,
+            estado_salud: form.querySelector('#ganado-estado-salud').value,
             pene: form.querySelector('#ganado-pene').value,
         };
         handleApiRequest('/ganado/actualizar/', body, form.dataset.id, 'ganado');
@@ -786,6 +820,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('¿Está seguro de que desea eliminar este registro de vacunación?')) {
             const body = { registro_id: registroId };
             handleApiRequest('/ganado/eliminar_vacunacion/', body, ganadoData.id, 'ganado');
+        }
+    }
+
+    async function handleRegistrarMedicamento(event, ganadoData) {
+        event.preventDefault();
+        const form = event.target;
+        const body = {
+            ganado_id: form.dataset.id,
+            medicamento_id: form.querySelector('#medicamento-select').value,
+            fecha_aplicacion: form.querySelector('#fecha-aplicacion-medicamento').value,
+            notas: form.querySelector('#medicamento-notas').value,
+        };
+        handleApiRequest('/ganado/registrar_medicamento/', body, form.dataset.id, 'ganado');
+    }
+
+    function handleEditMedicamento(event, ganadoData) {
+        const registroId = event.target.dataset.id;
+        const registro = ganadoData.historial_medicamentos.find(r => r.id == registroId);
+        if (!registro) return alert('No se encontró el registro del medicamento.');
+
+        const fechaAplicacionISO = registro.fecha_aplicacion.split('/').reverse().join('-');
+        const nuevaFechaAplicacion = prompt("Editar Fecha de Aplicación (YYYY-MM-DD):", fechaAplicacionISO);
+        if (nuevaFechaAplicacion === null) return;
+        const nuevasNotas = prompt("Editar Notas:", registro.notas === 'No hay notas.' ? '' : registro.notas);
+        if (nuevasNotas === null) return;
+        
+        const body = {
+            registro_id: registroId,
+            fecha_aplicacion: nuevaFechaAplicacion,
+            notas: nuevasNotas,
+        };
+        handleApiRequest('/ganado/editar_medicamento/', body, ganadoData.id, 'ganado');
+    }
+
+    function handleDeleteMedicamento(event, ganadoData) {
+        const registroId = event.target.dataset.id;
+        if (confirm('¿Está seguro de que desea eliminar este registro de medicamento?')) {
+            const body = { registro_id: registroId };
+            handleApiRequest('/ganado/eliminar_medicamento/', body, ganadoData.id, 'ganado');
         }
     }
 

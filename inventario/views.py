@@ -1,6 +1,7 @@
 # inventario/views.py
+from django.db.models import F
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal, VentaProducto
+from .models import Producto, Alimento, Combustible, ControlPlaga, Ganado, Mantenimiento, Medicamento, Potrero, Animal, VentaProducto, RegistroMedicamento
 from caracteristicas.models import Etiqueta, Categoria, Proveedor, Ubicacion
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
@@ -12,8 +13,8 @@ import json
 from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from .models import Comprador # Asegúrate de importar Comprador
-from .models import Vacuna, RegistroVacunacion # Asegúrate de que Vacuna esté importado
+from .models import Comprador
+from .models import Vacuna, RegistroVacunacion
 
 
 from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
@@ -186,6 +187,7 @@ def actualizar_ganado_ajax(request):
 
         ganado.peso_kg = data.get('peso_kg', ganado.peso_kg)
         ganado.estado = data.get('estado', ganado.estado)
+        ganado.estado_salud = data.get('estado_salud', ganado.estado_salud)
         ganado.pene = data.get('pene', ganado.pene)
         ganado.save()
 
@@ -1101,34 +1103,40 @@ def vacuna_detalles_json(request, vacuna_id):
 def ganado_detalles_json(request, ganado_id):
     ganado = get_object_or_404(Ganado, pk=ganado_id)
     
-    # Historial de vacunación del animal
+    # Historial de vacunación
     vacunaciones = ganado.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
     historial_vacunacion = [{
-        'id': reg.id,
-        'vacuna_id': reg.vacuna.id,
-        'vacuna_nombre': reg.vacuna.nombre,
+        'id': reg.id, 'vacuna_id': reg.vacuna.id, 'vacuna_nombre': reg.vacuna.nombre,
         'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
         'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
         'notas': reg.notas or 'No hay notas.',
     } for reg in vacunaciones]
 
+    # Historial de medicamentos
+    medicamentos_aplicados = ganado.medicamentos_aplicados.select_related('medicamento').order_by('-fecha_aplicacion')
+    historial_medicamentos = [{
+        'id': reg.id, 'medicamento_id': reg.medicamento.id, 'medicamento_nombre': reg.medicamento.nombre,
+        'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+        'notas': reg.notas or 'No hay notas.',
+    } for reg in medicamentos_aplicados]
+
+    estados_salud = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoSalud.choices]
+
     data = {
-        'id': ganado.id,
-        'identificador': ganado.identificador,
-        'animal': ganado.animal.nombre if ganado.animal else 'N/A',
-        'raza': ganado.raza,
-        'genero': ganado.get_genero_display(),
-        'peso_kg': str(ganado.peso_kg),
-        'edad': ganado.edad if ganado.fecha_nacimiento else 'N/A', # Comprobación añadida
-        'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d') if ganado.fecha_nacimiento else '', # Comprobación añadida
-        'estado': ganado.estado,
-        'pene': ganado.pene,
+        'id': ganado.id, 'identificador': ganado.identificador,
+        'animal': ganado.animal.nombre if ganado.animal else 'N/A', 'raza': ganado.raza,
+        'genero': ganado.get_genero_display(), 'peso_kg': str(ganado.peso_kg),
+        'edad': ganado.edad if ganado.fecha_nacimiento else 'N/A',
+        'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d') if ganado.fecha_nacimiento else '',
+        'estado': ganado.estado, 'estado_salud': ganado.estado_salud, 'pene': ganado.pene,
         'descripcion': ganado.descripcion or "No hay descripción.",
         'imagen_url': get_safe_image_url(ganado.imagen),
         'historial_vacunacion': historial_vacunacion,
+        'historial_medicamentos': historial_medicamentos,
         # Datos para los formularios
-        'todos_los_tipos_animal': list(Animal.objects.values('id', 'nombre')),
         'todas_las_vacunas': list(Vacuna.objects.filter(disponible=True).values('id', 'nombre')),
+        'todos_los_medicamentos': list(Medicamento.objects.filter(cantidad_ingresada__gt=F('cantidad_usada')).values('id', 'nombre')),
+        'todos_los_estados_salud': estados_salud,
     }
     return JsonResponse(data)
 
@@ -1196,5 +1204,65 @@ def eliminar_registro_vacunacion(request):
         # Podrías crear un log manual si es necesario.
         
         return JsonResponse({'status': 'success', 'message': f'Se eliminó el registro de {vacuna_nombre} para {ganado_identificador}.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def registrar_medicamento_ajax(request):
+    try:
+        data = json.loads(request.body)
+        ganado_id = data.get('ganado_id')
+        medicamento_id = data.get('medicamento_id')
+        fecha_aplicacion = data.get('fecha_aplicacion')
+        notas = data.get('notas', '')
+
+        ganado = get_object_or_404(Ganado, pk=ganado_id)
+        medicamento = get_object_or_404(Medicamento, pk=medicamento_id)
+
+        registro = RegistroMedicamento.objects.create(
+            ganado=ganado,
+            medicamento=medicamento,
+            fecha_aplicacion=fecha_aplicacion,
+            notas=notas
+        )
+        
+        log_user_action(request, registro, ADDITION, f"Registró aplicación de {medicamento.nombre} a {ganado.identificador}.")
+        
+        return JsonResponse({'status': 'success', 'message': 'Medicamento registrado correctamente.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def editar_registro_medicamento(request):
+    try:
+        data = json.loads(request.body)
+        registro_id = data.get('registro_id')
+        registro = get_object_or_404(RegistroMedicamento, pk=registro_id)
+
+        registro.fecha_aplicacion = data.get('fecha_aplicacion', registro.fecha_aplicacion)
+        registro.notas = data.get('notas', registro.notas)
+        registro.save()
+
+        log_user_action(request, registro, CHANGE, "Registro de medicamento actualizado.")
+        return JsonResponse({'status': 'success', 'message': 'Registro actualizado.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
+def eliminar_registro_medicamento(request):
+    try:
+        data = json.loads(request.body)
+        registro_id = data.get('registro_id')
+        registro = get_object_or_404(RegistroMedicamento, pk=registro_id)
+        
+        ganado_identificador = registro.ganado.identificador
+        medicamento_nombre = registro.medicamento.nombre
+        
+        registro.delete()
+        
+        return JsonResponse({'status': 'success', 'message': f'Se eliminó el registro de {medicamento_nombre} para {ganado_identificador}.'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

@@ -74,6 +74,13 @@ class Ganado(models.Model):
         ARTIFICIAL = 'ARTIFICIAL', 'Artificial'
         NO_APLICA = 'NO_APLICA', 'No Aplica'
 
+    class EstadoSalud(models.TextChoices):
+        ENFERMA = 'ENFERMA', 'Enferma'
+        TRATAMIENTO = 'TRATAMIENTO', 'En Tratamiento'
+        RECUPERANDOSE = 'RECUPERANDOSE', 'Recuperándose'
+        CURADA = 'CURADA', 'Curada'
+        NO_TIENE_NADA = 'NO_TIENE_NADA', 'No tiene nada'
+
     identificador = models.CharField(max_length=50, unique=True, help_text="Ej: Arete N° 123")
     animal = models.ForeignKey('Animal', on_delete=models.SET_NULL, null=True, verbose_name="Tipo de Animal")
     raza = models.CharField("Raza", max_length=100, blank=True, help_text="Ej: Holstein, Angus")
@@ -82,6 +89,7 @@ class Ganado(models.Model):
     
     fecha_nacimiento = models.DateField()
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
+    estado_salud = models.CharField(max_length=20, choices=EstadoSalud.choices, default=EstadoSalud.NO_TIENE_NADA)
     
     pene = models.CharField(max_length=15, choices=Pene.choices, default=Pene.NO_APLICA)
 
@@ -180,6 +188,21 @@ class RegistroVacunacion(models.Model):
 
     def __str__(self):
         return f"Vacunación de {self.ganado.identificador} con {self.vacuna.nombre}"
+
+
+class RegistroMedicamento(models.Model):
+    ganado = models.ForeignKey('Ganado', on_delete=models.CASCADE, related_name='medicamentos_aplicados')
+    medicamento = models.ForeignKey('Medicamento', on_delete=models.CASCADE, related_name='registros_aplicacion')
+    fecha_aplicacion = models.DateField(default=timezone.now)
+    notas = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Registro de Medicamento'
+        verbose_name_plural = 'Registros de Medicamentos'
+        ordering = ['-fecha_aplicacion']
+
+    def __str__(self):
+        return f"Aplicación de {self.medicamento.nombre} a {self.ganado.identificador}"
 
 
 class Alimento(models.Model):
