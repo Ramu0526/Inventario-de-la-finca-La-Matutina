@@ -21,51 +21,51 @@ class Migration(migrations.Migration):
         #     name='comprador',
         #     field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Comprador'),
         # ),
-        migrations.AddField(
-            model_name='ganado',
-            name='comprador_telefono',
-            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Teléfono del Comprador'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='crecimiento',
-            field=models.CharField(choices=[('MENOR', 'Menor'), ('ADULTO', 'Adulto')], default='MENOR', max_length=10, verbose_name='Crecimiento'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='descripcion_peñe',
-            field=models.TextField(blank=True, max_length=1000, null=True, verbose_name='Descripción del Peñe'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='estado_salud',
-            field=models.CharField(choices=[('ENFERMA', 'Enferma'), ('TRATAMIENTO', 'En Tratamiento'), ('RECUPERANDOSE', 'Recuperándose'), ('CURADA', 'Curada'), ('NO_TIENE_NADA', 'No tiene nada')], default='NO_TIENE_NADA', max_length=20),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='fecha_fallecimiento',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de Fallecimiento'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='fecha_peñe',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de Peñe'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='fecha_venta',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de Venta'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='peñe',
-            field=models.CharField(choices=[('NATURAL', 'Natural'), ('INSEMINACION', 'Inseminación'), ('ARTIFICIAL', 'Artificial'), ('NO_APLICA', 'No Aplica')], default='NO_APLICA', max_length=15, verbose_name='Tipo de Peñe'),
-        ),
-        migrations.AddField(
-            model_name='ganado',
-            name='valor_venta',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Valor de Venta'),
-        ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='comprador_telefono',
+        #     field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Teléfono del Comprador'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='crecimiento',
+        #     field=models.CharField(choices=[('MENOR', 'Menor'), ('ADULTO', 'Adulto')], default='MENOR', max_length=10, verbose_name='Crecimiento'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='descripcion_peñe',
+        #     field=models.TextField(blank=True, max_length=1000, null=True, verbose_name='Descripción del Peñe'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='estado_salud',
+        #     field=models.CharField(choices=[('ENFERMA', 'Enferma'), ('TRATAMIENTO', 'En Tratamiento'), ('RECUPERANDOSE', 'Recuperándose'), ('CURADA', 'Curada'), ('NO_TIENE_NADA', 'No tiene nada')], default='NO_TIENE_NADA', max_length=20),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='fecha_fallecimiento',
+        #     field=models.DateField(blank=True, null=True, verbose_name='Fecha de Fallecimiento'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='fecha_peñe',
+        #     field=models.DateField(blank=True, null=True, verbose_name='Fecha de Peñe'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='fecha_venta',
+        #     field=models.DateField(blank=True, null=True, verbose_name='Fecha de Venta'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='peñe',
+        #     field=models.CharField(choices=[('NATURAL', 'Natural'), ('INSEMINACION', 'Inseminación'), ('ARTIFICIAL', 'Artificial'), ('NO_APLICA', 'No Aplica')], default='NO_APLICA', max_length=15, verbose_name='Tipo de Peñe'),
+        # ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='valor_venta',
+        #     field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Valor de Venta'),
+        # ),
         migrations.CreateModel(
             name='RegistroMedicamento',
             fields=[
