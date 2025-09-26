@@ -10,8 +10,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='ganado',
-            name='parto',
-        ),
+        # migrations.RemoveField(
+        #     model_name='ganado',
+        #     name='parto',
+        # ),
     ]
