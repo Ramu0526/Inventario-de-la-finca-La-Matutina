@@ -16,11 +16,11 @@ class Migration(migrations.Migration):
         #     model_name='ganado',
         #     name='parto',
         # ),
-        migrations.AddField(
-            model_name='ganado',
-            name='comprador',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Comprador'),
-        ),
+        # migrations.AddField(
+        #     model_name='ganado',
+        #     name='comprador',
+        #     field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Comprador'),
+        # ),
         migrations.AddField(
             model_name='ganado',
             name='comprador_telefono',
