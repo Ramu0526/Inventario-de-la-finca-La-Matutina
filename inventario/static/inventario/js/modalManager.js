@@ -324,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const estadosSaludOptions = d.todos_los_estados_salud.map(e => `<option value="${e.value}" ${d.estado_salud === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
         const tiposPeñeOptions = d.todos_los_tipos_peñe.map(p => `<option value="${p.value}" ${d.peñe === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
         const estadosAnimalOptions = d.todos_los_estados.map(e => `<option value="${e.value}" ${d.estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
+        const crecimientoOptions = d.todos_los_crecimientos.map(c => `<option value="${c.value}" ${d.crecimiento === c.value ? 'selected' : ''}>${c.label}</option>`).join('');
 
         return `
             <div class="modal-header"><h2>${d.identificador} - ${d.animal}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
