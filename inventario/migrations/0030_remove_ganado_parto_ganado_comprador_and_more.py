@@ -66,19 +66,19 @@ class Migration(migrations.Migration):
         #     name='valor_venta',
         #     field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Valor de Venta'),
         # ),
-        migrations.CreateModel(
-            name='RegistroMedicamento',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha_aplicacion', models.DateField(default=django.utils.timezone.now)),
-                ('notas', models.TextField(blank=True)),
-                ('ganado', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='medicamentos_aplicados', to='inventario.ganado')),
-                ('medicamento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_aplicacion', to='inventario.medicamento')),
-            ],
-            options={
-                'verbose_name': 'Registro de Medicamento',
-                'verbose_name_plural': 'Registros de Medicamentos',
-                'ordering': ['-fecha_aplicacion'],
-            },
-        ),
+        # migrations.CreateModel(
+        #     name='RegistroMedicamento',
+        #     fields=[
+        #         ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('fecha_aplicacion', models.DateField(default=django.utils.timezone.now)),
+        #         ('notas', models.TextField(blank=True)),
+        #         ('ganado', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='medicamentos_aplicados', to='inventario.ganado')),
+        #         ('medicamento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_aplicacion', to='inventario.medicamento')),
+        #     ],
+        #     options={
+        #         'verbose_name': 'Registro de Medicamento',
+        #         'verbose_name_plural': 'Registros de Medicamentos',
+        #         'ordering': ['-fecha_aplicacion'],
+        #     },
+        # ),
     ]
