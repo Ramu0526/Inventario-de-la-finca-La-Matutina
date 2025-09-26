@@ -6,37 +6,42 @@
     <link rel="icon" type="image/png" href="{% static 'inventario/images/logo.png' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/new_styles.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="login-wrapper">
-        <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="login-logo">
-
         <div class="login-container">
-            <form method="post">
+            <div class="login-header">
+                <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="login-logo">
+                <h2>Bienvenido de Nuevo</h2>
+                <p>Inicia sesión para acceder a tu panel</p>
+            </div>
+            <div id="theme-toggle">🌑</div>
+            <form method="post" class="login-form">
                 {% csrf_token %}
 
-                <h2 style="text-align: center;">Iniciar Sesión</h2>
-                <div id="theme-toggle">🌑</div>
-
                 {% if messages %}
-                    {% for message in messages %}
-                        <p style="color: red; text-align: center;">{{ message }}</p>
-                    {% endfor %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <p class="error-message">{{ message }}</p>
+                        {% endfor %}
+                    </div>
                 {% endif %}
 
                 <div class="form-field">
-                    <label for="{{ form.username.id_for_label }}">Usuario:</label>
-                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
+                    <i class="fas fa-user icon"></i>
+                    <input type="text" name="username" placeholder="Usuario" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
                 </div>
 
                 <div class="form-field">
-                    <label for="{{ form.password.id_for_label }}">Contraseña:</label>
-                    <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
+                    <i class="fas fa-lock icon"></i>
+                    <input type="password" name="password" placeholder="Contraseña" autocomplete="current-password" required id="id_password" class="form-control">
                 </div>
 
-                <button type="submit">Iniciar sesión</button>
+                <button type="submit" class="login-btn">Iniciar Sesión</button>
 
-                <p style="text-align: center;">
+                <p class="admin-link">
                     ¿Eres administrador?
                     <a href="{% url 'admin:index' %}">Ingresa al panel de administración</a>.
                 </p>

@@ -8,36 +8,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'inventario/css/style.css' %}">
     <link rel="stylesheet" href="{% static 'inventario/css/StyleModal.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/new_styles.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
 
     <div class="panel-container">
-        <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="panel-logo">
-        <div id="theme-toggle">🌑</div>
-
         <div class="panel-header">
-            <h1>¡Hola, {{ user.username }}!</h1>
-            <p>Bienvenido al panel de usuario.</p>
+            <img src="{% static 'inventario/images/logo.png' %}" alt="Logo La Matutina" class="panel-logo">
+            <div class="header-text">
+                <h1>¡Hola, {{ user.username }}!</h1>
+                <p>Bienvenido al panel de control de La Matutina</p>
+            </div>
+            <div id="theme-toggle">🌑</div>
         </div>
 
-        <hr class="separator">
-
-        <div class="panel-buttons">
-            <button class="panel-btn" id="alimentos-btn">Alimentos</button>
-            <button class="panel-btn" id="combustibles-btn">Combustibles</button>
-            <button class="panel-btn" id="control-plagas-btn">Control Plagas</button>
-            <button class="panel-btn" id="ganado-btn">Ganado</button>
-            <button class="panel-btn" id="mantenimientos-btn">Mantenimiento</button>
-            <button class="panel-btn" id="medicamentos-btn">Medicamentos</button>
-            <button class="panel-btn" id="potreros-btn">Potreros</button>
-            <button class="panel-btn" id="productos-btn">Productos</button>
+        <div class="panel-grid">
+            <div class="panel-card" id="alimentos-btn">
+                <i class="fas fa-seedling panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Alimentos</span>
+            </div>
+            <div class="panel-card" id="combustibles-btn">
+                <i class="fas fa-gas-pump panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Combustibles</span>
+            </div>
+            <div class="panel-card" id="control-plagas-btn">
+                <i class="fas fa-bug panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Control Plagas</span>
+            </div>
+            <div class="panel-card" id="ganado-btn">
+                <i class="fas fa-paw panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Ganado</span>
+            </div>
+            <div class="panel-card" id="mantenimientos-btn">
+                <i class="fas fa-tools panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Mantenimiento</span>
+            </div>
+            <div class="panel-card" id="medicamentos-btn">
+                <i class="fas fa-pills panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Medicamentos</span>
+            </div>
+            <div class="panel-card" id="potreros-btn">
+                <i class="fas fa-map-marked-alt panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Potreros</span>
+            </div>
+            <div class="panel-card" id="productos-btn">
+                <i class="fas fa-box-open panel-icon"></i>
+                <br>
+                <span class="panel-card-title">Productos</span>
+            </div>
         </div>
 
-        <hr class="separator">
-
-        <form action="{% url 'logout' %}" method="post">
+        <form action="{% url 'logout' %}" method="post" class="logout-form">
             {% csrf_token %}
-            <button type="submit" class="logout-btn">Cerrar Sesión</button>
+            <button type="submit" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
         </form>
     </div>
 
