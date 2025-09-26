@@ -322,6 +322,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const vacunasOptions = d.todas_las_vacunas.map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
         const medicamentosOptions = d.todos_los_medicamentos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
         const estadosSaludOptions = d.todos_los_estados_salud.map(e => `<option value="${e.value}" ${d.estado_salud === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
+        const tiposPeñeOptions = d.todos_los_tipos_peñe.map(p => `<option value="${p.value}" ${d.peñe === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
+        const estadosAnimalOptions = d.todos_los_estados.map(e => `<option value="${e.value}" ${d.estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
+        const tiposPeneOptions = d.todos_los_tipos_pene.map(p => `<option value="${p.value}" ${d.pene === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
 
         return `
             <div class="modal-header"><h2>${d.identificador} - ${d.animal}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
@@ -338,10 +341,29 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="form-field"><label for="ganado-peso">Peso (Kg):</label><input type="number" step="0.01" id="ganado-peso" value="${d.peso_kg}"></div>
                                 <p><strong>Edad:</strong> ${d.edad}</p>
                                 <p><strong>Fecha de Nacimiento:</strong> ${d.fecha_nacimiento}</p>
-                                <div class="form-field"><label for="ganado-estado">Estado:</label><select id="ganado-estado"><option value="VIVO" ${d.estado === 'VIVO' ? 'selected' : ''}>Vivo</option><option value="FALLECIDO" ${d.estado === 'FALLECIDO' ? 'selected' : ''}>Fallecido</option><option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option></select></div>
+                                
+                                <div class="form-field"><label for="ganado-crecimiento">Crecimiento:</label><select id="ganado-crecimiento">${crecimientoOptions}</select></div>
+                                <div class="form-field"><label for="ganado-estado">Estado:</label><select id="ganado-estado">${estadosAnimalOptions}</select></div>
+                                
+                                <div id="fallecido-fields" style="display: none;">
+                                    <div class="form-field"><label for="ganado-fecha-fallecimiento">Fecha Fallecimiento:</label><input type="date" id="ganado-fecha-fallecimiento" value="${d.fecha_fallecimiento}"></div>
+                                </div>
+                                <div id="vendido-fields" style="display: none;">
+                                     <div class="form-field"><label for="ganado-fecha-venta">Fecha Venta:</label><input type="date" id="ganado-fecha-venta" value="${d.fecha_venta}"></div>
+                                     <div class="form-field"><label for="ganado-valor-venta">Valor Venta:</label><input type="number" step="0.01" id="ganado-valor-venta" value="${d.valor_venta}"></div>
+                                     <div class="form-field"><label for="ganado-comprador">Comprador:</label><input type="text" id="ganado-comprador" value="${d.comprador}"></div>
+                                     <div class="form-field"><label for="ganado-comprador-telefono">Teléfono Comprador:</label><input type="text" id="ganado-comprador-telefono" value="${d.comprador_telefono}"></div>
+                                </div>
+
                                 <div class="form-field"><label for="ganado-estado-salud">Estado de Salud:</label><select id="ganado-estado-salud">${estadosSaludOptions}</select></div>
-                                <div class="form-field"><label for="ganado-pene">Peñe:</label><select id="ganado-pene"><option value="NATURAL" ${d.pene === 'NATURAL' ? 'selected' : ''}>Natural</option><option value="INSEMINACION" ${d.pene === 'INSEMINACION' ? 'selected' : ''}>Inseminación</option><option value="ARTIFICIAL" ${d.pene === 'ARTIFICIAL' ? 'selected' : ''}>Artificial</option><option value="NO_APLICA" ${d.pene === 'NO_APLICA' ? 'selected' : ''}>No Aplica</option></select></div>
-                                <p><strong>Descripción:</strong> ${d.descripcion}</p>
+                                <div class="form-field"><label for="ganado-peñe">Tipo de Peñe:</label><select id="ganado-peñe">${tiposPeñeOptions}</select></div>
+                                
+                                <div id="peñe-fields" style="display: none;">
+                                     <div class="form-field"><label for="ganado-fecha-peñe">Fecha de Peñe:</label><input type="date" id="ganado-fecha-peñe" value="${d.fecha_peñe}"></div>
+                                     <div class="form-field"><label for="ganado-descripcion-peñe">Descripción del Peñe:</label><textarea id="ganado-descripcion-peñe">${d.descripcion_peñe}</textarea></div>
+                                </div>
+
+                                <div class="form-field"><label for="ganado-descripcion">Notas / Descripción:</label><textarea id="ganado-descripcion">${d.descripcion}</textarea></div>
                                 <button type="submit" class="panel-btn">Guardar Cambios</button>
                             </form>
                         </div>
@@ -470,7 +492,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Ganado-specific listeners
         const updateGanadoForm = detailsContent.querySelector('#update-ganado-form');
-        if (updateGanadoForm) updateGanadoForm.addEventListener('submit', handleUpdateGanado);
+        if (updateGanadoForm) {
+            updateGanadoForm.addEventListener('submit', handleUpdateGanado);
+            
+            const estadoSelect = detailsContent.querySelector('#ganado-estado');
+            const peñeSelect = detailsContent.querySelector('#ganado-peñe');
+
+            const toggleGanadoFields = () => {
+                const estadoValue = estadoSelect.value;
+                const peñeValue = peñeSelect.value;
+
+                const fallecidoFields = detailsContent.querySelector('#fallecido-fields');
+                const vendidoFields = detailsContent.querySelector('#vendido-fields');
+                const peñeFields = detailsContent.querySelector('#peñe-fields');
+
+                if (fallecidoFields) fallecidoFields.style.display = estadoValue === 'FALLECIDO' ? 'block' : 'none';
+                if (vendidoFields) vendidoFields.style.display = estadoValue === 'VENDIDO' ? 'block' : 'none';
+                if (peñeFields) peñeFields.style.display = ['NATURAL', 'INSEMINACION', 'ARTIFICIAL'].includes(peñeValue) ? 'block' : 'none';
+            };
+
+            if (estadoSelect) estadoSelect.addEventListener('change', toggleGanadoFields);
+            if (peñeSelect) peñeSelect.addEventListener('change', toggleGanadoFields);
+
+            // Initial call to set state
+            toggleGanadoFields();
+        }
 
         detailsContent.querySelectorAll('.view-note-btn').forEach(btn => btn.addEventListener('click', handleViewNote));
         
@@ -810,7 +856,16 @@ document.addEventListener('DOMContentLoaded', () => {
             peso_kg: form.querySelector('#ganado-peso').value,
             estado: form.querySelector('#ganado-estado').value,
             estado_salud: form.querySelector('#ganado-estado-salud').value,
-            pene: form.querySelector('#ganado-pene').value,
+            peñe: form.querySelector('#ganado-peñe').value,
+            descripcion: form.querySelector('#ganado-descripcion').value,
+            crecimiento: form.querySelector('#ganado-crecimiento').value,
+            fecha_fallecimiento: form.querySelector('#ganado-fecha-fallecimiento').value,
+            fecha_venta: form.querySelector('#ganado-fecha-venta').value,
+            valor_venta: form.querySelector('#ganado-valor-venta').value,
+            comprador: form.querySelector('#ganado-comprador').value,
+            comprador_telefono: form.querySelector('#ganado-comprador-telefono').value,
+            fecha_peñe: form.querySelector('#ganado-fecha-peñe').value,
+            descripcion_peñe: form.querySelector('#ganado-descripcion-peñe').value,
         };
         handleApiRequest('/ganado/actualizar/', body, form.dataset.id, 'ganado');
     }

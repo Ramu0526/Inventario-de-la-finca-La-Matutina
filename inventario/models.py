@@ -68,7 +68,7 @@ class Ganado(models.Model):
         FALLECIDO = 'FALLECIDO', 'Fallecido'
         VENDIDO = 'VENDIDO', 'Vendido'
 
-    class Pene(models.TextChoices):
+    class TipoPene(models.TextChoices):
         NATURAL = 'NATURAL', 'Natural'
         INSEMINACION = 'INSEMINACION', 'Inseminación'
         ARTIFICIAL = 'ARTIFICIAL', 'Artificial'
@@ -81,17 +81,32 @@ class Ganado(models.Model):
         CURADA = 'CURADA', 'Curada'
         NO_TIENE_NADA = 'NO_TIENE_NADA', 'No tiene nada'
 
+    class Crecimiento(models.TextChoices):
+        MENOR = 'MENOR', 'Menor'
+        ADULTO = 'ADULTO', 'Adulto'
+
     identificador = models.CharField(max_length=50, unique=True, help_text="Ej: Arete N° 123")
     animal = models.ForeignKey('Animal', on_delete=models.SET_NULL, null=True, verbose_name="Tipo de Animal")
     raza = models.CharField("Raza", max_length=100, blank=True, help_text="Ej: Holstein, Angus")
     genero = models.CharField(max_length=1, choices=GeneroAnimal.choices, default=GeneroAnimal.HEMBRA)
     peso_kg = models.DecimalField("Peso (Kg)", max_digits=7, decimal_places=2, null=True, blank=True)
     
+    crecimiento = models.CharField("Crecimiento", max_length=10, choices=Crecimiento.choices, default=Crecimiento.MENOR)
+
     fecha_nacimiento = models.DateField()
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
     estado_salud = models.CharField(max_length=20, choices=EstadoSalud.choices, default=EstadoSalud.NO_TIENE_NADA)
     
-    pene = models.CharField(max_length=15, choices=Pene.choices, default=Pene.NO_APLICA)
+    peñe = models.CharField("Tipo de Peñe", max_length=15, choices=TipoPene.choices, default=TipoPene.NO_APLICA)
+    fecha_peñe = models.DateField("Fecha de Peñe", null=True, blank=True)
+    descripcion_peñe = models.TextField("Descripción del Peñe", max_length=1000, blank=True, null=True)
+
+    fecha_fallecimiento = models.DateField("Fecha de Fallecimiento", null=True, blank=True)
+    
+    fecha_venta = models.DateField("Fecha de Venta", null=True, blank=True)
+    valor_venta = models.DecimalField("Valor de Venta", max_digits=10, decimal_places=2, null=True, blank=True)
+    comprador = models.CharField("Comprador", max_length=100, blank=True, null=True)
+    comprador_telefono = models.CharField("Teléfono del Comprador", max_length=20, blank=True, null=True)
 
     imagen = CloudinaryField('image', folder='ganado', null=True, blank=True)
     descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Notas o descripción del animal.")

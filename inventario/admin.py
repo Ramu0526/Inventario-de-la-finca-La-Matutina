@@ -82,20 +82,31 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento', 'estado', 'estado_salud', 'pene', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
-    list_filter = ('animal', 'genero', 'estado', 'estado_salud')
+    list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
     search_fields = ('identificador', 'animal__nombre', 'raza')
-    list_editable = ('estado_salud',)
+    list_editable = ('estado_salud', 'crecimiento', 'estado')
     
     readonly_fields = ('edad',)
 
     fieldsets = (
         ('Información Principal', {
-            'fields': ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'imagen', 'descripcion')
+            'fields': ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'crecimiento', 'imagen', 'descripcion')
         }),
         ('Fechas y Estado', {
-            'fields': ('fecha_nacimiento', 'edad', 'estado', 'estado_salud', 'pene')
+            'fields': ('fecha_nacimiento', 'edad', 'estado', 'estado_salud')
+        }),
+        ('Información de Peñe', {
+            'fields': ('peñe', 'fecha_peñe', 'descripcion_peñe')
+        }),
+        ('Información de Venta', {
+            'classes': ('collapse',),
+            'fields': ('fecha_venta', 'valor_venta', 'comprador', 'comprador_telefono')
+        }),
+        ('Información de Fallecimiento', {
+            'classes': ('collapse',),
+            'fields': ('fecha_fallecimiento',)
         }),
     )
 

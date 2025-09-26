@@ -185,10 +185,35 @@ def actualizar_ganado_ajax(request):
         ganado_id = data.get('ganado_id')
         ganado = get_object_or_404(Ganado, pk=ganado_id)
 
+        # Campos existentes
         ganado.peso_kg = data.get('peso_kg', ganado.peso_kg)
         ganado.estado = data.get('estado', ganado.estado)
         ganado.estado_salud = data.get('estado_salud', ganado.estado_salud)
-        ganado.pene = data.get('pene', ganado.pene)
+        ganado.peñe = data.get('peñe', ganado.peñe)
+        ganado.descripcion = data.get('descripcion', ganado.descripcion)
+
+        # Nuevos campos
+        ganado.crecimiento = data.get('crecimiento', ganado.crecimiento)
+        ganado.fecha_peñe = data.get('fecha_peñe') or None
+        ganado.descripcion_peñe = data.get('descripcion_peñe', ganado.descripcion_peñe)
+        
+        # Campos condicionales
+        if ganado.estado == 'FALLECIDO':
+            ganado.fecha_fallecimiento = data.get('fecha_fallecimiento') or None
+        else:
+            ganado.fecha_fallecimiento = None
+
+        if ganado.estado == 'VENDIDO':
+            ganado.fecha_venta = data.get('fecha_venta') or None
+            ganado.valor_venta = Decimal(data.get('valor_venta')) if data.get('valor_venta') else None
+            ganado.comprador = data.get('comprador', ganado.comprador)
+            ganado.comprador_telefono = data.get('comprador_telefono', ganado.comprador_telefono)
+        else:
+            ganado.fecha_venta = None
+            ganado.valor_venta = None
+            ganado.comprador = None
+            ganado.comprador_telefono = None
+
         ganado.save()
 
         log_user_action(request, ganado, CHANGE, "Datos del ganado actualizados desde el panel de usuario.")
@@ -1121,6 +1146,9 @@ def ganado_detalles_json(request, ganado_id):
     } for reg in medicamentos_aplicados]
 
     estados_salud = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoSalud.choices]
+    tipos_peñe = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.TipoPene.choices]
+    estados_animal = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoAnimal.choices]
+    crecimiento_animal = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.Crecimiento.choices]
 
     data = {
         'id': ganado.id, 'identificador': ganado.identificador,
@@ -1128,15 +1156,26 @@ def ganado_detalles_json(request, ganado_id):
         'genero': ganado.get_genero_display(), 'peso_kg': str(ganado.peso_kg),
         'edad': ganado.edad if ganado.fecha_nacimiento else 'N/A',
         'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d') if ganado.fecha_nacimiento else '',
-        'estado': ganado.estado, 'estado_salud': ganado.estado_salud, 'pene': ganado.pene,
+        'estado': ganado.estado, 'estado_salud': ganado.estado_salud, 'peñe': ganado.peñe,
         'descripcion': ganado.descripcion or "No hay descripción.",
         'imagen_url': get_safe_image_url(ganado.imagen),
         'historial_vacunacion': historial_vacunacion,
         'historial_medicamentos': historial_medicamentos,
+        'crecimiento': ganado.crecimiento,
+        'fecha_fallecimiento': ganado.fecha_fallecimiento.strftime('%Y-%m-%d') if ganado.fecha_fallecimiento else '',
+        'fecha_venta': ganado.fecha_venta.strftime('%Y-%m-%d') if ganado.fecha_venta else '',
+        'valor_venta': str(ganado.valor_venta) if ganado.valor_venta is not None else '',
+        'comprador': ganado.comprador or '',
+        'comprador_telefono': ganado.comprador_telefono or '',
+        'fecha_peñe': ganado.fecha_peñe.strftime('%Y-%m-%d') if ganado.fecha_peñe else '',
+        'descripcion_peñe': ganado.descripcion_peñe or '',
         # Datos para los formularios
         'todas_las_vacunas': list(Vacuna.objects.filter(disponible=True).values('id', 'nombre')),
         'todos_los_medicamentos': list(Medicamento.objects.filter(cantidad_ingresada__gt=F('cantidad_usada')).values('id', 'nombre')),
         'todos_los_estados_salud': estados_salud,
+        'todos_los_tipos_peñe': tipos_peñe,
+        'todos_los_estados': estados_animal,
+        'todos_los_crecimientos': crecimiento_animal,
     }
     return JsonResponse(data)
 
