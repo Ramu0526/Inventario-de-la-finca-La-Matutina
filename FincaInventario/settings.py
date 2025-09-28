@@ -28,29 +28,25 @@ INSTALLED_APPS = [
 ]
 
 JAZZMIN_SETTINGS = {
-
-    "site_title": "Inventario La Matutina",  
-    "site_header": "La Matutina",  
+    "site_title": "Inventario La Matutina",
+    "site_header": "La Matutina",
     "site_brand": "Panel de control",
-    "site_logo": "inventario/images/logo.png", 
-
-    "custom_css": "inventario/css/logo_resize.css", 
-
-    "welcome_sign": "¡Bienvenido a la administración de La Matutina!", 
-
-    "theme": "darkly", 
-    "navbar_small_text": False,  
-    "user_avatar": None, 
-    "show_sidebar": True,  
-    "navigation_expanded": True, 
-    "hide_apps": [],  
-    "hide_models": [],  
-    "order_with_respect_to": ["inventario"],  
-    
+    "site_logo": "inventario/images/logo.png",
+    "custom_css": "inventario/css/logo_resize.css",
+    "welcome_sign": "¡Bienvenido a la administración de La Matutina!",
+    "theme": "darkly",
+    "navbar_small_text": False,
+    "user_avatar": None,
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["inventario"],
     "topmenu_links": [
         {"name": "Ver Vista de Usuario", "url": "lista_productos", "new_window": True},
     ],
 }
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -98,10 +94,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 cloudinary.config(
-    cloud_name = "dd6ugwzzx",
-    api_key = "829678619421532",
-    api_secret = "YKO6Hw4iYwwumCoBfuRZtHGG5s0",
-    secure = True
+    cloud_name="dd6ugwzzx",
+    api_key="829678619421532",
+    api_secret="YKO6Hw4iYwwumCoBfuRZtHGG5s0",
+    secure=True
 )
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dd6ugwzzx',
@@ -110,9 +106,11 @@ CLOUDINARY_STORAGE = {
 }
 
 DEBUG = config('DEBUG', default=False, cast=bool)
-
-# Mantenemos la lógica de ALLOWED_HOSTS y DATABASES que depende de si estamos en producción
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
+
+# --- CONFIGURACIÓN DE ARCHIVOS ESTÁTICOS ---
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Directorio para collectstatic
 
 if IS_PRODUCTION:
     RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -127,14 +125,11 @@ if IS_PRODUCTION:
         )
     }
     
-    STATIC_URL = '/static/'
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     MEDIA_URL = ''
 
 else:
-    # Cuando corres localmente, DEBUG será controlado por tu archivo .env o será False por defecto.
-    # NO definimos DEBUG = True aquí.
+    # --- Configuración para desarrollo local ---
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
     
     DATABASES = {
@@ -144,6 +139,11 @@ else:
         }
     }
     
-    STATIC_URL = '/static/'
+    # Esta es la línea clave que faltaba para decirle a Django
+    # dónde encontrar los archivos estáticos de tus aplicaciones (como 'inventario')
+    STATICFILES_DIRS = [
+        BASE_DIR / 'inventario/static',
+    ]
+
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
