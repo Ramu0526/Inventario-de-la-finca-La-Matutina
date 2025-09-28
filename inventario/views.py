@@ -1134,20 +1134,39 @@ def ganado_detalles_json(request, ganado_id):
     
     # Historial de vacunación
     vacunaciones = ganado.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
-    historial_vacunacion = [{
-        'id': reg.id, 'vacuna_id': reg.vacuna.id, 'vacuna_nombre': reg.vacuna.nombre,
-        'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
-        'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
-        'notas': reg.notas or 'No hay notas.',
-    } for reg in vacunaciones]
+    historial_vacunacion = []
+    for reg in vacunaciones:
+        try:
+            historial_vacunacion.append({
+                'id': reg.id, 'vacuna_id': reg.vacuna.id, 'vacuna_nombre': reg.vacuna.nombre,
+                'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+                'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
+                'notas': reg.notas or 'No hay notas.',
+            })
+        except Vacuna.DoesNotExist:
+            historial_vacunacion.append({
+                'id': reg.id, 'vacuna_id': None, 'vacuna_nombre': f"Vacuna no encontrada (ID: {reg.vacuna_id})",
+                'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+                'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
+                'notas': 'Error: La vacuna asociada a este registro fue eliminada.',
+            })
 
     # Historial de medicamentos
     medicamentos_aplicados = ganado.medicamentos_aplicados.select_related('medicamento').order_by('-fecha_aplicacion')
-    historial_medicamentos = [{
-        'id': reg.id, 'medicamento_id': reg.medicamento.id, 'medicamento_nombre': reg.medicamento.nombre,
-        'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
-        'notas': reg.notas or 'No hay notas.',
-    } for reg in medicamentos_aplicados]
+    historial_medicamentos = []
+    for reg in medicamentos_aplicados:
+        try:
+            historial_medicamentos.append({
+                'id': reg.id, 'medicamento_id': reg.medicamento.id, 'medicamento_nombre': reg.medicamento.nombre,
+                'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+                'notas': reg.notas or 'No hay notas.',
+            })
+        except Medicamento.DoesNotExist:
+            historial_medicamentos.append({
+                'id': reg.id, 'medicamento_id': None, 'medicamento_nombre': f"Medicamento no encontrado (ID: {reg.medicamento_id})",
+                'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
+                'notas': 'Error: El medicamento asociado a este registro fue eliminado.',
+            })
 
     estados_salud = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoSalud.choices]
     tipos_peñe = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.TipoPene.choices]
