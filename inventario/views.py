@@ -15,6 +15,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from .models import Comprador
 from .models import Vacuna, RegistroVacunacion
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 
 from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
@@ -70,12 +72,21 @@ def lista_productos(request):
     # The modals will be populated by their own dedicated views.
     categorias = Categoria.objects.all()
     proveedores = Proveedor.objects.all()
-    animales = Animal.objects.all() # AÑADE ESTA LÍNEA
+    animales = Animal.objects.all()
+    ubicaciones = Ubicacion.objects.all()
+    lugares_mantenimiento = LugarMantenimiento.objects.all()
 
     context = {
         'categorias': categorias,
         'proveedores': proveedores,
-        'animales': animales, # AÑADE ESTA LÍNEA
+        'animales': animales,
+        'ubicaciones': ubicaciones,
+        'ganado_crecimiento_choices': Ganado.Crecimiento.choices,
+        'ganado_estado_choices': Ganado.EstadoAnimal.choices,
+        'ganado_estado_salud_choices': Ganado.EstadoSalud.choices,
+        'ganado_peñe_choices': Ganado.TipoPene.choices,
+        'lugares_mantenimiento': lugares_mantenimiento,
+        'producto_estado_choices': Producto.EstadoProducto.choices,
     }
     return render(request, 'inventario/lista_productos.html', context)
 
@@ -83,9 +94,15 @@ def lista_productos(request):
 def lista_alimentos(request):
     alimentos_list = Alimento.objects.select_related('categoria').prefetch_related('proveedores', 'ubicaciones').order_by('nombre')
 
+    # Filtros existentes
     nombre_query = request.GET.get('nombre', '')
     categoria_id = request.GET.get('categoria', '')
     proveedor_id = request.GET.get('proveedor', '')
+    
+    # Nuevos filtros
+    disponibilidad = request.GET.get('disponibilidad')
+    ubicacion_id = request.GET.get('ubicacion')
+    vencimiento = request.GET.get('vencimiento')
 
     if nombre_query:
         alimentos_list = alimentos_list.filter(nombre__icontains=nombre_query)
@@ -93,6 +110,36 @@ def lista_alimentos(request):
         alimentos_list = alimentos_list.filter(categoria__id=categoria_id)
     if proveedor_id:
         alimentos_list = alimentos_list.filter(proveedores__id=proveedor_id)
+    
+    # Lógica para nuevos filtros
+    if disponibilidad == 'disponible':
+        alimentos_list = alimentos_list.filter(cantidad_kg_ingresada__gt=F('cantidad_kg_usada'))
+    elif disponibilidad == 'agotado':
+        alimentos_list = alimentos_list.filter(cantidad_kg_ingresada__lte=F('cantidad_kg_usada'))
+
+    if ubicacion_id:
+        alimentos_list = alimentos_list.filter(ubicaciones__id=ubicacion_id)
+
+    if vencimiento:
+        today = timezone.now().date()
+        if vencimiento == '1_semana':
+            end_date = today + relativedelta(weeks=1)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '1_mes':
+            end_date = today + relativedelta(months=1)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '3_meses':
+            end_date = today + relativedelta(months=3)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '6_meses':
+            end_date = today + relativedelta(months=6)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '1_ano':
+            end_date = today + relativedelta(years=1)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == 'mas_1_ano':
+            end_date = today + relativedelta(years=1)
+            alimentos_list = alimentos_list.filter(fecha_vencimiento__gt=end_date)
 
     try:
         items_per_page = int(request.GET.get('items_per_page', 8))
@@ -258,11 +305,14 @@ def lista_combustibles(request):
 
     nombre_query = request.GET.get('nombre', '')
     proveedor_id = request.GET.get('proveedor', '')
+    ubicacion_id = request.GET.get('ubicacion', '')
 
     if nombre_query:
         combustibles_list = combustibles_list.filter(tipo__icontains=nombre_query)
     if proveedor_id:
         combustibles_list = combustibles_list.filter(proveedores__id=proveedor_id)
+    if ubicacion_id:
+        combustibles_list = combustibles_list.filter(ubicaciones__id=ubicacion_id)
 
     try:
         items_per_page = int(request.GET.get('items_per_page', 8))
@@ -527,8 +577,43 @@ def lista_control_plagas(request):
     items_list = ControlPlaga.objects.order_by('nombre_producto')
     
     nombre_query = request.GET.get('nombre', '')
+    ubicacion_id = request.GET.get('ubicacion')
+    tipo_query = request.GET.get('tipo')
+    disponibilidad = request.GET.get('disponibilidad')
+    vencimiento = request.GET.get('vencimiento')
+
     if nombre_query:
         items_list = items_list.filter(nombre_producto__icontains=nombre_query)
+    if ubicacion_id:
+        items_list = items_list.filter(ubicaciones__id=ubicacion_id)
+    if tipo_query:
+        items_list = items_list.filter(tipo__icontains=tipo_query)
+    
+    if disponibilidad == 'disponible':
+        items_list = items_list.filter(cantidad_ingresada__gt=F('cantidad_usada'))
+    elif disponibilidad == 'agotado':
+        items_list = items_list.filter(cantidad_ingresada__lte=F('cantidad_usada'))
+
+    if vencimiento:
+        today = timezone.now().date()
+        if vencimiento == '1_semana':
+            end_date = today + relativedelta(weeks=1)
+            items_list = items_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '1_mes':
+            end_date = today + relativedelta(months=1)
+            items_list = items_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '3_meses':
+            end_date = today + relativedelta(months=3)
+            items_list = items_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '6_meses':
+            end_date = today + relativedelta(months=6)
+            items_list = items_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == '1_ano':
+            end_date = today + relativedelta(years=1)
+            items_list = items_list.filter(fecha_vencimiento__range=[today, end_date])
+        elif vencimiento == 'mas_1_ano':
+            end_date = today + relativedelta(years=1)
+            items_list = items_list.filter(fecha_vencimiento__gt=end_date)
 
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)
@@ -553,11 +638,41 @@ def lista_ganado(request):
 
     nombre_query = request.GET.get('nombre', '')
     animal_id = request.GET.get('animal', '')
+    raza_query = request.GET.get('raza')
+    peso_query = request.GET.get('peso')
+    crecimiento_query = request.GET.get('crecimiento')
+    estado_query = request.GET.get('estado')
+    estado_salud_query = request.GET.get('estado_salud')
+    pene_query = request.GET.get('pene')
 
     if nombre_query:
         items_list = items_list.filter(identificador__icontains=nombre_query)
     if animal_id:
         items_list = items_list.filter(animal__id=animal_id)
+    if raza_query:
+        items_list = items_list.filter(raza__icontains=raza_query)
+    if crecimiento_query:
+        items_list = items_list.filter(crecimiento=crecimiento_query)
+    if estado_query:
+        items_list = items_list.filter(estado=estado_query)
+    if estado_salud_query:
+        items_list = items_list.filter(estado_salud=estado_salud_query)
+    if pene_query:
+        items_list = items_list.filter(peñe=pene_query)
+
+    if peso_query:
+        if peso_query == '0_10':
+            items_list = items_list.filter(peso_kg__lt=10)
+        elif peso_query == '10_100':
+            items_list = items_list.filter(peso_kg__gte=10, peso_kg__lt=100)
+        elif peso_query == '100_250':
+            items_list = items_list.filter(peso_kg__gte=100, peso_kg__lt=250)
+        elif peso_query == '250_500':
+            items_list = items_list.filter(peso_kg__gte=250, peso_kg__lt=500)
+        elif peso_query == '500_1000':
+            items_list = items_list.filter(peso_kg__gte=500, peso_kg__lt=1000)
+        elif peso_query == '1000_mas':
+            items_list = items_list.filter(peso_kg__gte=1000)
 
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)
@@ -581,8 +696,17 @@ def lista_mantenimientos(request):
     items_list = Mantenimiento.objects.order_by('equipo')
 
     nombre_query = request.GET.get('nombre', '')
+    completado_query = request.GET.get('completado')
+    lugar_id = request.GET.get('lugar_mantenimiento')
+
     if nombre_query:
         items_list = items_list.filter(equipo__icontains=nombre_query)
+    
+    if completado_query in ['true', 'false']:
+        items_list = items_list.filter(completado=(completado_query == 'true'))
+            
+    if lugar_id:
+        items_list = items_list.filter(lugares_mantenimiento__id=lugar_id)
 
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)
@@ -603,16 +727,28 @@ def lista_mantenimientos(request):
 
 @login_required
 def lista_medicamentos(request):
-    items_list = Medicamento.objects.select_related('categoria').order_by('nombre')
+    items_list = Medicamento.objects.select_related('categoria').prefetch_related('proveedores', 'ubicaciones').order_by('nombre')
     
     nombre_query = request.GET.get('nombre', '')
     categoria_id = request.GET.get('categoria', '')
+    proveedor_id = request.GET.get('proveedor')
+    ubicacion_id = request.GET.get('ubicacion')
+    disponibilidad = request.GET.get('disponibilidad')
 
     if nombre_query:
         items_list = items_list.filter(nombre__icontains=nombre_query)
     if categoria_id:
         items_list = items_list.filter(categoria__id=categoria_id)
+    if proveedor_id:
+        items_list = items_list.filter(proveedores__id=proveedor_id)
+    if ubicacion_id:
+        items_list = items_list.filter(ubicaciones__id=ubicacion_id)
 
+    if disponibilidad == 'disponible':
+        items_list = items_list.filter(cantidad_ingresada__gt=F('cantidad_usada'))
+    elif disponibilidad == 'agotado':
+        items_list = items_list.filter(cantidad_ingresada__lte=F('cantidad_usada'))
+        
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -635,9 +771,20 @@ def lista_potreros(request):
     items_list = Potrero.objects.order_by('nombre')
     
     nombre_query = request.GET.get('nombre', '')
+    empastado_query = request.GET.get('empastado')
+    fumigado_query = request.GET.get('fumigado')
+    rozado_query = request.GET.get('rozado')
+
     if nombre_query:
         items_list = items_list.filter(nombre__icontains=nombre_query)
     
+    if empastado_query in ['true', 'false']:
+        items_list = items_list.filter(empastado=(empastado_query == 'true'))
+    if fumigado_query in ['true', 'false']:
+        items_list = items_list.filter(fumigado=(fumigado_query == 'true'))
+    if rozado_query in ['true', 'false']:
+        items_list = items_list.filter(rozado=(rozado_query == 'true'))
+        
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -661,11 +808,14 @@ def lista_productos_view(request):
     
     nombre_query = request.GET.get('nombre', '')
     categoria_id = request.GET.get('categoria', '')
+    estado_query = request.GET.get('estado')
 
     if nombre_query:
         items_list = items_list.filter(nombre__icontains=nombre_query)
     if categoria_id:
         items_list = items_list.filter(categoria__id=categoria_id)
+    if estado_query:
+        items_list = items_list.filter(estado=estado_query)
         
     paginator = Paginator(items_list, 8)
     page_number = request.GET.get('page', 1)

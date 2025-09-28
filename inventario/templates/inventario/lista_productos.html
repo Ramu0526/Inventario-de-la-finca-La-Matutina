@@ -92,6 +92,24 @@
                         <option value="">Todos los proveedores</option>
                         {% for p in proveedores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
                     </select>
+                    <select class="filter-select filtro-disponibilidad">
+                        <option value="">Toda la disponibilidad</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="agotado">Agotado</option>
+                    </select>
+                    <select class="filter-select filtro-ubicacion">
+                        <option value="">Todas las ubicaciones</option>
+                        {% for u in ubicaciones %}<option value="{{ u.id }}">{{ u.nombre }}</option>{% endfor %}
+                    </select>
+                    <select class="filter-select filtro-vencimiento">
+                        <option value="">Fecha de vencimiento</option>
+                        <option value="1_semana">1 semana</option>
+                        <option value="1_mes">1 mes</option>
+                        <option value="3_meses">3 meses</option>
+                        <option value="6_meses">6 meses</option>
+                        <option value="1_ano">1 año</option>
+                        <option value="mas_1_ano">> 1 año</option>
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -114,6 +132,10 @@
                         <option value="">Todos los proveedores</option>
                         {% for p in proveedores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
                     </select>
+                    <select class="filter-select filtro-ubicacion">
+                        <option value="">Todas las ubicaciones</option>
+                        {% for u in ubicaciones %}<option value="{{ u.id }}">{{ u.nombre }}</option>{% endfor %}
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -132,6 +154,25 @@
             <div class="modal-body">
                 <div class="filters-container">
                     <input type="text" class="filter-input filtro-nombre" placeholder="Buscar por producto...">
+                    <input type="text" class="filter-input filtro-tipo" placeholder="Buscar por tipo...">
+                    <select class="filter-select filtro-disponibilidad">
+                        <option value="">Toda la disponibilidad</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="agotado">Agotado</option>
+                    </select>
+                    <select class="filter-select filtro-ubicacion">
+                        <option value="">Todas las ubicaciones</option>
+                        {% for u in ubicaciones %}<option value="{{ u.id }}">{{ u.nombre }}</option>{% endfor %}
+                    </select>
+                    <select class="filter-select filtro-vencimiento">
+                        <option value="">Fecha de vencimiento</option>
+                        <option value="1_semana">1 semana</option>
+                        <option value="1_mes">1 mes</option>
+                        <option value="3_meses">3 meses</option>
+                        <option value="6_meses">6 meses</option>
+                        <option value="1_ano">1 año</option>
+                        <option value="mas_1_ano">> 1 año</option>
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -150,9 +191,43 @@
             <div class="modal-body">
                 <div class="filters-container">
                     <input type="text" class="filter-input filtro-nombre" placeholder="Buscar por identificador...">
+                    <input type="text" class="filter-input filtro-raza" placeholder="Buscar por raza...">
                     <select class="filter-select filtro-animal">
                         <option value="">Todos los tipos</option>
                         {% for a in animales %}<option value="{{ a.id }}">{{ a.nombre }}</option>{% endfor %}
+                    </select>
+                    <select class="filter-select filtro-peso">
+                        <option value="">Cualquier peso</option>
+                        <option value="0_10">< 10kg</option>
+                        <option value="10_100">10-100kg</option>
+                        <option value="100_250">100-250kg</option>
+                        <option value="250_500">250-500kg</option>
+                        <option value="500_1000">500-1000kg</option>
+                        <option value="1000_mas">> 1000kg</option>
+                    </select>
+                    <select class="filter-select filtro-crecimiento">
+                        <option value="">Crecimiento</option>
+                        {% for value, label in ganado_crecimiento_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <select class="filter-select filtro-estado">
+                        <option value="">Estado</option>
+                        {% for value, label in ganado_estado_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <select class="filter-select filtro-estado-salud">
+                        <option value="">Estado de Salud</option>
+                        {% for value, label in ganado_estado_salud_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <select class="filter-select filtro-pene">
+                        <option value="">Tipo de Peñe</option>
+                        {% for value, label in ganado_peñe_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="modal-grid"></div>
@@ -172,6 +247,17 @@
             <div class="modal-body">
                 <div class="filters-container">
                     <input type="text" class="filter-input filtro-nombre" placeholder="Buscar por equipo...">
+                    <select class="filter-select filtro-completado">
+                        <option value="">Estado</option>
+                        <option value="true">Completado</option>
+                        <option value="false">Pendiente</option>
+                    </select>
+                    <select class="filter-select filtro-lugar-mantenimiento">
+                        <option value="">Todos los lugares</option>
+                        {% for lugar in lugares_mantenimiento %}
+                        <option value="{{ lugar.id }}">{{ lugar.nombre_lugar }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -194,6 +280,19 @@
                         <option value="">Todas las categorías</option>
                         {% for c in categorias %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
                     </select>
+                    <select class="filter-select filtro-disponibilidad">
+                        <option value="">Disponibilidad</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="agotado">Agotado</option>
+                    </select>
+                    <select class="filter-select filtro-proveedor">
+                        <option value="">Todos los proveedores</option>
+                        {% for p in proveedores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+                    </select>
+                    <select class="filter-select filtro-ubicacion">
+                        <option value="">Todas las ubicaciones</option>
+                        {% for u in ubicaciones %}<option value="{{ u.id }}">{{ u.nombre }}</option>{% endfor %}
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -212,6 +311,21 @@
             <div class="modal-body">
                 <div class="filters-container">
                     <input type="text" class="filter-input filtro-nombre" placeholder="Buscar por nombre...">
+                    <select class="filter-select filtro-empastado">
+                        <option value="">Empastado</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                    <select class="filter-select filtro-fumigado">
+                        <option value="">Fumigado</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                    <select class="filter-select filtro-rozado">
+                        <option value="">Rozado</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
                 </div>
                 <div class="modal-grid"></div>
                 <div class="pagination-controls"></div>
@@ -233,6 +347,12 @@
                      <select class="filter-select filtro-categoria">
                         <option value="">Todas las categorías</option>
                         {% for c in categorias %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                    </select>
+                    <select class="filter-select filtro-estado">
+                        <option value="">Todos los estados</option>
+                        {% for value, label in producto_estado_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="modal-grid"></div>

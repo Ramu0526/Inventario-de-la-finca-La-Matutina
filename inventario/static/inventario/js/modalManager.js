@@ -16,6 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoriaFilter = mainModal.querySelector('.filtro-categoria');
         const proveedorFilter = mainModal.querySelector('.filtro-proveedor');
         const animalFilter = mainModal.querySelector('.filtro-animal');
+        const disponibilidadFilter = mainModal.querySelector('.filtro-disponibilidad');
+        const ubicacionFilter = mainModal.querySelector('.filtro-ubicacion');
+        const vencimientoFilter = mainModal.querySelector('.filtro-vencimiento');
+        const tipoFilter = mainModal.querySelector('.filtro-tipo');
+        const razaFilter = mainModal.querySelector('.filtro-raza');
+        const pesoFilter = mainModal.querySelector('.filtro-peso');
+        const crecimientoFilter = mainModal.querySelector('.filtro-crecimiento');
+        const estadoFilter = mainModal.querySelector('.filtro-estado');
+        const estadoSaludFilter = mainModal.querySelector('.filtro-estado-salud');
+        const peneFilter = mainModal.querySelector('.filtro-pene');
+        const completadoFilter = mainModal.querySelector('.filtro-completado');
+        const lugarMantenimientoFilter = mainModal.querySelector('.filtro-lugar-mantenimiento');
+        const empastadoFilter = mainModal.querySelector('.filtro-empastado');
+        const fumigadoFilter = mainModal.querySelector('.filtro-fumigado');
+        const rozadoFilter = mainModal.querySelector('.filtro-rozado');
 
         openBtn.addEventListener('click', () => {
             mainModal.style.display = 'block';
@@ -37,6 +52,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 categoria: categoriaFilter ? categoriaFilter.value : '',
                 proveedor: proveedorFilter ? proveedorFilter.value : '',
                 animal: animalFilter ? animalFilter.value : '',
+                disponibilidad: disponibilidadFilter ? disponibilidadFilter.value : '',
+                ubicacion: ubicacionFilter ? ubicacionFilter.value : '',
+                vencimiento: vencimientoFilter ? vencimientoFilter.value : '',
+                tipo: tipoFilter ? tipoFilter.value : '',
+                raza: razaFilter ? razaFilter.value : '',
+                peso: pesoFilter ? pesoFilter.value : '',
+                crecimiento: crecimientoFilter ? crecimientoFilter.value : '',
+                estado: estadoFilter ? estadoFilter.value : '',
+                estado_salud: estadoSaludFilter ? estadoSaludFilter.value : '',
+                pene: peneFilter ? peneFilter.value : '',
+                completado: completadoFilter ? completadoFilter.value : '',
+                lugar_mantenimiento: lugarMantenimientoFilter ? lugarMantenimientoFilter.value : '',
+                empastado: empastadoFilter ? empastadoFilter.value : '',
+                fumigado: fumigadoFilter ? fumigadoFilter.value : '',
+                rozado: rozadoFilter ? rozadoFilter.value : '',
                 items_per_page: window.innerWidth <= 768 ? 6 : 8
             });
             const url = `/${itemType}/?${params.toString()}`;
@@ -117,6 +147,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (categoriaFilter) categoriaFilter.addEventListener('change', () => fetchItems(1));
         if (proveedorFilter) proveedorFilter.addEventListener('change', () => fetchItems(1));
         if (animalFilter) animalFilter.addEventListener('change', () => fetchItems(1));
+        if (disponibilidadFilter) disponibilidadFilter.addEventListener('change', () => fetchItems(1));
+        if (ubicacionFilter) ubicacionFilter.addEventListener('change', () => fetchItems(1));
+        if (vencimientoFilter) vencimientoFilter.addEventListener('change', () => fetchItems(1));
+        if (tipoFilter) tipoFilter.addEventListener('keyup', debounce(() => fetchItems(1), 300));
+        if (razaFilter) razaFilter.addEventListener('keyup', debounce(() => fetchItems(1), 300));
+        if (pesoFilter) pesoFilter.addEventListener('change', () => fetchItems(1));
+        if (crecimientoFilter) crecimientoFilter.addEventListener('change', () => fetchItems(1));
+        if (estadoFilter) estadoFilter.addEventListener('change', () => fetchItems(1));
+        if (estadoSaludFilter) estadoSaludFilter.addEventListener('change', () => fetchItems(1));
+        if (peneFilter) peneFilter.addEventListener('change', () => fetchItems(1));
+        if (completadoFilter) completadoFilter.addEventListener('change', () => fetchItems(1));
+        if (lugarMantenimientoFilter) lugarMantenimientoFilter.addEventListener('change', () => fetchItems(1));
+        if (empastadoFilter) empastadoFilter.addEventListener('change', () => fetchItems(1));
+        if (fumigadoFilter) fumigadoFilter.addEventListener('change', () => fetchItems(1));
+        if (rozadoFilter) rozadoFilter.addEventListener('change', () => fetchItems(1));
     };
 
     window.setupCreateVacunaModal = async () => {
