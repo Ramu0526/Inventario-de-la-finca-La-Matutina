@@ -121,8 +121,9 @@ class Ganado(models.Model):
         diferencia = relativedelta(hoy, self.fecha_nacimiento)
         return f"{diferencia.years} años, {diferencia.months} meses"
 
-    def __str__(self): 
-        return f"{self.identificador} - {self.animal}"
+    def __str__(self):
+        animal_display = self.animal.nombre if self.animal else "[Sin tipo de animal]"
+        return f"{self.identificador} - {animal_display}"
 
 class Medicamento(models.Model):
     class UnidadMedida(models.TextChoices):

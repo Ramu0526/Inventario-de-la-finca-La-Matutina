@@ -14,7 +14,10 @@ class ImagenAdminMixin(admin.ModelAdmin):
     """
     def imagen_thumbnail(self, obj):
         if obj.imagen:
-            return mark_safe(f'<a href="{obj.imagen.url}" target="_blank"><img src="{obj.imagen.url}" width="100" /></a>')
+            try:
+                return mark_safe(f'<a href="{obj.imagen.url}" target="_blank"><img src="{obj.imagen.url}" width="100" /></a>')
+            except (AttributeError, ValueError):
+                return "No se pudo cargar la imagen"
         return "Sin imagen"
     imagen_thumbnail.short_description = 'Vista Previa'
 
@@ -129,8 +132,8 @@ class GanadoAdmin(ImagenAdminMixin):
             try:
                 vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
                 html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
-            except Exception:
-                html += f'<li>{reg.fecha_aplicacion}: Vacuna no encontrada</li>'
+            except Vacuna.DoesNotExist:
+                html += f'<li>{reg.fecha_aplicacion}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
         
         return format_html(html)
@@ -149,8 +152,8 @@ class GanadoAdmin(ImagenAdminMixin):
             try:
                 link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
                 html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
-            except Exception:
-                html += f'<li>{reg.fecha_proxima_dosis}: Vacuna no encontrada</li>'
+            except Vacuna.DoesNotExist:
+                html += f'<li>{reg.fecha_proxima_dosis}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
         
         return format_html(html)
