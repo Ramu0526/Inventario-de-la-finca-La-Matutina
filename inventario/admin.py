@@ -126,8 +126,11 @@ class GanadoAdmin(ImagenAdminMixin):
         
         html = "<ul>"
         for reg in vacunaciones:
-            vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
-            html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
+            try:
+                vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+                html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
+            except Exception:
+                html += f'<li>{reg.fecha_aplicacion}: Vacuna no encontrada</li>'
         html += "</ul>"
         
         return format_html(html)
@@ -142,9 +145,12 @@ class GanadoAdmin(ImagenAdminMixin):
             return "Ninguna programada"
         
         html = "<ul>"
-        for reg in proximas[:3]: # Show up to 3 next vaccinations
-            link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
-            html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
+        for reg in proximas[:3]:
+            try:
+                link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+                html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
+            except Exception:
+                html += f'<li>{reg.fecha_proxima_dosis}: Vacuna no encontrada</li>'
         html += "</ul>"
         
         return format_html(html)
