@@ -115,6 +115,8 @@ class Ganado(models.Model):
     
     @property
     def edad(self):
+        if not self.fecha_nacimiento:
+            return "Fecha no registrada"
         hoy = datetime.date.today()
         diferencia = relativedelta(hoy, self.fecha_nacimiento)
         return f"{diferencia.years} años, {diferencia.months} meses"
