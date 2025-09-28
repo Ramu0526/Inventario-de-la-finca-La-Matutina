@@ -117,9 +117,15 @@ class Ganado(models.Model):
     def edad(self):
         if not self.fecha_nacimiento:
             return "Fecha no registrada"
-        hoy = datetime.date.today()
-        diferencia = relativedelta(hoy, self.fecha_nacimiento)
-        return f"{diferencia.years} años, {diferencia.months} meses"
+        
+        # AÑADIMOS UN BLOQUE TRY-EXCEPT PARA MANEJAR ERRORES
+        try:
+            hoy = datetime.date.today()
+            diferencia = relativedelta(hoy, self.fecha_nacimiento)
+            return f"{diferencia.years} años, {diferencia.months} meses"
+        except (ValueError, TypeError):
+            # Si hay algún problema con la fecha, devolvemos un mensaje seguro
+            return "Fecha inválida"
 
     def __str__(self):
         try:

@@ -1132,40 +1132,42 @@ def vacuna_detalles_json(request, vacuna_id):
 def ganado_detalles_json(request, ganado_id):
     ganado = get_object_or_404(Ganado, pk=ganado_id)
     
-    # Historial de vacunación
+    # Historial de vacunación - CÓDIGO MEJORADO
     vacunaciones = ganado.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
     historial_vacunacion = []
     for reg in vacunaciones:
-        try:
+        # Verificamos que la vacuna asociada existe antes de usarla
+        if hasattr(reg, 'vacuna') and reg.vacuna:
             historial_vacunacion.append({
                 'id': reg.id, 'vacuna_id': reg.vacuna.id, 'vacuna_nombre': reg.vacuna.nombre,
                 'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
                 'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
                 'notas': reg.notas or 'No hay notas.',
             })
-        except Vacuna.DoesNotExist:
+        else: # Si no existe, lo manejamos de forma segura
             historial_vacunacion.append({
-                'id': reg.id, 'vacuna_id': None, 'vacuna_nombre': f"Vacuna no encontrada (ID: {reg.vacuna_id})",
+                'id': reg.id, 'vacuna_id': None, 'vacuna_nombre': f"Vacuna eliminada (ID: {reg.vacuna_id})",
                 'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
                 'fecha_proxima_dosis': reg.fecha_proxima_dosis.strftime('%d/%m/%Y') if reg.fecha_proxima_dosis else 'N/A',
-                'notas': 'Error: La vacuna asociada a este registro fue eliminada.',
+                'notas': 'Error: La vacuna asociada a este registro ya no existe.',
             })
 
-    # Historial de medicamentos
+    # Historial de medicamentos - CÓDIGO MEJORADO
     medicamentos_aplicados = ganado.medicamentos_aplicados.select_related('medicamento').order_by('-fecha_aplicacion')
     historial_medicamentos = []
     for reg in medicamentos_aplicados:
-        try:
+        # Hacemos la misma verificación para los medicamentos
+        if hasattr(reg, 'medicamento') and reg.medicamento:
             historial_medicamentos.append({
                 'id': reg.id, 'medicamento_id': reg.medicamento.id, 'medicamento_nombre': reg.medicamento.nombre,
                 'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
                 'notas': reg.notas or 'No hay notas.',
             })
-        except Medicamento.DoesNotExist:
+        else: # Manejo seguro si el medicamento fue eliminado
             historial_medicamentos.append({
-                'id': reg.id, 'medicamento_id': None, 'medicamento_nombre': f"Medicamento no encontrado (ID: {reg.medicamento_id})",
+                'id': reg.id, 'medicamento_id': None, 'medicamento_nombre': f"Medicamento eliminado (ID: {reg.medicamento_id})",
                 'fecha_aplicacion': reg.fecha_aplicacion.strftime('%d/%m/%Y'),
-                'notas': 'Error: El medicamento asociado a este registro fue eliminado.',
+                'notas': 'Error: El medicamento asociado a este registro ya no existe.',
             })
 
     estados_salud = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoSalud.choices]

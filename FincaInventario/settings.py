@@ -34,7 +34,7 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Panel de control",
     "site_logo": "inventario/images/logo.png", 
 
-    "custom_css": "css/logo_resize.css", 
+    "custom_css": "inventario/css/logo_resize.css", 
 
     "welcome_sign": "¡Bienvenido a la administración de La Matutina!", 
 
