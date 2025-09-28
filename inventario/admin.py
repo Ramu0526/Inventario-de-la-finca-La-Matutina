@@ -85,7 +85,11 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 'razon_venta', 'razon_fallecimiento', 'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 
+                        'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 
+                        #'razon_venta', 'razon_fallecimiento', # <--- COMENTA ESTOS
+                        'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    # --- FIN DE LA MODIFICACIÓN ---
     list_per_page = 10
     list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
     search_fields = ('identificador', 'animal__nombre', 'raza')

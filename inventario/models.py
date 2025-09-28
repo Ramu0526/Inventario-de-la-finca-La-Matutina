@@ -101,14 +101,16 @@ class Ganado(models.Model):
     fecha_peñe = models.DateField("Fecha de Peñe", null=True, blank=True)
     descripcion_peñe = models.TextField("Descripción del Peñe", max_length=1000, blank=True, null=True)
 
-    fecha_fallecimiento = models.DateField("Fecha de Fallecimiento", null=True, blank=True)
-    razon_fallecimiento = models.TextField("Razón del Fallecimiento", max_length=1000, blank=True, null=True)
-    
-    fecha_venta = models.DateField("Fecha de Venta", null=True, blank=True)
-    valor_venta = models.DecimalField("Valor de Venta", max_digits=10, decimal_places=2, null=True, blank=True)
-    razon_venta = models.TextField("Razón de la Venta", max_length=1000, blank=True, null=True)
-    comprador = models.CharField("Comprador", max_length=100, blank=True, null=True)
-    comprador_telefono = models.CharField("Teléfono del Comprador", max_length=20, blank=True, null=True)
+    # --- COMENTA ESTAS LÍNEAS ---
+    # fecha_fallecimiento = models.DateField("Fecha de Fallecimiento", null=True, blank=True)
+    # razon_fallecimiento = models.TextField("Razón del Fallecimiento", max_length=1000, blank=True, null=True)
+
+    # fecha_venta = models.DateField("Fecha de Venta", null=True, blank=True)
+    # valor_venta = models.DecimalField("Valor de Venta", max_digits=10, decimal_places=2, null=True, blank=True)
+    # razon_venta = models.TextField("Razón de la Venta", max_length=1000, blank=True, null=True)
+    # comprador = models.CharField("Comprador", max_length=100, blank=True, null=True)
+    # comprador_telefono = models.CharField("Teléfono del Comprador", max_length=20, blank=True, null=True)
+    # --- FIN DE LÍNEAS A COMENTAR ---
 
     imagen = CloudinaryField('image', folder='ganado', null=True, blank=True)
     descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Notas o descripción del animal.")
