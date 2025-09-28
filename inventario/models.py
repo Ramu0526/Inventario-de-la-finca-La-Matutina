@@ -122,7 +122,10 @@ class Ganado(models.Model):
         return f"{diferencia.years} años, {diferencia.months} meses"
 
     def __str__(self):
-        animal_display = self.animal.nombre if self.animal else "[Sin tipo de animal]"
+        try:
+            animal_display = self.animal.nombre if self.animal else "[Sin tipo de animal]"
+        except Animal.DoesNotExist:
+            animal_display = "[Animal eliminado]"
         return f"{self.identificador} - {animal_display}"
 
 class Medicamento(models.Model):
