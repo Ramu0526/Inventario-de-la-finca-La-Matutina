@@ -347,10 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 <div id="fallecido-fields" style="display: none;">
                                     <div class="form-field"><label for="ganado-fecha-fallecimiento">Fecha Fallecimiento:</label><input type="date" id="ganado-fecha-fallecimiento" value="${d.fecha_fallecimiento}"></div>
+                                    <div class="form-field"><label for="ganado-razon-fallecimiento">Razón Fallecimiento:</label><textarea id="ganado-razon-fallecimiento">${d.razon_fallecimiento}</textarea></div>
                                 </div>
                                 <div id="vendido-fields" style="display: none;">
                                      <div class="form-field"><label for="ganado-fecha-venta">Fecha Venta:</label><input type="date" id="ganado-fecha-venta" value="${d.fecha_venta}"></div>
                                      <div class="form-field"><label for="ganado-valor-venta">Valor Venta:</label><input type="number" step="0.01" id="ganado-valor-venta" value="${d.valor_venta}"></div>
+                                     <div class="form-field"><label for="ganado-razon-venta">Razón Venta:</label><textarea id="ganado-razon-venta">${d.razon_venta}</textarea></div>
                                      <div class="form-field"><label for="ganado-comprador">Comprador:</label><input type="text" id="ganado-comprador" value="${d.comprador}"></div>
                                      <div class="form-field"><label for="ganado-comprador-telefono">Teléfono Comprador:</label><input type="text" id="ganado-comprador-telefono" value="${d.comprador_telefono}"></div>
                                 </div>
@@ -860,8 +862,10 @@ document.addEventListener('DOMContentLoaded', () => {
             descripcion: form.querySelector('#ganado-descripcion').value,
             crecimiento: form.querySelector('#ganado-crecimiento').value,
             fecha_fallecimiento: form.querySelector('#ganado-fecha-fallecimiento').value,
+            razon_fallecimiento: form.querySelector('#ganado-razon-fallecimiento').value,
             fecha_venta: form.querySelector('#ganado-fecha-venta').value,
             valor_venta: form.querySelector('#ganado-valor-venta').value,
+            razon_venta: form.querySelector('#ganado-razon-venta').value,
             comprador: form.querySelector('#ganado-comprador').value,
             comprador_telefono: form.querySelector('#ganado-comprador-telefono').value,
             fecha_peñe: form.querySelector('#ganado-fecha-peñe').value,

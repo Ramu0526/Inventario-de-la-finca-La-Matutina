@@ -82,7 +82,7 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 'razon_venta', 'razon_fallecimiento', 'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
     search_fields = ('identificador', 'animal__nombre', 'raza')
@@ -102,11 +102,11 @@ class GanadoAdmin(ImagenAdminMixin):
         }),
         ('Información de Venta', {
             'classes': ('collapse',),
-            'fields': ('fecha_venta', 'valor_venta', 'comprador', 'comprador_telefono')
+            'fields': ('fecha_venta', 'valor_venta', 'razon_venta', 'comprador', 'comprador_telefono')
         }),
         ('Información de Fallecimiento', {
             'classes': ('collapse',),
-            'fields': ('fecha_fallecimiento',)
+            'fields': ('fecha_fallecimiento', 'razon_fallecimiento')
         }),
     )
 

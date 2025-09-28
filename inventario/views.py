@@ -200,17 +200,21 @@ def actualizar_ganado_ajax(request):
         # Campos condicionales
         if ganado.estado == 'FALLECIDO':
             ganado.fecha_fallecimiento = data.get('fecha_fallecimiento') or None
+            ganado.razon_fallecimiento = data.get('razon_fallecimiento', ganado.razon_fallecimiento)
         else:
             ganado.fecha_fallecimiento = None
+            ganado.razon_fallecimiento = None
 
         if ganado.estado == 'VENDIDO':
             ganado.fecha_venta = data.get('fecha_venta') or None
             ganado.valor_venta = Decimal(data.get('valor_venta')) if data.get('valor_venta') else None
+            ganado.razon_venta = data.get('razon_venta', ganado.razon_venta)
             ganado.comprador = data.get('comprador', ganado.comprador)
             ganado.comprador_telefono = data.get('comprador_telefono', ganado.comprador_telefono)
         else:
             ganado.fecha_venta = None
             ganado.valor_venta = None
+            ganado.razon_venta = None
             ganado.comprador = None
             ganado.comprador_telefono = None
 
@@ -1165,6 +1169,8 @@ def ganado_detalles_json(request, ganado_id):
         'fecha_fallecimiento': ganado.fecha_fallecimiento.strftime('%Y-%m-%d') if ganado.fecha_fallecimiento else '',
         'fecha_venta': ganado.fecha_venta.strftime('%Y-%m-%d') if ganado.fecha_venta else '',
         'valor_venta': str(ganado.valor_venta) if ganado.valor_venta is not None else '',
+        'razon_venta': ganado.razon_venta or '',
+        'razon_fallecimiento': ganado.razon_fallecimiento or '',
         'comprador': ganado.comprador or '',
         'comprador_telefono': ganado.comprador_telefono or '',
         'fecha_peñe': ganado.fecha_peñe.strftime('%Y-%m-%d') if ganado.fecha_peñe else '',
