@@ -121,38 +121,51 @@ class GanadoAdmin(ImagenAdminMixin):
 
     def historial_vacunacion(self, obj):
         from django.utils.html import format_html
-        from django.urls import reverse
+        from django.urls import reverse, NoReverseMatch
         
-        vacunaciones = obj.vacunaciones.all().order_by('-fecha_aplicacion')
-        if not vacunaciones:
+        # Usamos select_related para hacer la consulta más eficiente
+        vacunaciones = obj.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
+        
+        if not vacunaciones.exists():
             return "Sin registros"
         
         html = "<ul>"
         for reg in vacunaciones:
-            try:
-                vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
-                html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
-            except Vacuna.DoesNotExist:
+            # Verificamos si el objeto 'vacuna' existe realmente
+            if hasattr(reg, 'vacuna') and reg.vacuna:
+                try:
+                    vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+                    html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
+                except NoReverseMatch:
+                    # En caso de que haya un problema creando el enlace
+                    html += f'<li>{reg.fecha_aplicacion}: {reg.vacuna.nombre} (link no disponible)</li>'
+            else:
+                # Si no hay vacuna asociada, mostramos un mensaje claro
                 html += f'<li>{reg.fecha_aplicacion}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
         
         return format_html(html)
     historial_vacunacion.short_description = 'Historial de Vacunación'
 
+    # REEMPLAZA TAMBIÉN ESTA FUNCIÓN
     def proximas_vacunas(self, obj):
         from django.utils.html import format_html
-        from django.urls import reverse
+        from django.urls import reverse, NoReverseMatch
         
-        proximas = obj.vacunaciones.filter(fecha_proxima_dosis__isnull=False).order_by('fecha_proxima_dosis')
-        if not proximas:
+        proximas = obj.vacunaciones.select_related('vacuna').filter(fecha_proxima_dosis__isnull=False).order_by('fecha_proxima_dosis')
+        
+        if not proximas.exists():
             return "Ninguna programada"
         
         html = "<ul>"
         for reg in proximas[:3]:
-            try:
-                link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
-                html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
-            except Vacuna.DoesNotExist:
+            if hasattr(reg, 'vacuna') and reg.vacuna:
+                try:
+                    link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
+                    html += f'<li>{reg.fecha_proxima_dosis}: <a href="{link}">{reg.vacuna.nombre}</a></li>'
+                except NoReverseMatch:
+                    html += f'<li>{reg.fecha_proxima_dosis}: {reg.vacuna.nombre} (link no disponible)</li>'
+            else:
                 html += f'<li>{reg.fecha_proxima_dosis}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
         
