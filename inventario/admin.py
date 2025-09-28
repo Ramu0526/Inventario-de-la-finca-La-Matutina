@@ -116,6 +116,8 @@ class GanadoAdmin(ImagenAdminMixin):
     inlines = [RegistroVacunacionInline, RegistroMedicamentoInline]
 
     def edad(self, obj):
+        # Añadimos un print para ver qué objeto se está procesando
+        print(f"Procesando edad para Ganado ID: {obj.pk}") 
         return obj.edad
     edad.short_description = 'Edad'
 
@@ -123,37 +125,33 @@ class GanadoAdmin(ImagenAdminMixin):
         from django.utils.html import format_html
         from django.urls import reverse, NoReverseMatch
         
-        # Usamos select_related para hacer la consulta más eficiente
-        vacunaciones = obj.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
+        print(f"Procesando historial_vacunacion para Ganado ID: {obj.pk}") # Añadimos print
         
+        vacunaciones = obj.vacunaciones.select_related('vacuna').order_by('-fecha_aplicacion')
         if not vacunaciones.exists():
             return "Sin registros"
         
         html = "<ul>"
         for reg in vacunaciones:
-            # Verificamos si el objeto 'vacuna' existe realmente
             if hasattr(reg, 'vacuna') and reg.vacuna:
                 try:
                     vacuna_link = reverse("admin:inventario_vacuna_change", args=[reg.vacuna.pk])
                     html += f'<li>{reg.fecha_aplicacion}: <a href="{vacuna_link}">{reg.vacuna.nombre}</a></li>'
                 except NoReverseMatch:
-                    # En caso de que haya un problema creando el enlace
                     html += f'<li>{reg.fecha_aplicacion}: {reg.vacuna.nombre} (link no disponible)</li>'
             else:
-                # Si no hay vacuna asociada, mostramos un mensaje claro
                 html += f'<li>{reg.fecha_aplicacion}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
-        
         return format_html(html)
     historial_vacunacion.short_description = 'Historial de Vacunación'
 
-    # REEMPLAZA TAMBIÉN ESTA FUNCIÓN
     def proximas_vacunas(self, obj):
         from django.utils.html import format_html
         from django.urls import reverse, NoReverseMatch
         
+        print(f"Procesando proximas_vacunas para Ganado ID: {obj.pk}") # Añadimos print
+
         proximas = obj.vacunaciones.select_related('vacuna').filter(fecha_proxima_dosis__isnull=False).order_by('fecha_proxima_dosis')
-        
         if not proximas.exists():
             return "Ninguna programada"
         
@@ -168,7 +166,6 @@ class GanadoAdmin(ImagenAdminMixin):
             else:
                 html += f'<li>{reg.fecha_proxima_dosis}: Vacuna no encontrada (ID: {reg.vacuna_id})</li>'
         html += "</ul>"
-        
         return format_html(html)
     proximas_vacunas.short_description = 'Próximas Vacunas'
 

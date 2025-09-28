@@ -109,11 +109,12 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': 'YKO6Hw4iYwwumCoBfuRZtHGG5s0',
 }
 
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+# Mantenemos la lógica de ALLOWED_HOSTS y DATABASES que depende de si estamos en producción
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
 if IS_PRODUCTION:
-    DEBUG = False
-    
     RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
     ALLOWED_HOSTS = []
     if RENDER_EXTERNAL_HOSTNAME:
@@ -132,7 +133,8 @@ if IS_PRODUCTION:
     MEDIA_URL = ''
 
 else:
-    DEBUG = True
+    # Cuando corres localmente, DEBUG será controlado por tu archivo .env o será False por defecto.
+    # NO definimos DEBUG = True aquí.
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
     
     DATABASES = {
