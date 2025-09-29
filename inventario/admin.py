@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 from django import forms
+import time
 from caracteristicas.models import Etiqueta
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
@@ -360,11 +361,14 @@ class AlimentoForm(forms.ModelForm):
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
     form = AlimentoForm
-    list_display = ('nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre', 'categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     
     class Media:
-        js = ('admin/js/admin_etiquetas.js',)
+        js = ('inventario/js/modalManager.js', 'inventario/js/admin_etiquetas.js',)
+        css = {
+            'all': (f'inventario/css/StyleModal.css?v={int(time.time())}',)
+        }
     list_filter = ('categoria', 'ubicaciones', 'proveedores', 'fecha_vencimiento', 'etiquetas')
     search_fields = ('nombre', 'categoria__nombre', 'proveedores__nombre', 'etiquetas__nombre')
     readonly_fields = ('cantidad_kg_usada', 'cantidad_kg_restante')
@@ -386,6 +390,79 @@ class AlimentoAdmin(ImagenAdminMixin):
     )
 
     filter_horizontal = ('proveedores', 'ubicaciones')
+
+    def ver_detalles(self, obj):
+        # Obtener datos relacionados, manejando casos vacíos
+        categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
+        
+        # Formatear listas para mostrarlas como elementos de lista HTML
+        etiquetas_html = "<ul>" + "".join([f"<li>{e.nombre}</li>" for e in obj.etiquetas.all()]) + "</ul>" if obj.etiquetas.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+
+        imagen_html = "Dato aún no ingresado"
+        if obj.imagen and hasattr(obj.imagen, 'url'):
+            imagen_html = f'<img src="{obj.imagen.url}" alt="Imagen de {obj.nombre}" class="details-img">'
+        
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        # Formatear fechas y números
+        fecha_compra = obj.fecha_compra.strftime('%d/%m/%Y') if obj.fecha_compra else "Dato aún no ingresado"
+        fecha_vencimiento = obj.fecha_vencimiento.strftime('%d/%m/%Y') if obj.fecha_vencimiento else "Dato aún no ingresado"
+        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
+        cantidad_ingresada = f"{obj.cantidad_kg_ingresada} Kg" if obj.cantidad_kg_ingresada is not None else "Dato aún no ingresado"
+        cantidad_usada = f"{obj.cantidad_kg_usada} Kg" if obj.cantidad_kg_usada is not None else "Dato aún no ingresado"
+        cantidad_restante = f"{obj.cantidad_kg_restante} Kg" if obj.cantidad_kg_restante is not None else "Dato aún no ingresado"
+
+        # Nueva estructura del modal con diseño mejorado
+        modal_html = f"""
+        <div id="modal-alimento-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de {obj.nombre}</h2>
+                    <span class="close-btn">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Categoría:</strong> {categoria}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                                <p><strong>Fecha de Compra:</strong> {fecha_compra}</p>
+                                <p><strong>Fecha de Vencimiento:</strong> {fecha_vencimiento}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Precio</h4>
+                                <p><strong>Cantidad Ingresada:</strong> {cantidad_ingresada}</p>
+                                <p><strong>Cantidad Usada:</strong> {cantidad_usada}</p>
+                                <p><strong>Cantidad Restante:</strong> {cantidad_restante}</p>
+                                <p><strong>Precio:</strong> {precio}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Organización</h4>
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                                <p><strong>Etiquetas:</strong></p>
+                                {etiquetas_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button ver-detalles-btn" data-modal-id="modal-alimento-{obj.pk}">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 
     def save_model(self, request, obj, form, change):
         # Save the main object first

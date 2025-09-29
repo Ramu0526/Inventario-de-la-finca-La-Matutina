@@ -1024,4 +1024,37 @@ document.addEventListener('DOMContentLoaded', () => {
         infoModal.style.display = 'block';
         infoContent.querySelector('#info-close-btn').addEventListener('click', closeInfoModal);
     }
+
+    // --- New logic for self-contained modals in admin lists using EVENT DELEGATION ---
+    document.addEventListener('click', function(event) {
+        // --- Open modal ---
+        const openBtn = event.target.closest('.ver-detalles-btn');
+        if (openBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const modalId = openBtn.dataset.modalId;
+            const modal = document.getElementById(modalId);
+            
+            if (modal) {
+                modal.style.display = 'block';
+            }
+            return; // Stop further execution
+        }
+
+        // --- Close modal via close button ---
+        const closeBtn = event.target.closest('.modal .close-btn');
+        if (closeBtn) {
+            const modal = closeBtn.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            return; // Stop further execution
+        }
+
+        // --- Close modal by clicking on the background ---
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }, { capture: true }); // Use event capturing to ensure this runs before other listeners
 });
