@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 items_per_page: window.innerWidth <= 768 ? 6 : 8
             });
             const url = `/${itemType}/?${params.toString()}`;
+            console.log("Fetching URL:", url);
 
             try {
                 const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });

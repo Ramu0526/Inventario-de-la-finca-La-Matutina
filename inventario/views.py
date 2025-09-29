@@ -643,7 +643,7 @@ def lista_ganado(request):
     crecimiento_query = request.GET.get('crecimiento')
     estado_query = request.GET.get('estado')
     estado_salud_query = request.GET.get('estado_salud')
-    pene_query = request.GET.get('pene')
+    peñe_query = request.GET.get('peñe')
 
     if nombre_query:
         items_list = items_list.filter(identificador__icontains=nombre_query)
@@ -657,8 +657,8 @@ def lista_ganado(request):
         items_list = items_list.filter(estado=estado_query)
     if estado_salud_query:
         items_list = items_list.filter(estado_salud=estado_salud_query)
-    if pene_query:
-        items_list = items_list.filter(peñe=pene_query)
+    if peñe_query:
+        items_list = items_list.filter(peñe=peñe_query)
 
     if peso_query:
         if peso_query == '0_10':
