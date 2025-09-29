@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 from django import forms
-import time
 from caracteristicas.models import Etiqueta
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
@@ -367,7 +366,7 @@ class AlimentoAdmin(ImagenAdminMixin):
     class Media:
         js = ('inventario/js/modalManager.js', 'inventario/js/admin_etiquetas.js',)
         css = {
-            'all': (f'inventario/css/StyleModal.css?v={int(time.time())}',)
+            'all': ('inventario/css/StyleModal.css',)
         }
     list_filter = ('categoria', 'ubicaciones', 'proveedores', 'fecha_vencimiento', 'etiquetas')
     search_fields = ('nombre', 'categoria__nombre', 'proveedores__nombre', 'etiquetas__nombre')
@@ -420,7 +419,7 @@ class AlimentoAdmin(ImagenAdminMixin):
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>Detalles de {obj.nombre}</h2>
-                    <span class="close-btn">&times;</span>
+                    <span class="close-btn" onclick="document.getElementById('modal-alimento-{obj.pk}').style.display='none'">&times;</span>
                 </div>
                 <hr class="separator">
                 <div class="modal-body">
@@ -458,7 +457,7 @@ class AlimentoAdmin(ImagenAdminMixin):
                 </div>
             </div>
         </div>
-        <button class="button ver-detalles-btn" data-modal-id="modal-alimento-{obj.pk}">Ver</button>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-alimento-{obj.pk}').style.display='block'">Ver</button>
         """
         return mark_safe(modal_html)
     ver_detalles.short_description = 'Detalles'

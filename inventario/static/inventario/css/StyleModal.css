@@ -12,7 +12,6 @@
 }
 
 .modal-content {
-    background-color: #ffffff; /* Fallback for light mode */
     background-color: var(--form-bg-color);
     color: var(--text-color);
     margin: 5% auto;
@@ -155,29 +154,16 @@ body.dark-mode .pagination-btn.active {
     z-index: 1001;
 }
 
-.details-grid {
-    display: flex;
+.details-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-}
-
-.details-left-column, .details-right-column {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* This is for the alternating row style. Django uses .row1 and .row2 */
-tr.row2 .details-grid {
-    flex-direction: row-reverse;
+    text-align: left;
 }
 
 .details-section {
     padding: 15px;
-    background-color: #f8f9fa; /* Light mode solid background */
     background-color: var(--bg-color);
-    border: 1px solid #dee2e6; /* Light mode border */
-    border-color: var(--input-border-color);
     border-radius: 8px;
 }
 
