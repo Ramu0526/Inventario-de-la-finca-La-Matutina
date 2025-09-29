@@ -23,15 +23,96 @@ class ImagenAdminMixin(admin.ModelAdmin):
 
 @admin.register(Animal)
 class AnimalAdmin(admin.ModelAdmin):
-    list_display = ('nombre',)
+    list_display = ('ver_detalles', 'nombre',)
     search_fields = ('nombre',)
     list_per_page = 10
 
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+
+    def ver_detalles(self, obj):
+        nombre = obj.nombre or "Dato aún no ingresado"
+        
+        # Obtener el ganado asociado a este tipo de animal
+        ganado_asociado = Ganado.objects.filter(animal=obj)
+        ganado_html = "<ul>" + "".join([f"<li>{g.identificador}</li>" for g in ganado_asociado]) + "</ul>" if ganado_asociado.exists() else "<p>No hay ganado de este tipo.</p>"
+
+        modal_html = f"""
+        <div id="modal-animal-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Tipo de Animal: {nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-animal-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-section">
+                        <h4>Información General</h4>
+                        <p><strong>Nombre del Tipo:</strong> {nombre}</p>
+                    </div>
+                    <div class="details-section">
+                        <h4>Ganado de este Tipo</h4>
+                        {ganado_html}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-animal-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 @admin.register(Comprador)
 class CompradorAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'telefono')
+    list_display = ('ver_detalles', 'nombre', 'telefono')
     search_fields = ('nombre',)
     list_per_page = 10
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+
+    def ver_detalles(self, obj):
+        # Obtener productos comprados
+        ventas = obj.ventaproducto_set.all()
+        productos_html = "<ul>" + "".join([f"<li>{v.producto.nombre} (Valor: ${v.valor_compra:,.2f}, Abono: ${v.valor_abono:,.2f})</li>" for v in ventas]) + "</ul>" if ventas.exists() else "<p>No ha comprado productos.</p>"
+
+        nombre = obj.nombre or "Dato aún no ingresado"
+        telefono = obj.telefono or "Dato aún no ingresado"
+
+        # Estructura del modal
+        modal_html = f"""
+        <div id="modal-comprador-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de: {nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-comprador-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-section">
+                            <h4>Información de Contacto</h4>
+                            <p><strong>Nombre:</strong> {nombre}</p>
+                            <p><strong>Teléfono:</strong> {telefono}</p>
+                        </div>
+                        <div class="details-section">
+                            <h4>Historial de Compras</h4>
+                            {productos_html}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-comprador-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
 class VentaProductoInline(admin.TabularInline):
     model = VentaProducto
@@ -41,11 +122,17 @@ class VentaProductoInline(admin.TabularInline):
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
     # CAMBIA la línea 'list_display' para incluir el estado
-    list_display = ('nombre', 'cantidad_con_unidad', 'categoria', 'estado', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre', 'cantidad_con_unidad', 'categoria', 'estado', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
     list_per_page = 10
     # AÑADE 'estado' a los filtros
     list_filter = ('categoria', 'estado', 'ubicaciones', 'unidad_medida')
     search_fields = ('nombre', 'categoria__nombre')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
 
     fieldsets = (
         (None, {
@@ -60,6 +147,66 @@ class ProductoAdmin(ImagenAdminMixin):
     )
     
     inlines = [VentaProductoInline]
+
+    def ver_detalles(self, obj):
+        categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
+        estado = obj.get_estado_display() or "Dato aún no ingresado"
+        
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        
+        imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
+        descripcion = obj.descripcion or "Sin descripción"
+        
+        fecha_produccion = obj.fecha_produccion.strftime('%d/%m/%Y') if obj.fecha_produccion else "Dato aún no ingresado"
+        fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No vendido"
+        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
+        cantidad = f"{obj.cantidad} {obj.get_unidad_medida_display()}" if obj.cantidad is not None else "Dato aún no ingresado"
+        precio_total = f"${obj.precio_total:,.2f}" if obj.precio_total is not None else "Dato aún no ingresado"
+
+        modal_html = f"""
+        <div id="modal-producto-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Producto: {obj.nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-producto-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Nombre:</strong> {obj.nombre}</p>
+                                <p><strong>Categoría:</strong> {categoria}</p>
+                                <p><strong>Estado:</strong> {estado}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Precio</h4>
+                                <p><strong>Cantidad:</strong> {cantidad}</p>
+                                <p><strong>Precio Unitario:</strong> {precio}</p>
+                                <p><strong>Precio Total:</strong> {precio_total}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Fechas y Ubicación</h4>
+                                <p><strong>Fecha de Producción:</strong> {fecha_produccion}</p>
+                                <p><strong>Fecha de Venta:</strong> {fecha_venta}</p>
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-producto-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def cantidad_con_unidad(self, obj):
         return f"{obj.cantidad} {obj.get_unidad_medida_display()}"
@@ -85,7 +232,7 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 
+    list_display = ('ver_detalles', 'identificador', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 
                         'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 
                         'razon_venta', 'razon_fallecimiento',
                         'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
@@ -96,6 +243,12 @@ class GanadoAdmin(ImagenAdminMixin):
     list_editable = ('estado_salud', 'crecimiento', 'estado')
     
     readonly_fields = ('edad',)
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
 
     fieldsets = (
         ('Información Principal', {
@@ -118,6 +271,90 @@ class GanadoAdmin(ImagenAdminMixin):
     )
 
     inlines = [RegistroVacunacionInline, RegistroMedicamentoInline]
+
+    def ver_detalles(self, obj):
+        animal = obj.animal.nombre if obj.animal else "Dato aún no ingresado"
+        raza = obj.raza or "Dato aún no ingresado"
+        genero = obj.get_genero_display() or "Dato aún no ingresado"
+        peso = f"{obj.peso_kg} Kg" if obj.peso_kg is not None else "Dato aún no ingresado"
+        edad = obj.edad or "Dato aún no ingresado"
+        crecimiento = obj.get_crecimiento_display() or "Dato aún no ingresado"
+        fecha_nacimiento = obj.fecha_nacimiento.strftime('%d/%m/%Y') if obj.fecha_nacimiento else "Dato aún no ingresado"
+        estado = obj.get_estado_display() or "Dato aún no ingresado"
+        estado_salud = obj.get_estado_salud_display() or "Dato aún no ingresado"
+        
+        # Peñe
+        peñe = obj.get_peñe_display() or "No aplica"
+        fecha_peñe = obj.fecha_peñe.strftime('%d/%m/%Y') if obj.fecha_peñe else "No aplica"
+        descripcion_peñe = obj.descripcion_peñe or "No aplica"
+        
+        # Venta
+        fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No aplica"
+        valor_venta = f"${obj.valor_venta:,.2f}" if obj.valor_venta is not None else "No aplica"
+        razon_venta = obj.razon_venta or "No aplica"
+        comprador = obj.comprador or "No aplica"
+        
+        # Fallecimiento
+        fecha_fallecimiento = obj.fecha_fallecimiento.strftime('%d/%m/%Y') if obj.fecha_fallecimiento else "No aplica"
+        razon_fallecimiento = obj.razon_fallecimiento or "No aplica"
+        
+        imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen else "No hay imagen"
+        descripcion = obj.descripcion or "Sin descripción"
+
+        modal_html = f"""
+        <div id="modal-ganado-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de: {obj.identificador}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-ganado-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información Principal</h4>
+                                <p><strong>Tipo de Animal:</strong> {animal}</p>
+                                <p><strong>Raza:</strong> {raza}</p>
+                                <p><strong>Género:</strong> {genero}</p>
+                                <p><strong>Peso:</strong> {peso}</p>
+                                <p><strong>Edad:</strong> {edad}</p>
+                                <p><strong>Crecimiento:</strong> {crecimiento}</p>
+                                <p><strong>Fecha de Nacimiento:</strong> {fecha_nacimiento}</p>
+                                <p><strong>Estado:</strong> {estado}</p>
+                                <p><strong>Estado de Salud:</strong> {estado_salud}</p>
+                                <p><strong>Descripción:</strong> {descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Información de Peñe</h4>
+                                <p><strong>Tipo de Peñe:</strong> {peñe}</p>
+                                <p><strong>Fecha de Peñe:</strong> {fecha_peñe}</p>
+                                <p><strong>Descripción:</strong> {descripcion_peñe}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Información de Venta</h4>
+                                <p><strong>Fecha de Venta:</strong> {fecha_venta}</p>
+                                <p><strong>Valor:</strong> {valor_venta}</p>
+                                <p><strong>Razón:</strong> {razon_venta}</p>
+                                <p><strong>Comprador:</strong> {comprador}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Información de Fallecimiento</h4>
+                                <p><strong>Fecha:</strong> {fecha_fallecimiento}</p>
+                                <p><strong>Razón:</strong> {razon_fallecimiento}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-ganado-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def edad(self, obj):
         # Añadimos un print para ver qué objeto se está procesando
@@ -175,13 +412,19 @@ class GanadoAdmin(ImagenAdminMixin):
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_ingreso', 'f_vencimiento', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_ingreso', 'f_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('categoria', 'ubicaciones', 'proveedores', 'fecha_vencimiento')
     search_fields = ('nombre', 'categoria__nombre', 'ubicaciones__nombre', 'proveedores__nombre')
     
     readonly_fields = ('cantidad_usada', 'cantidad_restante')
     filter_horizontal = ('proveedores', 'ubicaciones')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
     
     fieldsets = (
         (None, {
@@ -194,6 +437,73 @@ class MedicamentoAdmin(ImagenAdminMixin):
             'fields': ('fecha_compra', 'fecha_ingreso', 'fecha_vencimiento')
         }),
     )
+
+    def ver_detalles(self, obj):
+        categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
+        
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+
+        imagen_html = "Dato aún no ingresado"
+        if obj.imagen and hasattr(obj.imagen, 'url'):
+            imagen_html = f'<img src="{obj.imagen.url}" alt="Imagen de {obj.nombre}" class="details-img">'
+        
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        fecha_compra = obj.fecha_compra.strftime('%d/%m/%Y') if obj.fecha_compra else "Dato aún no ingresado"
+        fecha_ingreso = obj.fecha_ingreso.strftime('%d/%m/%Y') if obj.fecha_ingreso else "Dato aún no ingresado"
+        fecha_vencimiento = obj.fecha_vencimiento.strftime('%d/%m/%Y') if obj.fecha_vencimiento else "Dato aún no ingresado"
+        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
+        cantidad_ingresada = f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}" if obj.cantidad_ingresada is not None else "Dato aún no ingresado"
+        cantidad_usada = f"{obj.cantidad_usada} {obj.get_unidad_medida_display()}" if obj.cantidad_usada is not None else "Dato aún no ingresado"
+        cantidad_restante = f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}" if obj.cantidad_restante is not None else "Dato aún no ingresado"
+
+        modal_html = f"""
+        <div id="modal-medicamento-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de: {obj.nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-medicamento-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Categoría:</strong> {categoria}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                                <p><strong>Fecha de Compra:</strong> {fecha_compra}</p>
+                                <p><strong>Fecha de Ingreso:</strong> {fecha_ingreso}</p>
+                                <p><strong>Fecha de Vencimiento:</strong> {fecha_vencimiento}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Precio</h4>
+                                <p><strong>Cantidad Ingresada:</strong> {cantidad_ingresada}</p>
+                                <p><strong>Cantidad Usada:</strong> {cantidad_usada}</p>
+                                <p><strong>Cantidad Restante:</strong> {cantidad_restante}</p>
+                                <p><strong>Precio:</strong> {precio}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Organización</h4>
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-medicamento-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def cantidad_restante_con_unidad(self, obj):
         return f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}"
@@ -255,7 +565,7 @@ class VacunaForm(forms.ModelForm):
 @admin.register(Vacuna)
 class VacunaAdmin(ImagenAdminMixin):
     form = VacunaForm
-    list_display = ('nombre', 'tipo', 'disponible', 'mostrar_etiquetas', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre', 'tipo', 'disponible', 'mostrar_etiquetas', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_proveedores', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('disponible', 'tipo', 'etiquetas', 'fecha_vencimiento', 'proveedores', 'ubicaciones')
     search_fields = ('nombre', 'tipo', 'etiquetas__nombre')
@@ -283,7 +593,82 @@ class VacunaAdmin(ImagenAdminMixin):
     filter_horizontal = ('proveedores', 'ubicaciones')
 
     class Media:
-        js = ('admin/js/admin_etiquetas.js',)
+        js = ('inventario/js/modalManager.js', 'inventario/js/admin_etiquetas.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+    
+    def ver_detalles(self, obj):
+        tipo = obj.tipo or "Dato aún no ingresado"
+        disponible = "Sí" if obj.disponible else "No"
+        
+        etiquetas_html = "<ul>" + "".join([f"<li>{e.nombre}</li>" for e in obj.etiquetas.all()]) + "</ul>" if obj.etiquetas.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        
+        imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
+        descripcion = obj.descripcion or "Sin descripción"
+        
+        fecha_compra = obj.fecha_compra.strftime('%d/%m/%Y') if obj.fecha_compra else "Dato aún no ingresado"
+        fecha_vencimiento = obj.fecha_vencimiento.strftime('%d/%m/%Y') if obj.fecha_vencimiento else "Dato aún no ingresado"
+        cantidad = f"{obj.cantidad} {obj.get_unidad_medida_display()}" if obj.cantidad is not None else "Dato aún no ingresado"
+        
+        dosis_crecimiento = obj.dosis_crecimiento or "No especificada"
+        dosis_edad = obj.dosis_edad or "No especificada"
+        dosis_peso = obj.dosis_peso or "No especificada"
+
+        modal_html = f"""
+        <div id="modal-vacuna-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Vacuna: {obj.nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-vacuna-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Nombre:</strong> {obj.nombre}</p>
+                                <p><strong>Tipo:</strong> {tipo}</p>
+                                <p><strong>Disponible:</strong> {disponible}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Fechas</h4>
+                                <p><strong>Cantidad:</strong> {cantidad}</p>
+                                <p><strong>Fecha de Compra:</strong> {fecha_compra}</p>
+                                <p><strong>Fecha de Vencimiento:</strong> {fecha_vencimiento}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Dosis Recomendadas</h4>
+                                <p><strong>Por Crecimiento:</strong> {dosis_crecimiento}</p>
+                                <p><strong>Por Edad:</strong> {dosis_edad}</p>
+                                <p><strong>Por Peso:</strong> {dosis_peso}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Organización</h4>
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                                <p><strong>Etiquetas:</strong></p>
+                                {etiquetas_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-vacuna-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -515,12 +900,18 @@ class AlimentoAdmin(ImagenAdminMixin):
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre_producto', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('tipo', 'proveedores', 'ubicaciones', 'fecha_vencimiento')
     search_fields = ('nombre_producto', 'tipo', 'ubicaciones__nombre', 'proveedores__nombre')
     
     readonly_fields = ('cantidad_usada', 'cantidad_restante')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
 
     fieldsets = (
         (None, {
@@ -536,6 +927,72 @@ class ControlPlagaAdmin(ImagenAdminMixin):
     
     filter_horizontal = ('proveedores', 'ubicaciones')
     
+    def ver_detalles(self, obj):
+        # Formatear listas
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+
+        imagen_html = "Dato aún no ingresado"
+        if obj.imagen and hasattr(obj.imagen, 'url'):
+            imagen_html = f'<img src="{obj.imagen.url}" alt="Imagen de {obj.nombre_producto}" class="details-img">'
+        
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        # Formatear fechas y números
+        fecha_compra = obj.fecha_compra.strftime('%d/%m/%Y') if obj.fecha_compra else "Dato aún no ingresado"
+        fecha_vencimiento = obj.fecha_vencimiento.strftime('%d/%m/%Y') if obj.fecha_vencimiento else "Dato aún no ingresado"
+        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
+        cantidad_ingresada = f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}" if obj.cantidad_ingresada is not None else "Dato aún no ingresado"
+        cantidad_usada = f"{obj.cantidad_usada} {obj.get_unidad_medida_display()}" if obj.cantidad_usada is not None else "Dato aún no ingresado"
+        cantidad_restante = f"{obj.cantidad_restante} {obj.get_unidad_medida_display()}" if obj.cantidad_restante is not None else "Dato aún no ingresado"
+
+        # Estructura del modal
+        modal_html = f"""
+        <div id="modal-controlplaga-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de: {obj.nombre_producto}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-controlplaga-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Tipo:</strong> {obj.tipo}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                                <p><strong>Fecha de Compra:</strong> {fecha_compra}</p>
+                                <p><strong>Fecha de Vencimiento:</strong> {fecha_vencimiento}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Precio</h4>
+                                <p><strong>Cantidad Ingresada:</strong> {cantidad_ingresada}</p>
+                                <p><strong>Cantidad Usada:</strong> {cantidad_usada}</p>
+                                <p><strong>Cantidad Restante:</strong> {cantidad_restante}</p>
+                                <p><strong>Precio:</strong> {precio}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Organización</h4>
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-controlplaga-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
     def cantidad_ingresada_con_unidad(self, obj):
         return f"{obj.cantidad_ingresada} {obj.get_unidad_medida_display()}"
     cantidad_ingresada_con_unidad.short_description = 'Ingresado'
@@ -562,11 +1019,17 @@ class ControlPlagaAdmin(ImagenAdminMixin):
 
 @admin.register(Potrero)
 class PotreroAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'area_hectareas', 'empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'nombre', 'area_hectareas', 'empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('empastado', 'fumigado', 'rozado')
     search_fields = ('nombre',)
     list_editable = ('empastado', 'fumigado', 'rozado', 'fecha_proximo_empaste', 'fecha_proxima_fumigacion', 'fecha_proximo_rozado')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
     
     fieldsets = (
         ('Información Principal', {
@@ -580,9 +1043,70 @@ class PotreroAdmin(ImagenAdminMixin):
         }),
     )
 
+    def ver_detalles(self, obj):
+        nombre = obj.nombre or "Dato aún no ingresado"
+        area = f"{obj.area_hectareas} ha" if obj.area_hectareas is not None else "Dato aún no ingresado"
+        
+        empastado = "Sí" if obj.empastado else "No"
+        fumigado = "Sí" if obj.fumigado else "No"
+        rozado = "Sí" if obj.rozado else "No"
+        
+        fecha_empaste = obj.fecha_proximo_empaste.strftime('%d/%m/%Y') if obj.fecha_proximo_empaste else "No programado"
+        fecha_fumigacion = obj.fecha_proxima_fumigacion.strftime('%d/%m/%Y') if obj.fecha_proxima_fumigacion else "No programado"
+        fecha_rozado = obj.fecha_proximo_rozado.strftime('%d/%m/%Y') if obj.fecha_proximo_rozado else "No programado"
+        
+        intercambio_potrero = obj.intercambio_con_potrero.nombre if obj.intercambio_con_potrero else "Ninguno"
+        fecha_intercambio = obj.fecha_intercambio.strftime('%d/%m/%Y') if obj.fecha_intercambio else "No programado"
+        
+        imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
+        descripcion = obj.descripcion or "Sin descripción"
+
+        modal_html = f"""
+        <div id="modal-potrero-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Potrero: {nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-potrero-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Nombre:</strong> {nombre}</p>
+                                <p><strong>Área:</strong> {area}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Estado y Próximas Acciones</h4>
+                                <p><strong>Empastado:</strong> {empastado} (Próximo: {fecha_empaste})</p>
+                                <p><strong>Fumigado:</strong> {fumigado} (Próximo: {fecha_fumigacion})</p>
+                                <p><strong>Rozado:</strong> {rozado} (Próximo: {fecha_rozado})</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Intercambio de Potreros</h4>
+                                <p><strong>Intercambio con:</strong> {intercambio_potrero}</p>
+                                <p><strong>Fecha de Intercambio:</strong> {fecha_intercambio}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-potrero-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 @admin.register(Mantenimiento)
 class MantenimientoAdmin(ImagenAdminMixin):
     list_display = (
+        'ver_detalles',
         'equipo', 
         'fecha_ultimo_mantenimiento', 
         'fecha_proximo_mantenimiento', 
@@ -595,6 +1119,12 @@ class MantenimientoAdmin(ImagenAdminMixin):
     search_fields = ('equipo', 'lugares_mantenimiento__nombre_lugar')
     list_editable = ('completado',)
     filter_horizontal = ('lugares_mantenimiento',)
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
     
     fieldsets = (
         (None, {
@@ -604,6 +1134,56 @@ class MantenimientoAdmin(ImagenAdminMixin):
             'fields': ('fecha_ultimo_mantenimiento', 'fecha_proximo_mantenimiento', 'completado')
         }),
     )
+
+    def ver_detalles(self, obj):
+        equipo = obj.equipo or "Dato aún no ingresado"
+        fecha_ultimo = obj.fecha_ultimo_mantenimiento.strftime('%d/%m/%Y') if obj.fecha_ultimo_mantenimiento else "Dato aún no ingresado"
+        fecha_proximo = obj.fecha_proximo_mantenimiento.strftime('%d/%m/%Y') if obj.fecha_proximo_mantenimiento else "Dato aún no ingresado"
+        completado = "Sí" if obj.completado else "No"
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        lugares_html = "<ul>" + "".join([f"<li>{l.nombre_lugar}</li>" for l in obj.lugares_mantenimiento.all()]) + "</ul>" if obj.lugares_mantenimiento.exists() else "<p>Dato aún no ingresado</p>"
+        imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen else "No hay imagen"
+
+        modal_html = f"""
+        <div id="modal-mantenimiento-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Mantenimiento de: {equipo}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-mantenimiento-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Equipo:</strong> {equipo}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Fechas y Estado</h4>
+                                <p><strong>Último Mantenimiento:</strong> {fecha_ultimo}</p>
+                                <p><strong>Próximo Mantenimiento:</strong> {fecha_proximo}</p>
+                                <p><strong>Completado:</strong> {completado}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Lugares de Mantenimiento</h4>
+                                {lugares_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-mantenimiento-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def mostrar_lugares_mantenimiento(self, obj):
         from django.urls import reverse
@@ -622,12 +1202,18 @@ class MantenimientoAdmin(ImagenAdminMixin):
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_display = ('ver_detalles', 'tipo', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'mostrar_proveedores', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('tipo', 'ubicaciones', 'proveedores')
     search_fields = ('tipo', 'ubicaciones__nombre', 'proveedores__nombre')
 
     readonly_fields = ('cantidad_galones_usados', 'cantidad_galones_restantes')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
 
     fieldsets = (
         (None, {
@@ -639,6 +1225,68 @@ class CombustibleAdmin(ImagenAdminMixin):
     )
     
     filter_horizontal = ('proveedores', 'ubicaciones')
+
+    def ver_detalles(self, obj):
+        # Formatear listas para mostrarlas como elementos de lista HTML
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+
+        imagen_html = "Dato aún no ingresado"
+        if obj.imagen and hasattr(obj.imagen, 'url'):
+            imagen_html = f'<img src="{obj.imagen.url}" alt="Imagen de {obj.tipo}" class="details-img">'
+        
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        # Formatear números
+        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
+        cantidad_ingresada = f"{obj.cantidad_galones_ingresada} gal" if obj.cantidad_galones_ingresada is not None else "Dato aún no ingresado"
+        cantidad_usada = f"{obj.cantidad_galones_usados} gal" if obj.cantidad_galones_usados is not None else "Dato aún no ingresado"
+        cantidad_restante = f"{obj.cantidad_galones_restantes} gal" if obj.cantidad_galones_restantes is not None else "Dato aún no ingresado"
+
+        # Estructura del modal
+        modal_html = f"""
+        <div id="modal-combustible-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Combustible: {obj.tipo}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-combustible-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            {imagen_html}
+                            <div class="details-section">
+                                <h4>Información General</h4>
+                                <p><strong>Tipo:</strong> {obj.tipo}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Precio</h4>
+                                <p><strong>Cantidad Ingresada:</strong> {cantidad_ingresada}</p>
+                                <p><strong>Cantidad Usada:</strong> {cantidad_usada}</p>
+                                <p><strong>Cantidad Restante:</strong> {cantidad_restante}</p>
+                                <p><strong>Precio por Galón:</strong> {precio}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Organización</h4>
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-combustible-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def cantidad_galones_restantes(self, obj):
         return f"{obj.cantidad_galones_ingresada - obj.cantidad_galones_usados} gal"
@@ -660,32 +1308,185 @@ class CombustibleAdmin(ImagenAdminMixin):
 
 @admin.register(Trabajador)
 class TrabajadorAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "apellido", "cedula", "correo", "numero")
+    list_display = ("ver_detalles", "nombre", "apellido", "cedula", "correo", "numero")
     search_fields = ("nombre", "apellido", "cedula")
     list_per_page = 10
 
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+
+    def ver_detalles(self, obj):
+        nombre = f"{obj.nombre} {obj.apellido}" or "Dato aún no ingresado"
+        cedula = obj.cedula or "Dato aún no ingresado"
+        correo = obj.correo or "Dato aún no ingresado"
+        numero = obj.numero or "Dato aún no ingresado"
+        
+        # Historial de dotaciones
+        dotaciones = obj.dotaciones.all().order_by('-fecha_entrega')
+        dotaciones_html = "<ul>" + "".join([f"<li>Fecha: {d.fecha_entrega.strftime('%d/%m/%Y')} (Camisa: {'Sí' if d.camisa_franela else 'No'}, Pantalón: {'Sí' if d.pantalon else 'No'}, Zapatos: {'Sí' if d.zapato else 'No'})</li>" for d in dotaciones]) + "</ul>" if dotaciones.exists() else "<p>Sin historial de dotaciones.</p>"
+        
+        # Historial de pagos
+        pagos = obj.pagos.all().order_by('-fecha_pago')
+        pagos_html = "<ul>" + "".join([f"<li>Fecha: {p.fecha_pago.strftime('%d/%m/%Y')} - Valor: ${p.valor:,.2f} ({'Pagado' if p.pago_realizado else 'Pendiente'})</li>" for p in pagos]) + "</ul>" if pagos.exists() else "<p>Sin historial de pagos.</p>"
+
+        modal_html = f"""
+        <div id="modal-trabajador-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Trabajador: {nombre}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-trabajador-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            <div class="details-section">
+                                <h4>Información Personal</h4>
+                                <p><strong>Nombre Completo:</strong> {nombre}</p>
+                                <p><strong>Cédula:</strong> {cedula}</p>
+                                <p><strong>Correo:</strong> {correo}</p>
+                                <p><strong>Número de Contacto:</strong> {numero}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Historial de Dotaciones</h4>
+                                {dotaciones_html}
+                            </div>
+                            <div class="details-section">
+                                <h4>Historial de Pagos</h4>
+                                {pagos_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-trabajador-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 @admin.register(Dotacion)
 class DotacionAdmin(admin.ModelAdmin):
-    list_display = ("trabajador", "camisa_franela", "pantalon", "zapato", "fecha_entrega")
+    list_display = ("ver_detalles", "trabajador", "camisa_franela", "pantalon", "zapato", "fecha_entrega")
     list_per_page = 10
     list_filter = ("camisa_franela", "pantalon", "zapato")
     list_editable = ("camisa_franela", "pantalon", "zapato")
 
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+
+    def ver_detalles(self, obj):
+        trabajador_info = f"{obj.trabajador.nombre} {obj.trabajador.apellido} (C.C: {obj.trabajador.cedula})" if obj.trabajador else "Dato aún no ingresado"
+        
+        # Formatear booleans
+        camisa = "Sí" if obj.camisa_franela else "No"
+        pantalon = "Sí" if obj.pantalon else "No"
+        zapato = "Sí" if obj.zapato else "No"
+        
+        # Formatear fecha
+        fecha_entrega = obj.fecha_entrega.strftime('%d/%m/%Y') if obj.fecha_entrega else "Dato aún no ingresado"
+
+        # Estructura del modal
+        modal_html = f"""
+        <div id="modal-dotacion-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Dotación para: {obj.trabajador.nombre} {obj.trabajador.apellido}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-dotacion-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-section">
+                        <h4>Información del Trabajador</h4>
+                        <p><strong>Trabajador:</strong> {trabajador_info}</p>
+                    </div>
+                    <div class="details-section">
+                        <h4>Detalles de la Dotación</h4>
+                        <p><strong>Camisa/Franela:</strong> {camisa}</p>
+                        <p><strong>Pantalón:</strong> {pantalon}</p>
+                        <p><strong>Zapatos:</strong> {zapato}</p>
+                        <p><strong>Fecha de Entrega:</strong> {fecha_entrega}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-dotacion-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 @admin.register(Pago)
 class PagoAdmin(admin.ModelAdmin):
-    list_display = ("trabajador", "valor", "pago_realizado", "metodo_pago", "forma_pago", "fecha_pago")
+    list_display = ("ver_detalles", "trabajador", "valor", "pago_realizado", "metodo_pago", "forma_pago", "fecha_pago")
     list_per_page = 10
     list_filter = ("forma_pago", "pago_realizado")
     search_fields = ("trabajador__nombre", "trabajador__apellido", "trabajador__cedula")
     list_editable = ("pago_realizado",)
 
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
+
+    def ver_detalles(self, obj):
+        trabajador_info = f"{obj.trabajador.nombre} {obj.trabajador.apellido} (C.C: {obj.trabajador.cedula})" if obj.trabajador else "Dato aún no ingresado"
+        valor = f"${obj.valor:,.2f}" if obj.valor is not None else "Dato aún no ingresado"
+        pago_realizado = "Sí" if obj.pago_realizado else "No"
+        metodo_pago = obj.metodo_pago or "Dato aún no ingresado"
+        forma_pago = obj.get_forma_pago_display() or "Dato aún no ingresado"
+        fecha_pago = obj.fecha_pago.strftime('%d/%m/%Y') if obj.fecha_pago else "Dato aún no ingresado"
+
+        modal_html = f"""
+        <div id="modal-pago-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de Pago para: {obj.trabajador.nombre} {obj.trabajador.apellido}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-pago-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-section">
+                        <h4>Información del Trabajador</h4>
+                        <p><strong>Trabajador:</strong> {trabajador_info}</p>
+                    </div>
+                    <div class="details-section">
+                        <h4>Detalles del Pago</h4>
+                        <p><strong>Valor del Pago:</strong> {valor}</p>
+                        <p><strong>¿Pago Realizado?:</strong> {pago_realizado}</p>
+                        <p><strong>Método de Pago:</strong> {metodo_pago}</p>
+                        <p><strong>Forma de Pago:</strong> {forma_pago}</p>
+                        <p><strong>Fecha de Pago:</strong> {fecha_pago}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-pago-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
+
 @admin.register(LugarMantenimiento)
 class LugarMantenimientoAdmin(admin.ModelAdmin):
-    list_display = ("nombre_lugar", "nombre_empresa", "mostrar_proveedores", "correo", "numero")
+    list_display = ("ver_detalles", "nombre_lugar", "nombre_empresa", "mostrar_proveedores", "correo", "numero")
     list_per_page = 10
     search_fields = ("nombre_lugar", "nombre_empresa", "ubicaciones__nombre", "proveedores__nombre")
     list_filter = ("ubicaciones", "proveedores")
     filter_horizontal = ('proveedores', 'ubicaciones')
+
+    class Media:
+        js = ('inventario/js/modalManager.js',)
+        css = {
+            'all': ('inventario/css/StyleModal.css',)
+        }
     
     fieldsets = (
         ('Información del Lugar', {
@@ -695,6 +1496,57 @@ class LugarMantenimientoAdmin(admin.ModelAdmin):
             'fields': ('ubicaciones', 'proveedores')
         }),
     )
+
+    def ver_detalles(self, obj):
+        nombre_lugar = obj.nombre_lugar or "Dato aún no ingresado"
+        nombre_empresa = obj.nombre_empresa or "Dato aún no ingresado"
+        direccion = obj.direccion or "Dato aún no ingresado"
+        correo = obj.correo or "Dato aún no ingresado"
+        numero = obj.numero or "Dato aún no ingresado"
+        descripcion = obj.descripcion or "Dato aún no ingresado"
+        
+        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+
+        modal_html = f"""
+        <div id="modal-lugarmantenimiento-{obj.pk}" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalles de: {nombre_lugar}</h2>
+                    <span class="close-btn" onclick="document.getElementById('modal-lugarmantenimiento-{obj.pk}').style.display='none'">&times;</span>
+                </div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            <div class="details-section">
+                                <h4>Información del Lugar</h4>
+                                <p><strong>Nombre del Lugar:</strong> {nombre_lugar}</p>
+                                <p><strong>Nombre de la Empresa:</strong> {nombre_empresa}</p>
+                                <p><strong>Dirección:</strong> {direccion}</p>
+                                <p><strong>Correo:</strong> {correo}</p>
+                                <p><strong>Número:</strong> {numero}</p>
+                                <p><strong>Descripción:</strong></p>
+                                <p>{descripcion}</p>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Asignaciones</h4>
+                                <p><strong>Ubicaciones:</strong></p>
+                                {ubicaciones_html}
+                                <p><strong>Proveedores:</strong></p>
+                                {proveedores_html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="button" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('modal-lugarmantenimiento-{obj.pk}').style.display='block'">Ver</button>
+        """
+        return mark_safe(modal_html)
+    ver_detalles.short_description = 'Detalles'
 
     def mostrar_proveedores(self, obj):
         from django.urls import reverse
