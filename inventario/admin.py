@@ -232,13 +232,12 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'ver_detalles', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 
-                        'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud', 
-                        'razon_venta', 'razon_fallecimiento',
-                        'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
-    # --- FIN DE LA MODIFICACIÓN ---
+    list_display = ('identificador', 'ver_detalles', 'animal', 'raza', 'genero', 'peso_kg', 'edad',
+                    'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud',
+                    'razon_venta', 'razon_fallecimiento',
+                    'preñez', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
-    list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
+    list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'preñez')
     search_fields = ('identificador', 'animal__nombre', 'raza')
     list_editable = ('estado_salud', 'crecimiento', 'estado')
     
@@ -257,8 +256,8 @@ class GanadoAdmin(ImagenAdminMixin):
         ('Fechas y Estado', {
             'fields': ('fecha_nacimiento', 'edad', 'estado', 'estado_salud')
         }),
-        ('Información de Peñe', {
-            'fields': ('peñe', 'fecha_peñe', 'descripcion_peñe')
+        ('Información de Preñez', {
+            'fields': ('preñez', 'fecha_preñez', 'descripcion_preñez')
         }),
         ('Información de Venta', {
             'classes': ('collapse',),
@@ -283,10 +282,10 @@ class GanadoAdmin(ImagenAdminMixin):
         estado = obj.get_estado_display() or "Dato aún no ingresado"
         estado_salud = obj.get_estado_salud_display() or "Dato aún no ingresado"
         
-        # Peñe
-        peñe = obj.get_peñe_display() or "No aplica"
-        fecha_peñe = obj.fecha_peñe.strftime('%d/%m/%Y') if obj.fecha_peñe else "No aplica"
-        descripcion_peñe = obj.descripcion_peñe or "No aplica"
+        # Preñez
+        preñez = obj.get_preñez_display() or "No aplica"
+        fecha_preñez = obj.fecha_preñez.strftime('%d/%m/%Y') if obj.fecha_preñez else "No aplica"
+        descripcion_preñez = obj.descripcion_preñez or "No aplica"
         
         # Venta
         fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No aplica"
@@ -329,10 +328,10 @@ class GanadoAdmin(ImagenAdminMixin):
                         </div>
                         <div class="details-right-column">
                             <div class="details-section">
-                                <h4>Información de Peñe</h4>
-                                <p><strong>Tipo de Peñe:</strong> {peñe}</p>
-                                <p><strong>Fecha de Peñe:</strong> {fecha_peñe}</p>
-                                <p><strong>Descripción:</strong> {descripcion_peñe}</p>
+                                <h4>Información de Preñez</h4>
+                                <p><strong>Tipo de Preñez:</strong> {preñez}</p>
+                                <p><strong>Fecha de Preñez:</strong> {fecha_preñez}</p>
+                                <p><strong>Descripción:</strong> {descripcion_preñez}</p>
                             </div>
                             <div class="details-section">
                                 <h4>Información de Venta</h4>

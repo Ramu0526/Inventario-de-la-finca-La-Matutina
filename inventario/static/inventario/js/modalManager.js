@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const crecimientoFilter = mainModal.querySelector('.filtro-crecimiento');
         const estadoFilter = mainModal.querySelector('.filtro-estado');
         const estadoSaludFilter = mainModal.querySelector('.filtro-estado-salud');
-        const peneFilter = mainModal.querySelector('.filtro-pene');
+        const preñezFilter = mainModal.querySelector('.filtro-preñez');
         const completadoFilter = mainModal.querySelector('.filtro-completado');
         const lugarMantenimientoFilter = mainModal.querySelector('.filtro-lugar-mantenimiento');
         const empastadoFilter = mainModal.querySelector('.filtro-empastado');
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 crecimiento: crecimientoFilter ? crecimientoFilter.value : '',
                 estado: estadoFilter ? estadoFilter.value : '',
                 estado_salud: estadoSaludFilter ? estadoSaludFilter.value : '',
-                pene: peneFilter ? peneFilter.value : '',
+                preñez: preñezFilter ? preñezFilter.value : '',
                 completado: completadoFilter ? completadoFilter.value : '',
                 lugar_mantenimiento: lugarMantenimientoFilter ? lugarMantenimientoFilter.value : '',
                 empastado: empastadoFilter ? empastadoFilter.value : '',
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (crecimientoFilter) crecimientoFilter.addEventListener('change', () => fetchItems(1));
         if (estadoFilter) estadoFilter.addEventListener('change', () => fetchItems(1));
         if (estadoSaludFilter) estadoSaludFilter.addEventListener('change', () => fetchItems(1));
-        if (peneFilter) peneFilter.addEventListener('change', () => fetchItems(1));
+        if (preñezFilter) preñezFilter.addEventListener('change', () => fetchItems(1));
         if (completadoFilter) completadoFilter.addEventListener('change', () => fetchItems(1));
         if (lugarMantenimientoFilter) lugarMantenimientoFilter.addEventListener('change', () => fetchItems(1));
         if (empastadoFilter) empastadoFilter.addEventListener('change', () => fetchItems(1));
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const vacunasOptions = d.todas_las_vacunas.map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
         const medicamentosOptions = d.todos_los_medicamentos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
         const estadosSaludOptions = d.todos_los_estados_salud.map(e => `<option value="${e.value}" ${d.estado_salud === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
-        const tiposPeñeOptions = d.todos_los_tipos_peñe.map(p => `<option value="${p.value}" ${d.peñe === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
+        const tiposPreñezOptions = d.todos_los_tipos_preñez.map(p => `<option value="${p.value}" ${d.preñez === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
         const estadosAnimalOptions = d.todos_los_estados.map(e => `<option value="${e.value}" ${d.estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('');
         const crecimientoOptions = d.todos_los_crecimientos.map(c => `<option value="${c.value}" ${d.crecimiento === c.value ? 'selected' : ''}>${c.label}</option>`).join('');
 
@@ -404,11 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
 
                                 <div class="form-field"><label for="ganado-estado-salud">Estado de Salud:</label><select id="ganado-estado-salud">${estadosSaludOptions}</select></div>
-                                <div class="form-field"><label for="ganado-peñe">Tipo de Peñe:</label><select id="ganado-peñe">${tiposPeñeOptions}</select></div>
+                                <div class="form-field"><label for="ganado-preñez">Tipo de Preñez:</label><select id="ganado-preñez">${tiposPreñezOptions}</select></div>
                                 
-                                <div id="peñe-fields" style="display: none;">
-                                     <div class="form-field"><label for="ganado-fecha-peñe">Fecha de Peñe:</label><input type="date" id="ganado-fecha-peñe" value="${d.fecha_peñe}"></div>
-                                     <div class="form-field"><label for="ganado-descripcion-peñe">Descripción del Peñe:</label><textarea id="ganado-descripcion-peñe">${d.descripcion_peñe}</textarea></div>
+                                <div id="preñez-fields" style="display: none;">
+                                     <div class="form-field"><label for="ganado-fecha-preñez">Fecha de Preñez:</label><input type="date" id="ganado-fecha-preñez" value="${d.fecha_preñez}"></div>
+                                     <div class="form-field"><label for="ganado-descripcion-preñez">Descripción de la Preñez:</label><textarea id="ganado-descripcion-preñez">${d.descripcion_preñez}</textarea></div>
                                 </div>
 
                                 <div class="form-field"><label for="ganado-descripcion">Notas / Descripción:</label><textarea id="ganado-descripcion">${d.descripcion}</textarea></div>
@@ -544,23 +544,23 @@ document.addEventListener('DOMContentLoaded', () => {
             updateGanadoForm.addEventListener('submit', handleUpdateGanado);
             
             const estadoSelect = detailsContent.querySelector('#ganado-estado');
-            const peñeSelect = detailsContent.querySelector('#ganado-peñe');
+            const preñezSelect = detailsContent.querySelector('#ganado-preñez');
 
             const toggleGanadoFields = () => {
                 const estadoValue = estadoSelect.value;
-                const peñeValue = peñeSelect.value;
+                const preñezValue = preñezSelect.value;
 
                 const fallecidoFields = detailsContent.querySelector('#fallecido-fields');
                 const vendidoFields = detailsContent.querySelector('#vendido-fields');
-                const peñeFields = detailsContent.querySelector('#peñe-fields');
+                const preñezFields = detailsContent.querySelector('#preñez-fields');
 
                 if (fallecidoFields) fallecidoFields.style.display = estadoValue === 'FALLECIDO' ? 'block' : 'none';
                 if (vendidoFields) vendidoFields.style.display = estadoValue === 'VENDIDO' ? 'block' : 'none';
-                if (peñeFields) peñeFields.style.display = ['NATURAL', 'INSEMINACION', 'ARTIFICIAL'].includes(peñeValue) ? 'block' : 'none';
+                if (preñezFields) preñezFields.style.display = ['NATURAL', 'INSEMINACION'].includes(preñezValue) ? 'block' : 'none';
             };
 
             if (estadoSelect) estadoSelect.addEventListener('change', toggleGanadoFields);
-            if (peñeSelect) peñeSelect.addEventListener('change', toggleGanadoFields);
+            if (preñezSelect) preñezSelect.addEventListener('change', toggleGanadoFields);
 
             // Initial call to set state
             toggleGanadoFields();
@@ -644,14 +644,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDispatchSubmit(event, singleItemType) {
         event.preventDefault();
         const form = event.target;
-        const body = { [`${singleItemType}_id`]: form.dataset.id, cantidad_a_usar: form.querySelector('#dispatch-qty').value };
+        const idKey = `${singleItemType.replace('-', '_')}_id`;
+        const body = { [idKey]: form.dataset.id, cantidad_a_usar: form.querySelector('#dispatch-qty').value };
         handleApiRequest(`/${singleItemType}/actualizar_cantidad/`, body, form.dataset.id, singleItemType);
     }
 
     function handleAddStockSubmit(event, singleItemType) {
         event.preventDefault();
         const form = event.target;
-        const body = { [`${singleItemType}_id`]: form.dataset.id, cantidad_a_anadir: form.querySelector('#add-qty').value };
+        const idKey = `${singleItemType.replace('-', '_')}_id`;
+        const body = { [idKey]: form.dataset.id, cantidad_a_anadir: form.querySelector('#add-qty').value };
         handleApiRequest(`/${singleItemType}/anadir_stock/`, body, form.dataset.id, singleItemType);
     }
     
@@ -904,7 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
             peso_kg: form.querySelector('#ganado-peso').value,
             estado: form.querySelector('#ganado-estado').value,
             estado_salud: form.querySelector('#ganado-estado-salud').value,
-            peñe: form.querySelector('#ganado-peñe').value,
+            preñez: form.querySelector('#ganado-preñez').value,
             descripcion: form.querySelector('#ganado-descripcion').value,
             crecimiento: form.querySelector('#ganado-crecimiento').value,
             fecha_fallecimiento: form.querySelector('#ganado-fecha-fallecimiento').value,
@@ -914,8 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
             razon_venta: form.querySelector('#ganado-razon-venta').value,
             comprador: form.querySelector('#ganado-comprador').value,
             comprador_telefono: form.querySelector('#ganado-comprador-telefono').value,
-            fecha_peñe: form.querySelector('#ganado-fecha-peñe').value,
-            descripcion_peñe: form.querySelector('#ganado-descripcion-peñe').value,
+            fecha_preñez: form.querySelector('#ganado-fecha-preñez').value,
+            descripcion_preñez: form.querySelector('#ganado-descripcion-preñez').value,
         };
         handleApiRequest('/ganado/actualizar/', body, form.dataset.id, 'ganado');
     }

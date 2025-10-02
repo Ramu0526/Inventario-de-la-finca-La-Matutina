@@ -84,7 +84,7 @@ def lista_productos(request):
         'ganado_crecimiento_choices': Ganado.Crecimiento.choices,
         'ganado_estado_choices': Ganado.EstadoAnimal.choices,
         'ganado_estado_salud_choices': Ganado.EstadoSalud.choices,
-        'ganado_peñe_choices': Ganado.TipoPene.choices,
+        'ganado_preñez_choices': Ganado.TipoPrenez.choices,
         'lugares_mantenimiento': lugares_mantenimiento,
         'producto_estado_choices': Producto.EstadoProducto.choices,
     }
@@ -236,13 +236,13 @@ def actualizar_ganado_ajax(request):
         ganado.peso_kg = data.get('peso_kg', ganado.peso_kg)
         ganado.estado = data.get('estado', ganado.estado)
         ganado.estado_salud = data.get('estado_salud', ganado.estado_salud)
-        ganado.peñe = data.get('peñe', ganado.peñe)
+        ganado.preñez = data.get('preñez', ganado.preñez)
         ganado.descripcion = data.get('descripcion', ganado.descripcion)
 
         # Nuevos campos
         ganado.crecimiento = data.get('crecimiento', ganado.crecimiento)
-        ganado.fecha_peñe = data.get('fecha_peñe') or None
-        ganado.descripcion_peñe = data.get('descripcion_peñe', ganado.descripcion_peñe)
+        ganado.fecha_preñez = data.get('fecha_preñez') or None
+        ganado.descripcion_preñez = data.get('descripcion_preñez', ganado.descripcion_preñez)
         
         # Campos condicionales
         if ganado.estado == 'FALLECIDO':
@@ -643,7 +643,7 @@ def lista_ganado(request):
     crecimiento_query = request.GET.get('crecimiento')
     estado_query = request.GET.get('estado')
     estado_salud_query = request.GET.get('estado_salud')
-    peñe_query = request.GET.get('peñe')
+    preñez_query = request.GET.get('preñez')
 
     if nombre_query:
         items_list = items_list.filter(identificador__icontains=nombre_query)
@@ -657,8 +657,8 @@ def lista_ganado(request):
         items_list = items_list.filter(estado=estado_query)
     if estado_salud_query:
         items_list = items_list.filter(estado_salud=estado_salud_query)
-    if peñe_query:
-        items_list = items_list.filter(peñe=peñe_query)
+    if preñez_query:
+        items_list = items_list.filter(preñez=preñez_query)
 
     if peso_query:
         if peso_query == '0_10':
@@ -1043,8 +1043,18 @@ def producto_detalles_json(request, producto_id):
             'id': venta.comprador.id,
             'nombre': venta.comprador.nombre,
             'valor_compra': str(venta.valor_compra),
-            'valor_abono': str(venta.valor_abono)  # AÑADE ESTA LÍNEA
+            'valor_abono': str(venta.valor_abono)
         }
+
+    ubicaciones_data = []
+    for u in producto.ubicaciones.all():
+        ubicaciones_data.append({
+            'nombre': u.nombre,
+            'barrio': u.barrio,
+            'direccion': u.direccion,
+            'link': u.link,
+            'imagen_url': get_safe_image_url(u.imagen)
+        })
 
     data = {
         'id': producto.id,
@@ -1059,7 +1069,7 @@ def producto_detalles_json(request, producto_id):
         'fecha_produccion': producto.fecha_produccion.strftime('%Y-%m-%d'),
         'fecha_venta': producto.fecha_venta.strftime('%Y-%m-%d') if producto.fecha_venta else '',
         'comprador_info': comprador_info,
-        'ubicaciones': list(producto.ubicaciones.values('nombre', 'barrio', 'direccion', 'link', 'imagen')),
+        'ubicaciones': ubicaciones_data,
         'imagen_url': get_safe_image_url(producto.imagen),
         'todos_los_compradores': list(Comprador.objects.values('id', 'nombre')),
     }
@@ -1321,7 +1331,7 @@ def ganado_detalles_json(request, ganado_id):
             })
 
     estados_salud = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoSalud.choices]
-    tipos_peñe = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.TipoPene.choices]
+    tipos_preñez = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.TipoPrenez.choices]
     estados_animal = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.EstadoAnimal.choices]
     crecimiento_animal = [{'value': choice[0], 'label': choice[1]} for choice in Ganado.Crecimiento.choices]
 
@@ -1331,7 +1341,7 @@ def ganado_detalles_json(request, ganado_id):
         'genero': ganado.get_genero_display(), 'peso_kg': str(ganado.peso_kg),
         'edad': ganado.edad if ganado.fecha_nacimiento else 'N/A',
         'fecha_nacimiento': ganado.fecha_nacimiento.strftime('%Y-%m-%d') if ganado.fecha_nacimiento else '',
-        'estado': ganado.estado, 'estado_salud': ganado.estado_salud, 'peñe': ganado.peñe,
+        'estado': ganado.estado, 'estado_salud': ganado.estado_salud, 'preñez': ganado.preñez,
         'descripcion': ganado.descripcion or "No hay descripción.",
         'imagen_url': get_safe_image_url(ganado.imagen),
         'historial_vacunacion': historial_vacunacion,
@@ -1344,13 +1354,13 @@ def ganado_detalles_json(request, ganado_id):
         'razon_fallecimiento': ganado.razon_fallecimiento or '',
         'comprador': ganado.comprador or '',
         'comprador_telefono': ganado.comprador_telefono or '',
-        'fecha_peñe': ganado.fecha_peñe.strftime('%Y-%m-%d') if ganado.fecha_peñe else '',
-        'descripcion_peñe': ganado.descripcion_peñe or '',
+        'fecha_preñez': ganado.fecha_preñez.strftime('%Y-%m-%d') if ganado.fecha_preñez else '',
+        'descripcion_preñez': ganado.descripcion_preñez or '',
         # Datos para los formularios
         'todas_las_vacunas': list(Vacuna.objects.filter(disponible=True).values('id', 'nombre')),
         'todos_los_medicamentos': list(Medicamento.objects.filter(cantidad_ingresada__gt=F('cantidad_usada')).values('id', 'nombre')),
         'todos_los_estados_salud': estados_salud,
-        'todos_los_tipos_peñe': tipos_peñe,
+        'todos_los_tipos_preñez': tipos_preñez,
         'todos_los_estados': estados_animal,
         'todos_los_crecimientos': crecimiento_animal,
     }
