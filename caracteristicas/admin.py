@@ -10,7 +10,7 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
-    list_display = ('ver_detalles', 'nombre', 'nombre_local', 'telefono', 'correo_electronico', 'ubicacion', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles', 'nombre_local', 'telefono', 'correo_electronico', 'ubicacion', 'imagen_thumbnail')
     list_per_page = 10
     search_fields = ('nombre', 'nombre_local', 'telefono', 'correo_electronico')
 
@@ -82,7 +82,7 @@ class ProveedorAdmin(admin.ModelAdmin):
 
 @admin.register(Ubicacion)
 class UbicacionAdmin(admin.ModelAdmin):
-    list_display = ('ver_detalles', 'nombre', 'barrio', 'direccion', 'link_con_icono', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles', 'barrio', 'direccion', 'link_con_icono', 'imagen_thumbnail')
     list_per_page = 10
     search_fields = ('nombre', 'barrio', 'direccion')
 
