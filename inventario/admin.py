@@ -8,6 +8,44 @@ from .models import (
     Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto, RegistroMedicamento
 )
 
+def _get_ubicacion_details_html(u):
+    if not u:
+        return "<p>No especificada</p>"
+    
+    nombre = u.nombre or "Dato no ingresado"
+    barrio = u.barrio or "Dato no ingresado"
+    direccion = u.direccion or "Dato no ingresado"
+    link_html = f'<a href="{u.link}" target="_blank">Ver en mapa</a>' if u.link else "No hay enlace"
+    
+    return f"""
+        <div class="details-subsection" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <p style="margin: 0;"><strong>{nombre}</strong></p>
+            <p style="margin: 2px 0;">{barrio} - {direccion}</p>
+            <p style="margin: 0;">{link_html}</p>
+        </div>
+    """
+
+def _get_proveedor_details_html(p):
+    if not p:
+        return "<p>No especificado</p>"
+
+    nombre = p.nombre or "Dato no ingresado"
+    nombre_local = p.nombre_local or "No especificado"
+    correo = p.correo_electronico or "No especificado"
+    telefono = p.telefono or "No especificado"
+    
+    ubicacion_html = _get_ubicacion_details_html(p.ubicacion) if p.ubicacion else "<p>No hay ubicación asociada.</p>"
+
+    return f"""
+        <div class="details-subsection" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <p style="margin: 0;"><strong>{nombre} ({nombre_local})</strong></p>
+            <p style="margin: 2px 0;">{correo} - {telefono}</p>
+            <div style="padding-left: 15px; margin-top: 5px;">
+                {ubicacion_html}
+            </div>
+        </div>
+    """
+
 class ImagenAdminMixin(admin.ModelAdmin):
     """
     Mixin para añadir una vista previa de la imagen que se puede ampliar.
@@ -152,7 +190,7 @@ class ProductoAdmin(ImagenAdminMixin):
         categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
         estado = obj.get_estado_display() or "Dato aún no ingresado"
         
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
         
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
         descripcion = obj.descripcion or "Sin descripción"
@@ -283,9 +321,9 @@ class GanadoAdmin(ImagenAdminMixin):
         estado_salud = obj.get_estado_salud_display() or "Dato aún no ingresado"
         
         # Preñez
-        preñez = obj.get_peñe_display() or "No aplica" # Cambia get_preñez_display por get_peñe_display
-        fecha_preñez = obj.fecha_peñe.strftime('%d/%m/%Y') if obj.fecha_peñe else "No aplica" # Cambia fecha_preñez por fecha_peñe
-        descripcion_preñez = obj.descripcion_peñe or "No aplica" # Cambia descripcion_preñez por descripcion_peñe
+        preñez = obj.get_peñe_display() or "No aplica"
+        fecha_preñez = obj.fecha_peñe.strftime('%d/%m/%Y') if obj.fecha_peñe else "No aplica"
+        descripcion_preñez = obj.descripcion_peñe or "No aplica"
         
         # Venta
         fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No aplica"
@@ -297,6 +335,23 @@ class GanadoAdmin(ImagenAdminMixin):
         fecha_fallecimiento = obj.fecha_fallecimiento.strftime('%d/%m/%Y') if obj.fecha_fallecimiento else "No aplica"
         razon_fallecimiento = obj.razon_fallecimiento or "No aplica"
         
+        # Historial de vacunación
+        vacunaciones = obj.vacunaciones.all()
+        vacunaciones_html = "<ul>" + "".join([
+            f"<li><strong>{v.vacuna.nombre}</strong> ({v.fecha_aplicacion.strftime('%d/%m/%Y')})<br>"
+            f"Próxima dosis: {v.fecha_proxima_dosis.strftime('%d/%m/%Y') if v.fecha_proxima_dosis else 'No programada'}<br>"
+            f"Notas: {v.notas or 'Sin notas'}</li>"
+            for v in vacunaciones
+        ]) + "</ul>" if vacunaciones.exists() else "<p>No hay registros de vacunación.</p>"
+
+        # Historial de medicamentos
+        medicamentos = obj.medicamentos_aplicados.all()
+        medicamentos_html = "<ul>" + "".join([
+            f"<li><strong>{m.medicamento.nombre}</strong> ({m.fecha_aplicacion.strftime('%d/%m/%Y')})<br>"
+            f"Notas: {m.notas or 'Sin notas'}</li>"
+            for m in medicamentos
+        ]) + "</ul>" if medicamentos.exists() else "<p>No hay registros de medicamentos.</p>"
+
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen else "No hay imagen"
         descripcion = obj.descripcion or "Sin descripción"
 
@@ -332,6 +387,14 @@ class GanadoAdmin(ImagenAdminMixin):
                                 <p><strong>Tipo de Preñez:</strong> {preñez}</p>
                                 <p><strong>Fecha de Preñez:</strong> {fecha_preñez}</p>
                                 <p><strong>Descripción:</strong> {descripcion_preñez}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Historial de Vacunación</h4>
+                                {vacunaciones_html}
+                            </div>
+                            <div class="details-section">
+                                <h4>Historial de Medicamentos</h4>
+                                {medicamentos_html}
                             </div>
                             <div class="details-section">
                                 <h4>Información de Venta</h4>
@@ -440,8 +503,8 @@ class MedicamentoAdmin(ImagenAdminMixin):
     def ver_detalles(self, obj):
         categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
         
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
 
         imagen_html = "Dato aún no ingresado"
         if obj.imagen and hasattr(obj.imagen, 'url'):
@@ -602,8 +665,8 @@ class VacunaAdmin(ImagenAdminMixin):
         disponible = "Sí" if obj.disponible else "No"
         
         etiquetas_html = "<ul>" + "".join([f"<li>{e.nombre}</li>" for e in obj.etiquetas.all()]) + "</ul>" if obj.etiquetas.exists() else "<p>Dato aún no ingresado</p>"
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
         
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
         descripcion = obj.descripcion or "Sin descripción"
@@ -780,8 +843,8 @@ class AlimentoAdmin(ImagenAdminMixin):
         
         # Formatear listas para mostrarlas como elementos de lista HTML
         etiquetas_html = "<ul>" + "".join([f"<li>{e.nombre}</li>" for e in obj.etiquetas.all()]) + "</ul>" if obj.etiquetas.exists() else "<p>Dato aún no ingresado</p>"
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
 
         imagen_html = "Dato aún no ingresado"
         if obj.imagen and hasattr(obj.imagen, 'url'):
@@ -928,8 +991,8 @@ class ControlPlagaAdmin(ImagenAdminMixin):
     
     def ver_detalles(self, obj):
         # Formatear listas
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
 
         imagen_html = "Dato aún no ingresado"
         if obj.imagen and hasattr(obj.imagen, 'url'):
@@ -1227,8 +1290,8 @@ class CombustibleAdmin(ImagenAdminMixin):
 
     def ver_detalles(self, obj):
         # Formatear listas para mostrarlas como elementos de lista HTML
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
 
         imagen_html = "Dato aún no ingresado"
         if obj.imagen and hasattr(obj.imagen, 'url'):
@@ -1504,8 +1567,8 @@ class LugarMantenimientoAdmin(admin.ModelAdmin):
         numero = obj.numero or "Dato aún no ingresado"
         descripcion = obj.descripcion or "Dato aún no ingresado"
         
-        ubicaciones_html = "<ul>" + "".join([f"<li>{u.nombre}</li>" for u in obj.ubicaciones.all()]) + "</ul>" if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
-        proveedores_html = "<ul>" + "".join([f"<li>{p.nombre}</li>" for p in obj.proveedores.all()]) + "</ul>" if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
+        ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in obj.ubicaciones.all()]) if obj.ubicaciones.exists() else "<p>Dato aún no ingresado</p>"
+        proveedores_html = "".join([_get_proveedor_details_html(p) for p in obj.proveedores.all()]) if obj.proveedores.exists() else "<p>Dato aún no ingresado</p>"
 
         modal_html = f"""
         <div id="modal-lugarmantenimiento-{obj.pk}" class="modal" style="display:none;">
