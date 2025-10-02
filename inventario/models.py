@@ -96,10 +96,11 @@ class Ganado(models.Model):
     estado = models.CharField(max_length=10, choices=EstadoAnimal.choices, default=EstadoAnimal.VIVO)
     estado_salud = models.CharField(max_length=20, choices=EstadoSalud.choices, default=EstadoSalud.NO_TIENE_NADA)
     
-    preñez = models.CharField("Tipo de Preñez", max_length=15, choices=TipoPrenez.choices, default=TipoPrenez.NO_APLICA)
-    fecha_preñez = models.DateField("Fecha de Preñez", null=True, blank=True)
-    descripcion_preñez = models.TextField("Descripción de la Preñez", max_length=1000, blank=True, null=True)
-
+# ... (otros campos)
+    peñe = models.CharField("Tipo de Preñez", max_length=15, choices=TipoPrenez.choices, default=TipoPrenez.NO_APLICA)
+    fecha_peñe = models.DateField("Fecha de Preñez", null=True, blank=True)
+    descripcion_peñe = models.TextField("Descripción de la Preñez", max_length=1000, blank=True, null=True)
+    # ... (otros campos)
     # --- COMENTA ESTAS LÍNEAS ---
     fecha_fallecimiento = models.DateField("Fecha de Fallecimiento", null=True, blank=True)
     razon_fallecimiento = models.TextField("Razón del Fallecimiento", max_length=1000, blank=True, null=True)

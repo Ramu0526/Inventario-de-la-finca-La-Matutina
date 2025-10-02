@@ -235,9 +235,9 @@ class GanadoAdmin(ImagenAdminMixin):
     list_display = ('identificador', 'ver_detalles', 'animal', 'raza', 'genero', 'peso_kg', 'edad',
                     'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud',
                     'razon_venta', 'razon_fallecimiento',
-                    'preñez', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+                    'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
     list_per_page = 10
-    list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'preñez')
+    list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
     search_fields = ('identificador', 'animal__nombre', 'raza')
     list_editable = ('estado_salud', 'crecimiento', 'estado')
     
@@ -257,7 +257,7 @@ class GanadoAdmin(ImagenAdminMixin):
             'fields': ('fecha_nacimiento', 'edad', 'estado', 'estado_salud')
         }),
         ('Información de Preñez', {
-            'fields': ('preñez', 'fecha_preñez', 'descripcion_preñez')
+            'fields': ('peñe', 'fecha_peñe', 'descripcion_peñe')
         }),
         ('Información de Venta', {
             'classes': ('collapse',),
@@ -283,9 +283,9 @@ class GanadoAdmin(ImagenAdminMixin):
         estado_salud = obj.get_estado_salud_display() or "Dato aún no ingresado"
         
         # Preñez
-        preñez = obj.get_preñez_display() or "No aplica"
-        fecha_preñez = obj.fecha_preñez.strftime('%d/%m/%Y') if obj.fecha_preñez else "No aplica"
-        descripcion_preñez = obj.descripcion_preñez or "No aplica"
+        preñez = obj.get_peñe_display() or "No aplica" # Cambia get_preñez_display por get_peñe_display
+        fecha_preñez = obj.fecha_peñe.strftime('%d/%m/%Y') if obj.fecha_peñe else "No aplica" # Cambia fecha_preñez por fecha_peñe
+        descripcion_preñez = obj.descripcion_peñe or "No aplica" # Cambia descripcion_preñez por descripcion_peñe
         
         # Venta
         fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No aplica"
