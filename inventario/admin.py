@@ -161,7 +161,7 @@ class VentaProductoInline(admin.TabularInline):
     model = VentaProducto
     extra = 1
     autocomplete_fields = ['comprador']
-    fields = ('comprador', 'fecha_venta', 'valor_compra', 'valor_abono')
+    fields = ('comprador', 'fecha_venta', 'cantidad_vendida', 'precio_unitario_venta', 'valor_compra', 'valor_abono', 'fecha_produccion_venta')
 
 
 @admin.register(Producto)
@@ -203,8 +203,6 @@ class ProductoAdmin(ImagenAdminMixin):
         ventas = obj.ventaproducto_set.all().select_related('comprador')
         fechas_produccion = obj.fechas_produccion.all()
         
-        fechas_produccion_str = "<br>".join([fp.fecha.strftime('%d/%m/%Y') for fp in fechas_produccion]) if fechas_produccion.exists() else "N/A"
-
         total_ventas_valor = sum(v.valor_compra for v in ventas if v.valor_compra is not None)
 
         tabla_html = """
@@ -219,13 +217,12 @@ class ProductoAdmin(ImagenAdminMixin):
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Cantidad</th>
-                        <th>Valor por Unidad</th>
-                        <th>Valor Total</th>
-                        <th>Fecha de Producción</th>
+                        <th>Cantidad Vendida</th>
+                        <th>Precio Unitario (Venta)</th>
+                        <th>Valor Total (Venta)</th>
+                        <th>Fecha Producción (Venta)</th>
                         <th>Comprador</th>
                         <th>Fecha de Venta</th>
-                        <th>Valor de Compra</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -233,26 +230,31 @@ class ProductoAdmin(ImagenAdminMixin):
 
         if ventas.exists():
             for venta in ventas:
+                cantidad_display = f"{venta.cantidad_vendida} {obj.get_unidad_medida_display()}" if venta.cantidad_vendida is not None else "N/A"
+                precio_unitario_display = f"${venta.precio_unitario_venta:,.2f}" if venta.precio_unitario_venta is not None else "N/A"
+                valor_total_display = f"${venta.valor_compra:,.2f}" if venta.valor_compra is not None else "N/A"
+                fecha_produccion_display = venta.fecha_produccion_venta.strftime('%d/%m/%Y') if venta.fecha_produccion_venta else "N/A"
+                
                 tabla_html += f"""
                     <tr>
-                        <td>{obj.cantidad} {obj.get_unidad_medida_display()}</td>
-                        <td>${obj.precio:,.2f}</td>
-                        <td>${obj.precio_total:,.2f}</td>
-                        <td>{fechas_produccion_str}</td>
+                        <td>{cantidad_display}</td>
+                        <td>{precio_unitario_display}</td>
+                        <td>{valor_total_display}</td>
+                        <td>{fecha_produccion_display}</td>
                         <td>{venta.comprador.nombre if venta.comprador else 'N/A'}</td>
                         <td>{venta.fecha_venta.strftime('%d/%m/%Y') if venta.fecha_venta else 'N/A'}</td>
-                        <td>${venta.valor_compra:,.2f}</td>
                     </tr>
                 """
         else:
-            # If no sales, show a row with production info
+            # If no sales, show a row with current production info
+            fechas_produccion_str = "<br>".join([fp.fecha.strftime('%d/%m/%Y') for fp in fechas_produccion]) if fechas_produccion.exists() else "N/A"
             tabla_html += f"""
                 <tr>
                     <td>{obj.cantidad} {obj.get_unidad_medida_display()}</td>
                     <td>${obj.precio:,.2f}</td>
                     <td>${obj.precio_total:,.2f}</td>
                     <td>{fechas_produccion_str}</td>
-                    <td colspan="3" style="text-align:center;">Sin ventas registradas</td>
+                    <td colspan="2" style="text-align:center;">Sin ventas registradas</td>
                 </tr>
             """
 
@@ -260,7 +262,7 @@ class ProductoAdmin(ImagenAdminMixin):
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="6" style="text-align: right;">Valor Total de Ventas:</td>
+                        <td colspan="5" style="text-align: right;">Valor Total de Ventas:</td>
                         <td>${total_ventas_valor:,.2f}</td>
                     </tr>
                 </tfoot>

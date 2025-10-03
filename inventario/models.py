@@ -431,7 +431,9 @@ class VentaProducto(models.Model):
     fecha_venta = models.DateField(default=timezone.now)
     valor_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     valor_abono = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-
+    cantidad_vendida = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    precio_unitario_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    fecha_produccion_venta = models.DateField(null=True, blank=True)
     
     class Meta:
         verbose_name = 'Venta de Producto'

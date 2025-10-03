@@ -1135,9 +1135,8 @@ def actualizar_producto(request):
         producto_id = data.get('producto_id')
         producto = get_object_or_404(Producto, pk=producto_id)
 
-        # 1. Update the product state
+        # 1. Get the new state from the request
         new_estado = data.get('estado', producto.estado)
-        producto.estado = new_estado
         
         # 2. Handle sale/reservation creation
         if new_estado in ['VENDIDO', 'APARTADO']:
@@ -1149,10 +1148,16 @@ def actualizar_producto(request):
 
             comprador = get_object_or_404(Comprador, pk=comprador_id)
             
+            # Capture the state of the product at the time of sale/reservation
+            latest_production_date = producto.fechas_produccion.order_by('-fecha').first()
+
             venta_data = {
                 'producto': producto,
                 'comprador': comprador,
                 'fecha_venta': fecha_venta,
+                'cantidad_vendida': producto.cantidad,
+                'precio_unitario_venta': producto.precio,
+                'fecha_produccion_venta': latest_production_date.fecha if latest_production_date else None,
             }
 
             if new_estado == 'VENDIDO':
@@ -1161,17 +1166,18 @@ def actualizar_producto(request):
                     return JsonResponse({'status': 'error', 'message': 'El valor de compra es requerido para una venta.'}, status=400)
                 venta_data['valor_compra'] = Decimal(valor_compra)
                 
-                # Update quantity and price to 0 on sale
+                # Update product quantity and price to 0 on sale
                 producto.cantidad = 0
                 producto.precio = 0
             
             elif new_estado == 'APARTADO':
                 valor_abono = data.get('valor_abono', 0.0)
                 venta_data['valor_abono'] = Decimal(valor_abono)
-                # valor_compra will be null by default as it's now nullable
 
             VentaProducto.objects.create(**venta_data)
         
+        # Finally, update the product's state
+        producto.estado = new_estado
         producto.save()
         
         log_user_action(request, producto, CHANGE, f"Estado del producto actualizado a {producto.get_estado_display()} desde el panel de usuario.")
