@@ -321,8 +321,100 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderProductoDetails(d) {
         const ubicacionesHtml = d.ubicaciones.map((u, index) => `<li class="info-list-item">${u.nombre} <button class="info-btn" data-type="ubicacion" data-index="${index}">Ver más</button></li>`).join('') || '<li>N/A</li>';
-        const compradoresOptions = d.todos_los_compradores.map(c => `<option value="${c.id}" ${d.comprador_info && d.comprador_info.id === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('');
-        return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><div class="details-grid"><div class="details-left-column">${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}<div class="details-section"><h4>Información</h4><p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p><p><strong>Descripción:</strong> ${d.descripcion}</p></div><div class="details-section"><h4>Ubicaciones del Producto</h4><ul class="info-list">${ubicacionesHtml}</ul></div></div><div class="details-right-column"><div class="details-section"><h4>Inventario y Venta</h4><form id="update-producto-form" data-id="${d.id}"><p><strong>Cantidad:</strong> ${d.cantidad} ${d.unidad_medida}</p><p><strong>Precio Unitario:</strong> $${d.precio}</p><p><strong>Precio Total:</strong> $${d.precio_total}</p><p><strong>Fecha Producción:</strong> ${d.fecha_produccion}</p><div class="form-field"><label for="fecha-venta">Fecha de Venta:</label><input type="date" id="fecha-venta" value="${d.fecha_venta}"></div><div class="form-field"><label for="estado-producto">Estado:</label><select id="estado-producto"><option value="DISPONIBLE" ${d.estado === 'DISPONIBLE' ? 'selected' : ''}>Disponible</option><option value="APARTADO" ${d.estado === 'APARTADO' ? 'selected' : ''}>Apartado</option><option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option></select></div><hr class="separator"><h4>Comprador</h4><div class="comprador-info" style="${!d.comprador_info ? 'display: none;' : ''}"><p><strong>Asignado a:</strong> <span id="comprador-nombre">${d.comprador_info ? d.comprador_info.nombre : ''}</span> <button type="button" class="info-btn" id="ver-comprador-btn">Ver más</button></p></div><div class="form-field"><label for="comprador">Asignar a:</label><select id="comprador"><option value="">Ninguno</option>${compradoresOptions}</select></div><div class="form-field"><label for="valor-abono">Valor de Abono:</label><input type="number" step="0.01" id="valor-abono" value="${d.comprador_info ? d.comprador_info.valor_abono : '0.00'}"></div><div class="form-field"><label for="valor-compra">Valor de Compra:</label><input type="number" step="0.01" id="valor-compra" value="${d.comprador_info ? d.comprador_info.valor_compra : ''}"></div><button type="submit" class="panel-btn">Guardar Cambios</button></form></div><div class="details-section"><h4>Crear Nuevo Comprador</h4><form id="create-comprador-form"><div class="form-field"><label for="nuevo-comprador-nombre">Nombre:</label><input type="text" id="nuevo-comprador-nombre" required></div><div class="form-field"><label for="nuevo-comprador-telefono">Teléfono:</label><input type="text" id="nuevo-comprador-telefono"></div><button type="submit" class="panel-btn">Crear Comprador</button></form></div></div></div></div>`;
+        const compradoresOptions = d.todos_los_compradores.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        
+        // Obtener la fecha de producción más reciente
+        const fechaProduccionReciente = d.fechas_produccion && d.fechas_produccion.length > 0 ? d.fechas_produccion[d.fechas_produccion.length - 1] : 'N/A';
+
+        // Crear la lista de ventas
+        const ventasHtml = d.ventas && d.ventas.length > 0 ? d.ventas.map(v => `
+            <li class="info-list-item">
+                Vendido a <strong>${v.comprador_nombre}</strong> (Fecha: ${v.fecha_venta}) por $${v.valor_compra || v.valor_abono || '0.00'}
+            </li>
+        `).join('') : '<li>No hay ventas registradas.</li>';
+
+        return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div>
+                <hr class="separator">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="details-left-column">
+                            ${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}
+                            <div class="details-section">
+                                <h4>Información</h4>
+                                <p><strong>Categoría:</strong> ${d.categoria ? d.categoria.nombre : 'N/A'}</p>
+                                <p><strong>Descripción:</strong> ${d.descripcion}</p>
+                            </div>
+                            <div class="details-section">
+                                <h4>Ubicaciones del Producto</h4>
+                                <ul class="info-list">${ubicacionesHtml}</ul>
+                            </div>
+                        </div>
+                        <div class="details-right-column">
+                            <div class="details-section">
+                                <h4>Inventario y Venta</h4>
+                                <form id="update-producto-form" data-id="${d.id}">
+                                    <p><strong>Cantidad:</strong> ${d.cantidad} ${d.unidad_medida}</p>
+                                    <p><strong>Precio Unitario:</strong> $${d.precio}</p>
+                                    <p><strong>Precio Total:</strong> $${d.precio_total}</p>
+                                    <p><strong>Fecha Producción Reciente:</strong> ${fechaProduccionReciente}</p>
+                                    <div class="form-field">
+                                        <label for="estado-producto">Estado:</label>
+                                        <select id="estado-producto">
+                                            <option value="DISPONIBLE" ${d.estado === 'DISPONIBLE' ? 'selected' : ''}>Disponible</option>
+                                            <option value="APARTADO" ${d.estado === 'APARTADO' ? 'selected' : ''}>Apartado</option>
+                                            <option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option>
+                                        </select>
+                                    </div>
+                                    <div id="sale-fields-container" style="display: none;">
+                                        <div class="form-field">
+                                            <label for="comprador">Comprador:</label>
+                                            <select id="comprador"><option value="">Seleccione...</option>${compradoresOptions}</select>
+                                        </div>
+                                        <div class="form-field" id="valor-abono-field">
+                                            <label for="valor-abono">Valor de Abono:</label>
+                                            <input type="number" step="0.01" id="valor-abono" value="0.00">
+                                        </div>
+                                        <div class="form-field" id="valor-compra-field">
+                                            <label for="valor-compra">Valor de Compra:</label>
+                                            <input type="number" step="0.01" id="valor-compra" value="">
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="fecha-venta">Fecha de Venta:</label>
+                                            <input type="date" id="fecha-venta" value="">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="panel-btn">Guardar Cambios</button>
+                                </form>
+                            </div>
+                            <div class="details-section">
+                                <h4>Añadir Stock</h4>
+                                <form id="add-stock-producto-form" data-id="${d.id}" class="additional-form">
+                                    <div class="form-field">
+                                        <label for="add-stock-cantidad">Cantidad a Añadir:</label>
+                                        <input type="number" step="0.01" id="add-stock-cantidad" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="add-stock-fecha">Fecha de Producción:</label>
+                                        <input type="date" id="add-stock-fecha" required>
+                                    </div>
+                                    <button type="submit" class="panel-btn">Añadir</button>
+                                </form>
+                            </div>
+                            <div class="details-section">
+                                <h4>Historial de Ventas</h4>
+                                <ul class="info-list">${ventasHtml}</ul>
+                            </div>
+                            <div class="details-section">
+                                <h4>Crear Nuevo Comprador</h4>
+                                <form id="create-comprador-form">
+                                    <div class="form-field"><label for="nuevo-comprador-nombre">Nombre:</label><input type="text" id="nuevo-comprador-nombre" required></div>
+                                    <div class="form-field"><label for="nuevo-comprador-telefono">Teléfono:</label><input type="text" id="nuevo-comprador-telefono"></div>
+                                    <button type="submit" class="panel-btn">Crear Comprador</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
     }
 
     function renderMedicamentoDetails(d) {
@@ -521,7 +613,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (updatePotreroForm) updatePotreroForm.addEventListener('submit', handleUpdatePotrero);
         
         const updateProductoForm = detailsContent.querySelector('#update-producto-form');
-        if (updateProductoForm) updateProductoForm.addEventListener('submit', handleUpdateProducto);
+        if (updateProductoForm) {
+            updateProductoForm.addEventListener('submit', handleUpdateProducto);
+
+            const estadoSelect = updateProductoForm.querySelector('#estado-producto');
+            if (estadoSelect) {
+                const saleFieldsContainer = detailsContent.querySelector('#sale-fields-container');
+                const valorAbonoField = detailsContent.querySelector('#valor-abono-field');
+                const valorCompraField = detailsContent.querySelector('#valor-compra-field');
+
+                const toggleSaleFields = () => {
+                    const selectedState = estadoSelect.value;
+                    if (selectedState === 'APARTADO') {
+                        saleFieldsContainer.style.display = 'block';
+                        valorAbonoField.style.display = 'block';
+                        valorCompraField.style.display = 'none';
+                    } else if (selectedState === 'VENDIDO') {
+                        saleFieldsContainer.style.display = 'block';
+                        valorAbonoField.style.display = 'none';
+                        valorCompraField.style.display = 'block';
+                    } else { // DISPONIBLE
+                        saleFieldsContainer.style.display = 'none';
+                    }
+                };
+
+                estadoSelect.addEventListener('change', toggleSaleFields);
+                toggleSaleFields(); // Initial call
+            }
+        }
+
+        const addStockProductoForm = detailsContent.querySelector('#add-stock-producto-form');
+        if (addStockProductoForm) addStockProductoForm.addEventListener('submit', handleAddStockProducto);
 
         const createCompradorForm = detailsContent.querySelector('#create-comprador-form');
         if (createCompradorForm) createCompradorForm.addEventListener('submit', handleCreateComprador);
@@ -740,12 +862,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = {
             producto_id: form.dataset.id,
             estado: form.querySelector('#estado-producto').value,
-            fecha_venta: form.querySelector('#fecha-venta').value,
-            comprador_id: form.querySelector('#comprador').value,
-            valor_compra: form.querySelector('#valor-compra').value,
-            valor_abono: form.querySelector('#valor-abono').value,
+            fecha_venta: form.querySelector('#fecha-venta')?.value, // Use optional chaining in case the element doesn't exist
+            comprador_id: form.querySelector('#comprador')?.value,
+            valor_compra: form.querySelector('#valor-compra')?.value,
+            valor_abono: form.querySelector('#valor-abono')?.value,
         };
         handleApiRequest('/producto/actualizar/', body, form.dataset.id, 'producto');
+    }
+
+    function handleAddStockProducto(event) {
+        event.preventDefault();
+        const form = event.target;
+        const body = {
+            producto_id: form.dataset.id,
+            cantidad: form.querySelector('#add-stock-cantidad').value,
+            fecha_produccion: form.querySelector('#add-stock-fecha').value,
+        };
+        handleApiRequest('/producto/anadir_stock/', body, form.dataset.id, 'producto');
     }
 
     async function handleCreateComprador(event) {

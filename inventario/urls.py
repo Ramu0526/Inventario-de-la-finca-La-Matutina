@@ -36,6 +36,7 @@ urlpatterns = [
     # AÑADE ESTAS LÍNEAS PARA PRODUCTOS
     path('producto/detalles/<int:producto_id>/', views.producto_detalles_json, name='producto_detalles_json'),
     path('producto/actualizar/', views.actualizar_producto, name='actualizar_producto'),
+    path('producto/anadir_stock/', views.anadir_stock_producto, name='anadir_stock_producto'),
     path('comprador/detalles/<int:comprador_id>/', views.comprador_detalles_json, name='comprador_detalles_json'),
     path('comprador/crear/', views.crear_comprador_ajax, name='crear_comprador_ajax'),
 

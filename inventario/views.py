@@ -1037,15 +1037,20 @@ def actualizar_potrero(request):
 def producto_detalles_json(request, producto_id):
     producto = get_object_or_404(Producto, pk=producto_id)
     
-    venta = producto.ventaproducto_set.first()
-    comprador_info = None
-    if venta:
-        comprador_info = {
-            'id': venta.comprador.id,
-            'nombre': venta.comprador.nombre,
+    # Obtener todas las fechas de producción
+    fechas_produccion = list(producto.fechas_produccion.all().values_list('fecha', flat=True))
+    
+    # Obtener todas las ventas asociadas
+    ventas = producto.ventaproducto_set.all()
+    ventas_info = []
+    for venta in ventas:
+        ventas_info.append({
+            'comprador_id': venta.comprador.id,
+            'comprador_nombre': venta.comprador.nombre,
+            'fecha_venta': venta.fecha_venta.strftime('%Y-%m-%d'),
             'valor_compra': str(venta.valor_compra),
             'valor_abono': str(venta.valor_abono)
-        }
+        })
 
     ubicaciones_data = []
     for u in producto.ubicaciones.all():
@@ -1067,9 +1072,8 @@ def producto_detalles_json(request, producto_id):
         'estado': producto.estado,
         'precio': str(producto.precio),
         'precio_total': str(producto.precio_total),
-        'fecha_produccion': producto.fecha_produccion.strftime('%Y-%m-%d'),
-        'fecha_venta': producto.fecha_venta.strftime('%Y-%m-%d') if producto.fecha_venta else '',
-        'comprador_info': comprador_info,
+        'fechas_produccion': [fecha.strftime('%Y-%m-%d') for fecha in fechas_produccion],
+        'ventas': ventas_info,
         'ubicaciones': ubicaciones_data,
         'imagen_url': get_safe_image_url(producto.imagen),
         'todos_los_compradores': list(Comprador.objects.values('id', 'nombre')),
@@ -1087,34 +1091,78 @@ def comprador_detalles_json(request, comprador_id):
 
 @require_POST
 @login_required
+def anadir_stock_producto(request):
+    try:
+        data = json.loads(request.body)
+        producto_id = data.get('producto_id')
+        cantidad = Decimal(data.get('cantidad'))
+        fecha_produccion = data.get('fecha_produccion')
+
+        if not all([producto_id, cantidad, fecha_produccion]):
+            return JsonResponse({'status': 'error', 'message': 'Faltan datos.'}, status=400)
+        
+        if cantidad <= 0:
+            return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser un número positivo.'}, status=400)
+
+        producto = get_object_or_404(Producto, pk=producto_id)
+        producto.cantidad += cantidad
+        producto.save()
+
+        FechaProduccion.objects.create(producto=producto, fecha=fecha_produccion)
+        
+        log_user_action(request, producto, CHANGE, f"Añadió {cantidad} de stock con fecha de producción {fecha_produccion}.")
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Stock añadido correctamente.',
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@require_POST
+@login_required
 def actualizar_producto(request):
     try:
         data = json.loads(request.body)
         producto_id = data.get('producto_id')
         producto = get_object_or_404(Producto, pk=producto_id)
 
-        producto.estado = data.get('estado', producto.estado)
-        producto.fecha_venta = data.get('fecha_venta') or None
+        # 1. Update the product state
+        new_estado = data.get('estado', producto.estado)
+        producto.estado = new_estado
         
-        comprador_id = data.get('comprador_id')
-        valor_compra = data.get('valor_compra')
-        valor_abono = data.get('valor_abono', 0.0)
+        # 2. Handle sale/reservation creation
+        if new_estado in ['VENDIDO', 'APARTADO']:
+            comprador_id = data.get('comprador_id')
+            fecha_venta = data.get('fecha_venta')
 
-        producto.ventaproducto_set.all().delete()
+            if not comprador_id or not fecha_venta:
+                return JsonResponse({'status': 'error', 'message': 'Faltan datos del comprador o fecha de venta.'}, status=400)
 
-        if comprador_id and valor_compra:
             comprador = get_object_or_404(Comprador, pk=comprador_id)
-            VentaProducto.objects.create(
-                producto=producto,
-                comprador=comprador,
-                valor_compra=Decimal(valor_compra),
-                valor_abono=Decimal(valor_abono)
-            )
+            
+            venta_data = {
+                'producto': producto,
+                'comprador': comprador,
+                'fecha_venta': fecha_venta,
+            }
+
+            if new_estado == 'VENDIDO':
+                valor_compra = data.get('valor_compra')
+                if not valor_compra:
+                    return JsonResponse({'status': 'error', 'message': 'El valor de compra es requerido para una venta.'}, status=400)
+                venta_data['valor_compra'] = Decimal(valor_compra)
+            
+            elif new_estado == 'APARTADO':
+                valor_abono = data.get('valor_abono', 0.0)
+                venta_data['valor_abono'] = Decimal(valor_abono)
+                # valor_compra will be null by default as it's now nullable
+
+            VentaProducto.objects.create(**venta_data)
         
         producto.save()
         
-        # AÑADIDO: Registrar en el historial
-        log_user_action(request, producto, CHANGE, "Producto actualizado desde el panel de usuario.")
+        log_user_action(request, producto, CHANGE, f"Estado del producto actualizado a {producto.get_estado_display()} desde el panel de usuario.")
 
         return JsonResponse({'status': 'success', 'message': 'Producto actualizado.'})
     except Exception as e:

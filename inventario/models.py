@@ -31,8 +31,6 @@ class Producto(models.Model):
 
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     ubicaciones = models.ManyToManyField('caracteristicas.Ubicacion', blank=True, related_name="productos_ubicados")
-    fecha_produccion = models.DateField(default=timezone.now)
-    fecha_venta = models.DateField(null=True, blank=True)
     imagen = CloudinaryField('image', folder='productos', null=True, blank=True)
     descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción detallada del producto.")
     compradores = models.ManyToManyField('Comprador', through='VentaProducto', blank=True, related_name='productos_comprados')
@@ -45,6 +43,14 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.cantidad} {self.get_unidad_medida_display()})"
+
+
+class FechaProduccion(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='fechas_produccion')
+    fecha = models.DateField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.producto.nombre} - {self.fecha}"
 
 class Animal(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -422,7 +428,8 @@ class Comprador(models.Model):
 class VentaProducto(models.Model):
     producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
     comprador = models.ForeignKey('Comprador', on_delete=models.CASCADE)
-    valor_compra = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_venta = models.DateField(default=timezone.now)
+    valor_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     valor_abono = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
 
     

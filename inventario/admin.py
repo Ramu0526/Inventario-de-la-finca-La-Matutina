@@ -5,7 +5,8 @@ from caracteristicas.models import Etiqueta
 from .models import (
     Producto, Ganado, Medicamento, Alimento, ControlPlaga,
     Potrero, Mantenimiento, Combustible, Trabajador, Dotacion, Pago, LugarMantenimiento,
-    Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto, RegistroMedicamento
+    Animal, Vacuna, RegistroVacunacion, Comprador, VentaProducto, RegistroMedicamento,
+    FechaProduccion
 )
 
 def _get_ubicacion_details_html(u):
@@ -152,15 +153,21 @@ class CompradorAdmin(admin.ModelAdmin):
         return mark_safe(modal_html)
     ver_detalles.short_description = 'Detalles'
 
+class FechaProduccionInline(admin.TabularInline):
+    model = FechaProduccion
+    extra = 1
+
 class VentaProductoInline(admin.TabularInline):
     model = VentaProducto
     extra = 1
     autocomplete_fields = ['comprador']
+    fields = ('comprador', 'fecha_venta', 'valor_compra', 'valor_abono')
+
 
 @admin.register(Producto)
 class ProductoAdmin(ImagenAdminMixin):
     # CAMBIA la línea 'list_display' para incluir el estado
-    list_display = ('nombre', 'ver_detalles', 'cantidad_con_unidad', 'categoria', 'estado', 'precio', 'precio_total_display', 'fecha_produccion', 'fecha_venta', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles', 'categoria', 'cantidad_con_unidad', 'estado', 'precio', 'precio_total_display', 'imagen_thumbnail')
     list_per_page = 10
     # AÑADE 'estado' a los filtros
     list_filter = ('categoria', 'estado', 'ubicaciones', 'unidad_medida')
@@ -179,12 +186,9 @@ class ProductoAdmin(ImagenAdminMixin):
         ('Cantidad y Precio', {
             'fields': (('cantidad', 'unidad_medida'), 'precio')
         }),
-        ('Fechas', {
-            'fields': ('fecha_produccion', 'fecha_venta')
-        }),
     )
     
-    inlines = [VentaProductoInline]
+    inlines = [FechaProduccionInline, VentaProductoInline]
 
     def ver_detalles(self, obj):
         categoria = obj.categoria.nombre if obj.categoria else "Dato aún no ingresado"
@@ -195,8 +199,9 @@ class ProductoAdmin(ImagenAdminMixin):
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
         descripcion = obj.descripcion or "Sin descripción"
         
-        fecha_produccion = obj.fecha_produccion.strftime('%d/%m/%Y') if obj.fecha_produccion else "Dato aún no ingresado"
-        fecha_venta = obj.fecha_venta.strftime('%d/%m/%Y') if obj.fecha_venta else "No vendido"
+        fechas_produccion_html = "<ul>" + "".join([f"<li>{fp.fecha.strftime('%d/%m/%Y')}</li>" for fp in obj.fechas_produccion.all()]) + "</ul>" if obj.fechas_produccion.exists() else "<p>No hay fechas de producción.</p>"
+        ventas_html = "<ul>" + "".join([f"<li>{v.fecha_venta.strftime('%d/%m/%Y')} - {v.comprador.nombre}</li>" for v in obj.ventaproducto_set.all()]) + "</ul>" if obj.ventaproducto_set.exists() else "<p>No hay ventas registradas.</p>"
+
         precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
         cantidad = f"{obj.cantidad} {obj.get_unidad_medida_display()}" if obj.cantidad is not None else "Dato aún no ingresado"
         precio_total = f"${obj.precio_total:,.2f}" if obj.precio_total is not None else "Dato aún no ingresado"
@@ -231,8 +236,10 @@ class ProductoAdmin(ImagenAdminMixin):
                             </div>
                             <div class="details-section">
                                 <h4>Fechas y Ubicación</h4>
-                                <p><strong>Fecha de Producción:</strong> {fecha_produccion}</p>
-                                <p><strong>Fecha de Venta:</strong> {fecha_venta}</p>
+                                <p><strong>Fechas de Producción:</strong></p>
+                                {fechas_produccion_html}
+                                <p><strong>Ventas:</strong></p>
+                                {ventas_html}
                                 <p><strong>Ubicaciones:</strong></p>
                                 {ubicaciones_html}
                             </div>
