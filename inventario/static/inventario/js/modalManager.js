@@ -165,6 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rozadoFilter) rozadoFilter.addEventListener('change', () => fetchItems(1));
     };
 
+// ... (resto del código de modalManager.js) ...
+
     window.setupCreateVacunaModal = async () => {
         const modal = document.getElementById('crear-vacuna-modal');
         const form = modal.querySelector('#create-vacuna-form');
@@ -178,27 +180,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const allUbicacionesOptions = data.ubicaciones.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
             const allEtiquetasOptions = data.etiquetas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
 
+            // HTML del formulario con los nuevos wrappers para los selectores múltiples
             form.innerHTML = `
-                <div class="management-grid">
-                    <div class="form-field"><label for="vacuna-nombre">Nombre:</label><input type="text" id="vacuna-nombre" required></div>
-                    <div class="form-field"><label for="vacuna-tipo">Tipo:</label><input type="text" id="vacuna-tipo"></div>
-                    <div class="form-field"><label for="vacuna-precio">Precio:</label><input type="number" step="0.01" id="vacuna-precio" value="0.00" required></div>
-                    <div class="form-field"><label for="vacuna-cantidad">Cantidad:</label><input type="number" step="0.01" id="vacuna-cantidad" required></div>
-                    <div class="form-field"><label for="vacuna-unidad">Unidad Medida:</label><select id="vacuna-unidad"><option value="U">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option></select></div>
-                    <div class="form-field"><label for="vacuna-fecha-compra">Fecha Compra:</label><input type="date" id="vacuna-fecha-compra" required></div>
-                    <div class="form-field"><label for="vacuna-fecha-vencimiento">Fecha Vencimiento:</label><input type="date" id="vacuna-fecha-vencimiento" required></div>
-                    <div class.form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div>
-                    <div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div>
-                    <div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div>
+                <div class="form-grid-columns">
+                    <div class="form-column">
+                        <div class="form-field"><label for="vacuna-nombre">Nombre:</label><input type="text" id="vacuna-nombre" required></div>
+                        <div class="form-field"><label for="vacuna-tipo">Tipo:</label><input type="text" id="vacuna-tipo"></div>
+                        <div class="form-field"><label for="vacuna-precio">Precio:</label><input type="number" step="0.01" id="vacuna-precio" value="0.00" required></div>
+                        <div class="form-field"><label for="vacuna-cantidad">Cantidad:</label><input type="number" step="0.01" id="vacuna-cantidad" required></div>
+                        <div class="form-field"><label for="vacuna-unidad">Unidad Medida:</label><select id="vacuna-unidad"><option value="U">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option></select></div>
+                        <div class="form-field"><label for="vacuna-fecha-compra">Fecha Compra:</label><input type="date" id="vacuna-fecha-compra" required></div>
+                        <div class="form-field"><label for="vacuna-fecha-vencimiento">Fecha Vencimiento:</label><input type="date" id="vacuna-fecha-vencimiento" required></div>
+                        <div class="form-field-checkbox"><input type="checkbox" id="vacuna-disponible" checked><label for="vacuna-disponible">Disponible</label></div>
+                    </div>
+                    <div class="form-column">
+                        <div class="form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div>
+                        <div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div>
+                        <div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div>
+                        
+                        <div class="form-field-full">
+                            <label for="vacuna-proveedores">Proveedores:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select>
+                            </div>
+                        </div>
+                        <div class="form-field-full">
+                            <label for="vacuna-ubicaciones">Ubicaciones:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select>
+                            </div>
+                        </div>
+                        <div class="form-field-full">
+                            <label for="vacuna-etiquetas">Etiquetas:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="management-grid">
-                    <div class="form-field"><label for="vacuna-proveedores">Proveedores:</label><select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select></div>
-                    <div class="form-field"><label for="vacuna-ubicaciones">Ubicaciones:</label><select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select></div>
-                    <div class="form-field"><label for="vacuna-etiquetas">Etiquetas:</label><select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select></div>
-                </div>
-                <div class="form-field"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div>
-                <div class="form-field-checkbox" style="margin-top: 1rem;"><input type="checkbox" id="vacuna-disponible" checked><label for="vacuna-disponible">Disponible para uso</label></div>
-                <button type="submit" class="panel-btn" style="margin-top: 1.5rem; width: 100%;">Crear Vacuna</button>
+                <div class="form-field-full"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div>
+                <button type="submit" class="panel-btn" style="margin-top: 1rem;">Crear Vacuna</button>
             `;
             modal.style.display = 'block';
         } catch (error) {
@@ -209,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
         form.addEventListener('submit', handleCreateVacuna);
     };
+
+// ... (resto del código de modalManager.js) ...
     
     const closeDetailsModal = () => { detailsModal.style.display = 'none'; detailsContent.innerHTML = ''; };
     const closeInfoModal = () => { infoModal.style.display = 'none'; infoContent.innerHTML = ''; };
