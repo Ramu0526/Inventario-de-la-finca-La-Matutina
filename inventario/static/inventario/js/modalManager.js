@@ -361,18 +361,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <label for="estado-producto">Estado:</label>
                                         <select id="estado-producto">
                                             <option value="DISPONIBLE" ${d.estado === 'DISPONIBLE' ? 'selected' : ''}>Disponible</option>
-                                            <option value="APARTADO" ${d.estado === 'APARTADO' ? 'selected' : ''}>Apartado</option>
-                                            <option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vendido</option>
+                                            <option value="VENDIDO" ${d.estado === 'VENDIDO' ? 'selected' : ''}>Vender</option>
                                         </select>
                                     </div>
                                     <div id="sale-fields-container" style="display: none;">
                                         <div class="form-field">
                                             <label for="comprador">Comprador:</label>
                                             <select id="comprador"><option value="">Seleccione...</option>${compradoresOptions}</select>
-                                        </div>
-                                        <div class="form-field" id="valor-abono-field">
-                                            <label for="valor-abono">Valor de Abono:</label>
-                                            <input type="number" step="0.01" id="valor-abono" value="0.00">
                                         </div>
                                         <div class="form-field" id="valor-compra-field">
                                             <label for="valor-compra">Valor de Compra:</label>
@@ -390,8 +385,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h4>Añadir Stock</h4>
                                 <form id="add-stock-producto-form" data-id="${d.id}" class="additional-form">
                                     <div class="form-field">
-                                        <label for="add-stock-cantidad">Cantidad a Añadir:</label>
+                                        <label for="add-stock-cantidad">Nueva Cantidad:</label>
                                         <input type="number" step="0.01" id="add-stock-cantidad" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="add-stock-precio">Nuevo Precio:</label>
+                                        <input type="number" step="0.01" id="add-stock-precio" required>
                                     </div>
                                     <div class="form-field">
                                         <label for="add-stock-fecha">Fecha de Producción:</label>
@@ -619,18 +618,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const estadoSelect = updateProductoForm.querySelector('#estado-producto');
             if (estadoSelect) {
                 const saleFieldsContainer = detailsContent.querySelector('#sale-fields-container');
-                const valorAbonoField = detailsContent.querySelector('#valor-abono-field');
                 const valorCompraField = detailsContent.querySelector('#valor-compra-field');
 
                 const toggleSaleFields = () => {
                     const selectedState = estadoSelect.value;
-                    if (selectedState === 'APARTADO') {
+                    if (selectedState === 'VENDIDO') {
                         saleFieldsContainer.style.display = 'block';
-                        valorAbonoField.style.display = 'block';
-                        valorCompraField.style.display = 'none';
-                    } else if (selectedState === 'VENDIDO') {
-                        saleFieldsContainer.style.display = 'block';
-                        valorAbonoField.style.display = 'none';
                         valorCompraField.style.display = 'block';
                     } else { // DISPONIBLE
                         saleFieldsContainer.style.display = 'none';
@@ -900,10 +893,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = {
             producto_id: form.dataset.id,
             estado: form.querySelector('#estado-producto').value,
-            fecha_venta: form.querySelector('#fecha-venta')?.value, // Use optional chaining in case the element doesn't exist
+            fecha_venta: form.querySelector('#fecha-venta')?.value,
             comprador_id: form.querySelector('#comprador')?.value,
             valor_compra: form.querySelector('#valor-compra')?.value,
-            valor_abono: form.querySelector('#valor-abono')?.value,
         };
         handleApiRequest('/producto/actualizar/', body, form.dataset.id, 'producto');
     }
@@ -914,6 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = {
             producto_id: form.dataset.id,
             cantidad: form.querySelector('#add-stock-cantidad').value,
+            precio: form.querySelector('#add-stock-precio').value,
             fecha_produccion: form.querySelector('#add-stock-fecha').value,
         };
         handleApiRequest('/producto/anadir_stock/', body, form.dataset.id, 'producto');

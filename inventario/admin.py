@@ -198,52 +198,94 @@ class ProductoAdmin(ImagenAdminMixin):
         
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen and hasattr(obj.imagen, 'url') else "No hay imagen"
         descripcion = obj.descripcion or "Sin descripción"
-        
-        fechas_produccion_html = "<ul>" + "".join([f"<li>{fp.fecha.strftime('%d/%m/%Y')}</li>" for fp in obj.fechas_produccion.all()]) + "</ul>" if obj.fechas_produccion.exists() else "<p>No hay fechas de producción.</p>"
-        ventas_html = "<ul>" + "".join([f"<li>{v.fecha_venta.strftime('%d/%m/%Y')} - {v.comprador.nombre}</li>" for v in obj.ventaproducto_set.all()]) + "</ul>" if obj.ventaproducto_set.exists() else "<p>No hay ventas registradas.</p>"
 
-        precio = f"${obj.precio:,.2f}" if obj.precio is not None else "Dato aún no ingresado"
-        cantidad = f"{obj.cantidad} {obj.get_unidad_medida_display()}" if obj.cantidad is not None else "Dato aún no ingresado"
-        precio_total = f"${obj.precio_total:,.2f}" if obj.precio_total is not None else "Dato aún no ingresado"
+        # New table logic
+        ventas = obj.ventaproducto_set.all().select_related('comprador')
+        fechas_produccion = obj.fechas_produccion.all()
+        
+        fechas_produccion_str = "<br>".join([fp.fecha.strftime('%d/%m/%Y') for fp in fechas_produccion]) if fechas_produccion.exists() else "N/A"
+
+        total_ventas_valor = sum(v.valor_compra for v in ventas if v.valor_compra is not None)
+
+        tabla_html = """
+        <style>
+            .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .admin-table th { background-color: #f2f2f2; }
+            .admin-table tfoot { font-weight: bold; }
+        </style>
+        <div class="details-section">
+            <h4>Historial de Producción y Ventas</h4>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Cantidad</th>
+                        <th>Valor por Unidad</th>
+                        <th>Valor Total</th>
+                        <th>Fecha de Producción</th>
+                        <th>Comprador</th>
+                        <th>Fecha de Venta</th>
+                        <th>Valor de Compra</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+
+        if ventas.exists():
+            for venta in ventas:
+                tabla_html += f"""
+                    <tr>
+                        <td>{obj.cantidad} {obj.get_unidad_medida_display()}</td>
+                        <td>${obj.precio:,.2f}</td>
+                        <td>${obj.precio_total:,.2f}</td>
+                        <td>{fechas_produccion_str}</td>
+                        <td>{venta.comprador.nombre if venta.comprador else 'N/A'}</td>
+                        <td>{venta.fecha_venta.strftime('%d/%m/%Y') if venta.fecha_venta else 'N/A'}</td>
+                        <td>${venta.valor_compra:,.2f}</td>
+                    </tr>
+                """
+        else:
+            # If no sales, show a row with production info
+            tabla_html += f"""
+                <tr>
+                    <td>{obj.cantidad} {obj.get_unidad_medida_display()}</td>
+                    <td>${obj.precio:,.2f}</td>
+                    <td>${obj.precio_total:,.2f}</td>
+                    <td>{fechas_produccion_str}</td>
+                    <td colspan="3" style="text-align:center;">Sin ventas registradas</td>
+                </tr>
+            """
+
+        tabla_html += f"""
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" style="text-align: right;">Valor Total de Ventas:</td>
+                        <td>${total_ventas_valor:,.2f}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        """
 
         modal_html = f"""
         <div id="modal-producto-{obj.pk}" class="modal" style="display:none;">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 80%;">
                 <div class="modal-header">
                     <h2>Detalles de Producto: {obj.nombre}</h2>
                     <span class="close-btn" onclick="document.getElementById('modal-producto-{obj.pk}').style.display='none'">&times;</span>
                 </div>
                 <hr class="separator">
                 <div class="modal-body">
-                    <div class="details-grid">
-                        <div class="details-left-column">
-                            {imagen_html}
-                            <div class="details-section">
-                                <h4>Información General</h4>
-                                <p><strong>Nombre:</strong> {obj.nombre}</p>
-                                <p><strong>Categoría:</strong> {categoria}</p>
-                                <p><strong>Estado:</strong> {estado}</p>
-                                <p><strong>Descripción:</strong></p>
-                                <p>{descripcion}</p>
-                            </div>
-                        </div>
-                        <div class="details-right-column">
-                            <div class="details-section">
-                                <h4>Inventario y Precio</h4>
-                                <p><strong>Cantidad:</strong> {cantidad}</p>
-                                <p><strong>Precio Unitario:</strong> {precio}</p>
-                                <p><strong>Precio Total:</strong> {precio_total}</p>
-                            </div>
-                            <div class="details-section">
-                                <h4>Fechas y Ubicación</h4>
-                                <p><strong>Fechas de Producción:</strong></p>
-                                {fechas_produccion_html}
-                                <p><strong>Ventas:</strong></p>
-                                {ventas_html}
-                                <p><strong>Ubicaciones:</strong></p>
-                                {ubicaciones_html}
-                            </div>
-                        </div>
+                    <div class="details-section">
+                        <h4>Información General</h4>
+                        <p><strong>Categoría:</strong> {categoria} | <strong>Estado:</strong> {estado}</p>
+                        <p><strong>Descripción:</strong> {descripcion}</p>
+                    </div>
+                    {tabla_html}
+                    <div class="details-section">
+                        <h4>Ubicaciones</h4>
+                        {ubicaciones_html}
                     </div>
                 </div>
             </div>

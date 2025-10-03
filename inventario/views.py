@@ -1098,25 +1098,30 @@ def anadir_stock_producto(request):
         data = json.loads(request.body)
         producto_id = data.get('producto_id')
         cantidad = Decimal(data.get('cantidad'))
+        precio = Decimal(data.get('precio'))
         fecha_produccion = data.get('fecha_produccion')
 
-        if not all([producto_id, cantidad, fecha_produccion]):
+        if not all([producto_id, cantidad, fecha_produccion, precio]):
             return JsonResponse({'status': 'error', 'message': 'Faltan datos.'}, status=400)
         
         if cantidad <= 0:
             return JsonResponse({'status': 'error', 'message': 'La cantidad debe ser un número positivo.'}, status=400)
 
+        if precio <= 0:
+            return JsonResponse({'status': 'error', 'message': 'El precio debe ser un número positivo.'}, status=400)
+
         producto = get_object_or_404(Producto, pk=producto_id)
-        producto.cantidad += cantidad
+        producto.cantidad = cantidad
+        producto.precio = precio
         producto.save()
 
         FechaProduccion.objects.create(producto=producto, fecha=fecha_produccion)
         
-        log_user_action(request, producto, CHANGE, f"Añadió {cantidad} de stock con fecha de producción {fecha_produccion}.")
+        log_user_action(request, producto, CHANGE, f"Actualizó el stock a {cantidad} con fecha de producción {fecha_produccion} y precio ${precio}.")
 
         return JsonResponse({
             'status': 'success',
-            'message': 'Stock añadido correctamente.',
+            'message': 'Stock actualizado correctamente.',
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -1155,6 +1160,10 @@ def actualizar_producto(request):
                 if not valor_compra:
                     return JsonResponse({'status': 'error', 'message': 'El valor de compra es requerido para una venta.'}, status=400)
                 venta_data['valor_compra'] = Decimal(valor_compra)
+                
+                # Update quantity and price to 0 on sale
+                producto.cantidad = 0
+                producto.precio = 0
             
             elif new_estado == 'APARTADO':
                 valor_abono = data.get('valor_abono', 0.0)
