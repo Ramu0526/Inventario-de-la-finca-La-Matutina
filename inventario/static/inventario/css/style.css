@@ -1,4 +1,4 @@
-body:not(.dark-mode) {
+:root {
     --bg-color: #f4f4f4;
     --text-color: #333;
     --form-bg-color: #ffffff;
