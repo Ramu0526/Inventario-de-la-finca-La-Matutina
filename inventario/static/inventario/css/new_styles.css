@@ -11,6 +11,8 @@
     --light-bg-card: #ffffff;
     --light-text: #212529;
     --light-border: #dee2e6;
+    --placeholder-bg: #e9ecef;
+    --placeholder-text: #6c757d;
     --dark-bg: #1a1a1a;
     --dark-bg-card: #2c2c2c;
     --dark-text: #e8e6e3;
@@ -31,6 +33,8 @@ body.dark-mode {
     --form-bg-color: var(--dark-bg-card);
     --text-color: var(--dark-text);
     --input-border-color: var(--dark-border);
+    --placeholder-bg: #343a40;
+    --placeholder-text: #adb5bd;
 }
 
 /* --- LOGIN PAGE ENHANCEMENTS --- */

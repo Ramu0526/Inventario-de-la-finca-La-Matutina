@@ -238,13 +238,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderDespachoSection = (d) => `<div class="details-section"><h4>Despacho</h4><div class="management-grid"><form id="dispatch-form" data-id="${d.id}" class="additional-form"><label>Usar Cantidad (Kg):</label><div class="form-row"><input type="number" step="0.01" min="0" id="dispatch-qty" required><button type="submit">Aceptar</button></div></form><form id="add-stock-form" data-id="${d.id}" class="additional-form"><label>Añadir Cantidad (Kg):</label><div class="form-row"><input type="number" step="0.01" min="0" id="add-qty" required><button type="submit">Añadir</button></div></form></div></div>`;
         const renderAdicionalSection = (d) => {
             const mainTags = d.etiquetas.filter(t => t.parent_id === null);
-            const subTags = d.etiquetas.filter(t => t.parent_id !== null);
-            const mainTagsHtml = mainTags.map(tag => `<li class="tag-item">${tag.nombre} <button class="remove-tag-btn" data-tag-id="${tag.id}" data-alimento-id="${d.id}">&times;</button></li>`).join('');
-            const subTagsHtml = subTags.map(tag => `<li class="tag-item">${tag.nombre} <button class="remove-tag-btn" data-tag-id="${tag.id}" data-alimento-id="${d.id}">&times;</button></li>`).join('');
+            
+            // Group sub-tags by their parent
+            const subTagsMap = new Map();
+            d.etiquetas.forEach(tag => {
+                if (tag.parent_id !== null) {
+                    if (!subTagsMap.has(tag.parent_id)) {
+                        subTagsMap.set(tag.parent_id, []);
+                    }
+                    subTagsMap.get(tag.parent_id).push(tag);
+                }
+            });
+
+            const tagsHtml = mainTags.map(mainTag => {
+                const subTags = subTagsMap.get(mainTag.id) || [];
+                const subTagsHtml = subTags.map(subTag => 
+                    `<li class="tag-item sub-tag">${subTag.nombre} <button class="remove-tag-btn" data-tag-id="${subTag.id}" data-alimento-id="${d.id}">&times;</button></li>`
+                ).join('');
+
+                return `
+                    <div class="tag-group">
+                        <div class="tag-item main-tag">
+                            ${mainTag.nombre}
+                            <button class="remove-tag-btn" data-tag-id="${mainTag.id}" data-alimento-id="${d.id}">&times;</button>
+                        </div>
+                        ${subTags.length > 0 ? `<ul class="sub-tag-list">${subTagsHtml}</ul>` : ''}
+                    </div>
+                `;
+            }).join('');
+
             const availableMainTags = d.todas_las_etiquetas_principales.filter(tag => !mainTags.some(assigned => assigned.id === tag.id)).map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
             const assignedMainTags = mainTags.map(tag => `<option value="${tag.id}">${tag.nombre}</option>`).join('');
             const availableCategories = d.todas_las_categorias.filter(cat => !d.categoria || d.categoria.id !== cat.id).map(cat => `<option value="${cat.id}">${cat.nombre}</option>`).join('');
-            return `<div class="details-section tags-section"><h4>Adicional</h4><p><strong>Etiquetas Principales:</strong></p><ul class="tag-list">${mainTagsHtml || '<li>Ninguna</li>'}</ul><p><strong>Sub-Etiquetas:</strong></p><ul class="tag-list">${subTagsHtml || '<li>Ninguna</li>'}</ul><div class="management-grid"><form id="assign-category-form" data-id="${d.id}" class="additional-form"><label>Asignar Categoría:</label><div class="form-row"><select id="category-select" required><option value="">Seleccione...</option>${availableCategories}</select><button type="submit">Asignar</button></div></form><form id="create-category-form" data-id="${d.id}" class="additional-form"><label>Crear Categoría:</label><div class="form-row"><input type="text" id="new-category-name" placeholder="Nombre..." required><button type="submit">Crear</button></div></form><form id="add-tag-form" data-id="${d.id}" class="additional-form"><label>Añadir Etiqueta:</label><div class="form-row"><select id="tag-select" required><option value="">Seleccione...</option>${availableMainTags}</select><button type="submit">Añadir</button></div></form><form id="create-tag-form" data-id="${d.id}" class="additional-form"><label>Crear Etiqueta Principal:</label><div class="form-row"><input type="text" id="new-tag-name" placeholder="Nombre..." required><button type="submit">Crear</button></div></form><form id="add-subtag-form" data-id="${d.id}" class="additional-form"><label>Añadir Sub-Etiqueta:</label><div class="form-row"><select id="add-subtag-parent-select" required><option value="">Etiqueta Padre...</option>${assignedMainTags}</select><select id="add-subtag-select" required><option value="">Sub-Etiqueta...</option></select><button type="submit">Añadir</button></div></form><form id="create-subtag-form" data-id="${d.id}" class="additional-form"><label>Crear Sub-Etiqueta:</label><div class="form-row"><input type="text" id="new-subtag-name" placeholder="Nombre..." required><select id="parent-tag-select" required><option value="">Asociar a...</option>${assignedMainTags}</select><button type="submit">Crear</button></div></form></div></div>`;
+            
+            return `<div class="details-section tags-section"><h4>Etiquetas</h4><div class="tags-container">${tagsHtml || '<li>Ninguna</li>'}</div><div class="management-grid"><form id="assign-category-form" data-id="${d.id}" class="additional-form"><label>Asignar Categoría:</label><div class="form-row"><select id="category-select" required><option value="">Seleccione...</option>${availableCategories}</select><button type="submit">Asignar</button></div></form><form id="create-category-form" data-id="${d.id}" class="additional-form"><label>Crear Categoría:</label><div class="form-row"><input type="text" id="new-category-name" placeholder="Nombre..." required><button type="submit">Crear</button></div></form><form id="add-tag-form" data-id="${d.id}" class="additional-form"><label>Añadir Etiqueta:</label><div class="form-row"><select id="tag-select" required><option value="">Seleccione...</option>${availableMainTags}</select><button type="submit">Añadir</button></div></form><form id="create-tag-form" data-id="${d.id}" class="additional-form"><label>Crear Etiqueta Principal:</label><div class="form-row"><input type="text" id="new-tag-name" placeholder="Nombre..." required><button type="submit">Crear</button></div></form><form id="add-subtag-form" data-id="${d.id}" class="additional-form"><label>Añadir Sub-Etiqueta:</label><div class="form-row"><select id="add-subtag-parent-select" required><option value="">Etiqueta Padre...</option>${assignedMainTags}</select><select id="add-subtag-select" required><option value="">Sub-Etiqueta...</option></select><button type="submit">Añadir</button></div></form><form id="create-subtag-form" data-id="${d.id}" class="additional-form"><label>Crear Sub-Etiqueta:</label><div class="form-row"><input type="text" id="new-subtag-name" placeholder="Nombre..." required><select id="parent-tag-select" required><option value="">Asociar a...</option>${assignedMainTags}</select><button type="submit">Crear</button></div></form></div></div>`;
         };
         return `<div class="modal-header"><h2>${d.nombre}</h2><span class="close-btn" id="details-close-btn">&times;</span></div><hr class="separator"><div class="modal-body"><div class="details-grid"><div class="details-left-column">${d.imagen_url ? `<img src="${d.imagen_url}" alt="${d.nombre}" class="details-img">` : '<div class="item-card-img-placeholder">Sin imagen</div>'}</div><div class="details-right-column">${renderInventarioSection(d)}${renderDespachoSection(d)}</div></div><div class="details-bottom-grid">${renderInfoSection(d)}${renderAdicionalSection(d)}</div></div>`;
     }
