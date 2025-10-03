@@ -165,6 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rozadoFilter) rozadoFilter.addEventListener('change', () => fetchItems(1));
     };
 
+// ... (resto del código de modalManager.js) ...
+
     window.setupCreateVacunaModal = async () => {
         const modal = document.getElementById('crear-vacuna-modal');
         const form = modal.querySelector('#create-vacuna-form');
@@ -178,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const allUbicacionesOptions = data.ubicaciones.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
             const allEtiquetasOptions = data.etiquetas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
 
+            // HTML del formulario con los nuevos wrappers para los selectores múltiples
             form.innerHTML = `
                 <div class="form-grid-columns">
                     <div class="form-column">
@@ -194,9 +197,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="form-field"><label for="vacuna-dosis-crecimiento">Dosis Crecimiento:</label><input type="text" id="vacuna-dosis-crecimiento"></div>
                         <div class="form-field"><label for="vacuna-dosis-edad">Dosis Edad:</label><input type="text" id="vacuna-dosis-edad"></div>
                         <div class="form-field"><label for="vacuna-dosis-peso">Dosis Peso:</label><input type="text" id="vacuna-dosis-peso"></div>
-                        <div class="form-field-full"><label for="vacuna-proveedores">Proveedores:</label><select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select></div>
-                        <div class="form-field-full"><label for="vacuna-ubicaciones">Ubicaciones:</label><select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select></div>
-                        <div class="form-field-full"><label for="vacuna-etiquetas">Etiquetas:</label><select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select></div>
+                        
+                        <div class="form-field-full">
+                            <label for="vacuna-proveedores">Proveedores:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-proveedores" multiple>${allProveedoresOptions}</select>
+                            </div>
+                        </div>
+                        <div class="form-field-full">
+                            <label for="vacuna-ubicaciones">Ubicaciones:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-ubicaciones" multiple>${allUbicacionesOptions}</select>
+                            </div>
+                        </div>
+                        <div class="form-field-full">
+                            <label for="vacuna-etiquetas">Etiquetas:</label>
+                            <div class="select-multiple-wrapper">
+                                <select id="vacuna-etiquetas" multiple>${allEtiquetasOptions}</select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-field-full"><label for="vacuna-descripcion">Descripción:</label><textarea id="vacuna-descripcion"></textarea></div>
@@ -211,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
         form.addEventListener('submit', handleCreateVacuna);
     };
+
+// ... (resto del código de modalManager.js) ...
     
     const closeDetailsModal = () => { detailsModal.style.display = 'none'; detailsContent.innerHTML = ''; };
     const closeInfoModal = () => { infoModal.style.display = 'none'; infoContent.innerHTML = ''; };
