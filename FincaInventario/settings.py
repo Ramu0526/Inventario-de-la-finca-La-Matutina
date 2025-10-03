@@ -105,6 +105,14 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': 'YKO6Hw4iYwwumCoBfuRZtHGG5s0',
 }
 
+# CONFIGURACIÓN DE CORREO ELECTRÓNICO
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
 DEBUG = config('DEBUG', default=False, cast=bool)
 IS_PRODUCTION = 'DATABASE_URL' in os.environ
 
