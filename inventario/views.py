@@ -9,12 +9,13 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 import json
 from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from .models import Comprador
-from .models import Vacuna, RegistroVacunacion
+from .models import Vacuna, RegistroVacunacion, FechaProduccion
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
@@ -1091,6 +1092,7 @@ def comprador_detalles_json(request, comprador_id):
 
 @require_POST
 @login_required
+@csrf_protect
 def anadir_stock_producto(request):
     try:
         data = json.loads(request.body)
@@ -1121,6 +1123,7 @@ def anadir_stock_producto(request):
 
 @require_POST
 @login_required
+@csrf_protect
 def actualizar_producto(request):
     try:
         data = json.loads(request.body)
@@ -1170,6 +1173,7 @@ def actualizar_producto(request):
 
 @require_POST
 @login_required
+@csrf_protect
 def crear_comprador_ajax(request):
     try:
         data = json.loads(request.body)

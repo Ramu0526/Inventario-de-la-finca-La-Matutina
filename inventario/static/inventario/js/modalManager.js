@@ -775,38 +775,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Helper function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     async function handleApiRequest(url, body, itemId, singleItemType) {
-        const csrfTokenElement = document.querySelector('input[name=csrfmiddlewaretoken]');
-        if (!csrfTokenElement) {
-            console.error('CSRF token not found!');
-            alert('Error de seguridad. Recargue la página.');
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+            alert('Error de seguridad (CSRF). Por favor, recargue la página.');
             return;
         }
-        const csrfToken = csrfTokenElement.value;
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
                 body: JSON.stringify(body)
             });
-            const result = await response.json();
-            if (response.ok) {
-                alert(result.message);
-                if (itemId && singleItemType) {
-                    const detailsResponse = await fetch(`/${singleItemType}/detalles/${itemId}/`);
-                    if (!detailsResponse.ok) throw new Error('Error al recargar los datos del item.');
-                    const updatedDetails = await detailsResponse.json();
-                    const pluralItemType = singleItemType === 'ganado' ? 'ganado' : singleItemType + 's';
-                    renderDetailsModal(updatedDetails, pluralItemType);
+
+            // Check if the response is JSON before trying to parse it
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    // Reload details modal if applicable
+                    if (itemId && singleItemType) {
+                        const detailsResponse = await fetch(`/${singleItemType}/detalles/${itemId}/`);
+                        if (!detailsResponse.ok) throw new Error('Error al recargar los datos del item.');
+                        const updatedDetails = await detailsResponse.json();
+                        const pluralItemType = singleItemType === 'ganado' ? 'ganado' : singleItemType + 's';
+                        renderDetailsModal(updatedDetails, pluralItemType);
+                    } else if (result.nuevo_comprador) {
+                        // Special handling for creating a buyer
+                        const newOption = new Option(result.nuevo_comprador.nombre, result.nuevo_comprador.id, true, true);
+                        const compradorSelect = document.querySelector('#comprador');
+                        if (compradorSelect) {
+                            compradorSelect.add(newOption);
+                            compradorSelect.value = result.nuevo_comprador.id;
+                        }
+                        const createCompradorForm = document.querySelector('#create-comprador-form');
+                        if (createCompradorForm) createCompradorForm.reset();
+                    } else {
+                        closeDetailsModal();
+                    }
                 } else {
-                    closeDetailsModal();
+                    alert(`Error: ${result.message}`);
                 }
             } else {
-                alert(`Error: ${result.message}`);
+                // Handle non-JSON responses (like HTML error pages)
+                const errorText = await response.text();
+                console.error("Respuesta no válida del servidor:", errorText);
+                alert("Ocurrió un error inesperado. La respuesta del servidor no es válida.");
             }
         } catch (error) {
-            console.error(error);
+            console.error("Comprende este error", error);
             alert(`Ocurrió un error: ${error.message}`);
         }
     }
@@ -881,31 +919,16 @@ document.addEventListener('DOMContentLoaded', () => {
         handleApiRequest('/producto/anadir_stock/', body, form.dataset.id, 'producto');
     }
 
-    async function handleCreateComprador(event) {
+    function handleCreateComprador(event) {
         event.preventDefault();
         const form = event.target;
         const nombre = form.querySelector('#nuevo-comprador-nombre').value;
         const telefono = form.querySelector('#nuevo-comprador-telefono').value;
-        const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-        try {
-            const response = await fetch('/comprador/crear/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                body: JSON.stringify({ nombre, telefono })
-            });
-            const result = await response.json();
-            if (response.ok) {
-                alert(result.message);
-                const newOption = new Option(result.nuevo_comprador.nombre, result.nuevo_comprador.id, true, true);
-                document.querySelector('#comprador').add(newOption);
-                form.reset();
-            } else {
-                alert(`Error: ${result.message}`);
-            }
-        } catch (error) {
-            console.error(error);
-            alert(`Ocurrió un error: ${error.message}`);
-        }
+        const body = { nombre, telefono };
+        
+        // Use the centralized API request handler
+        // Pass null for itemId and singleItemType as we have special handling for this case
+        handleApiRequest('/comprador/crear/', body, null, null);
     }
 
     function handleTagManagement(event, singleItemType, action = 'add') {
