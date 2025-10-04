@@ -47,6 +47,33 @@ def _get_proveedor_details_html(p):
         </div>
     """
 
+def _get_lugar_mantenimiento_details_html(lugar):
+    if not lugar:
+        return "<p>No especificado</p>"
+
+    nombre_lugar = lugar.nombre_lugar or "Dato no ingresado"
+    nombre_empresa = lugar.nombre_empresa or "No especificado"
+    direccion = lugar.direccion or "No especificado"
+    correo = lugar.correo or "No especificado"
+    numero = lugar.numero or "No especificado"
+    
+    ubicaciones_html = "".join([_get_ubicacion_details_html(u) for u in lugar.ubicaciones.all()]) if lugar.ubicaciones.exists() else "<p>No hay ubicaciones asociadas.</p>"
+    proveedores_html = "".join([_get_proveedor_details_html(p) for p in lugar.proveedores.all()]) if lugar.proveedores.exists() else "<p>No hay proveedores asociados.</p>"
+
+    return f"""
+        <div class="details-subsection" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <p style="margin: 0;"><strong>{nombre_lugar} ({nombre_empresa})</strong></p>
+            <p style="margin: 2px 0;">{direccion}</p>
+            <p style="margin: 2px 0;">{correo} - {numero}</p>
+            <div style="padding-left: 15px; margin-top: 5px;">
+                <h4>Ubicaciones:</h4>
+                {ubicaciones_html}
+                <h4>Proveedores:</h4>
+                {proveedores_html}
+            </div>
+        </div>
+    """
+
 class ImagenAdminMixin(admin.ModelAdmin):
     """
     Mixin para añadir una vista previa de la imagen que se puede ampliar.
@@ -1255,7 +1282,7 @@ class MantenimientoAdmin(ImagenAdminMixin):
         completado = "Sí" if obj.completado else "No"
         descripcion = obj.descripcion or "Dato aún no ingresado"
         
-        lugares_html = "<ul>" + "".join([f"<li>{l.nombre_lugar}</li>" for l in obj.lugares_mantenimiento.all()]) + "</ul>" if obj.lugares_mantenimiento.exists() else "<p>Dato aún no ingresado</p>"
+        lugares_html = "".join([_get_lugar_mantenimiento_details_html(l) for l in obj.lugares_mantenimiento.all()]) if obj.lugares_mantenimiento.exists() else "<p>Dato aún no ingresado</p>"
         imagen_html = f'<img src="{obj.imagen.url}" class="details-img">' if obj.imagen else "No hay imagen"
 
         modal_html = f"""
