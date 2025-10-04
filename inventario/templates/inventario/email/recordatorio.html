@@ -131,6 +131,17 @@
             </div>
             {% endif %}
 
+            {% if dotaciones %}
+            <div class="section">
+                <h2>Dotaciones Próximas</h2>
+                {% for item in dotaciones %}
+                <div class="item">
+                    <span class="item-name">Dotación para {{ item.trabajador }}:</span> Próxima entrega estimada para el {{ item.fecha_proxima_entrega|date:"d/m/Y" }}.
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <p style="margin-top: 30px;">Por favor, revisa el panel de administración para más detalles.</p>
         </div>
         <div class="footer">
