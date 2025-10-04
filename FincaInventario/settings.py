@@ -94,15 +94,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 cloudinary.config(
-    cloud_name="dd6ugwzzx",
-    api_key="829678619421532",
-    api_secret="YKO6Hw4iYwwumCoBfuRZtHGG5s0",
+    cloud_name="dt0mwcqix",
+    api_key="277191915316828",
+    api_secret="rYpFxr1C1YDyw_GrpXVS_Ma8Ihs",
     secure=True
 )
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dd6ugwzzx',
-    'API_KEY': '829678619421532',
-    'API_SECRET': 'YKO6Hw4iYwwumCoBfuRZtHGG5s0',
+    'CLOUD_NAME': 'dt0mwcqix',
+    'API_KEY': '277191915316828',
+    'API_SECRET': 'rYpFxr1C1YDyw_GrpXVS_Ma8Ihs',
 }
 
 # CONFIGURACIÓN DE CORREO ELECTRÓNICO
