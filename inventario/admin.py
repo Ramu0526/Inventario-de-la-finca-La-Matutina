@@ -233,18 +233,13 @@ class ProductoAdmin(ImagenAdminMixin):
         total_ventas_valor = sum(v.valor_compra for v in ventas if v.valor_compra is not None)
 
         tabla_html = """
-        <style>
-            .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .admin-table th { background-color: #f2f2f2; }
-            .admin-table tfoot { font-weight: bold; }
-        </style>
         <div class="details-section">
             <h4>Historial de Producción y Ventas</h4>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Cantidad Vendida</th>
+            <div class="table-responsive-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Cantidad Vendida</th>
                         <th>Precio Unitario (Venta)</th>
                         <th>Valor Total (Venta)</th>
                         <th>Fecha Producción (Venta)</th>
@@ -293,7 +288,8 @@ class ProductoAdmin(ImagenAdminMixin):
                         <td>${total_ventas_valor:,.2f}</td>
                     </tr>
                 </tfoot>
-            </table>
+                </table>
+            </div>
         </div>
         """
 

@@ -383,9 +383,9 @@ class Trabajador(models.Model):
 
 class Dotacion(models.Model):
     trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, related_name="dotaciones")
-    camisa_franela = models.BooleanField(default=False)
+    camisa_franela = models.BooleanField(default=False, verbose_name="Camisa/franela")
     pantalon = models.BooleanField(default=False)
-    zapato = models.BooleanField(default=False)
+    zapato = models.BooleanField(default=False, verbose_name="Zapatos/botas")
     fecha_entrega = models.DateField(default=timezone.now)
 
     class Meta:

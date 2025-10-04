@@ -550,3 +550,49 @@ body.dark-mode #crear-vacuna-modal .select-multiple-wrapper select[multiple] opt
         grid-template-columns: 1fr;
     }
 }
+
+/* === ESTILOS PARA TABLAS EN MODALES === */
+.table-responsive-wrapper {
+    overflow-x: auto;
+    margin-top: 15px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 8px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Asegura que la tabla no se comprima demasiado */
+}
+
+.admin-table th,
+.admin-table td {
+    border: 1px solid var(--input-border-color);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.admin-table th {
+    background-color: var(--bg-color);
+    font-weight: 600;
+    position: sticky;
+    top: 0; /* Para cabeceras fijas si el wrapper tiene alto definido */
+}
+
+.admin-table tbody tr:nth-child(even) {
+    background-color: var(--bg-color);
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--placeholder-bg);
+}
+
+.admin-table tfoot {
+    font-weight: bold;
+    background-color: var(--bg-color);
+}
+
+.admin-table tfoot td {
+    text-align: right;
+}
