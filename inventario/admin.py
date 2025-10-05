@@ -344,10 +344,8 @@ class RegistroMedicamentoInline(admin.TabularInline):
 
 @admin.register(Ganado)
 class GanadoAdmin(ImagenAdminMixin):
-    list_display = ('identificador', 'ver_detalles', 'animal', 'raza', 'genero', 'peso_kg', 'edad',
-                    'crecimiento', 'fecha_nacimiento', 'estado', 'estado_salud',
-                    'razon_venta', 'razon_fallecimiento',
-                    'peñe', 'historial_vacunacion', 'proximas_vacunas', 'imagen_thumbnail')
+    list_display = ('identificador', 'ver_detalles', 'animal', 'raza', 'genero', 'peso_kg', 'edad', 'fecha_nacimiento',
+                    'crecimiento', 'estado', 'estado_salud', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('animal', 'genero', 'estado', 'estado_salud', 'crecimiento', 'peñe')
     search_fields = ('identificador', 'animal__nombre', 'raza')
@@ -548,7 +546,7 @@ class GanadoAdmin(ImagenAdminMixin):
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(ImagenAdminMixin):
-    list_display = ('nombre', 'ver_detalles', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_ingreso', 'f_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'categoria', 'precio', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('categoria', 'ubicaciones', 'proveedores', 'fecha_vencimiento')
     search_fields = ('nombre', 'categoria__nombre', 'ubicaciones__nombre', 'proveedores__nombre')
@@ -701,7 +699,7 @@ class VacunaForm(forms.ModelForm):
 @admin.register(Vacuna)
 class VacunaAdmin(ImagenAdminMixin):
     form = VacunaForm
-    list_display = ('nombre', 'ver_detalles', 'tipo', 'disponible', 'mostrar_etiquetas', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles', 'tipo', 'disponible', 'mostrar_etiquetas', 'cantidad_con_unidad', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('disponible', 'tipo', 'etiquetas', 'fecha_vencimiento', 'proveedores', 'ubicaciones')
     search_fields = ('nombre', 'tipo', 'etiquetas__nombre')
@@ -881,7 +879,7 @@ class AlimentoForm(forms.ModelForm):
 @admin.register(Alimento)
 class AlimentoAdmin(ImagenAdminMixin):
     form = AlimentoForm
-    list_display = ('nombre', 'ver_detalles','categoria', 'mostrar_etiquetas', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre', 'ver_detalles','categoria', 'cantidad_kg_ingresada', 'cantidad_kg_usada', 'cantidad_kg_restante', 'precio', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     
     class Media:
@@ -1036,7 +1034,7 @@ class AlimentoAdmin(ImagenAdminMixin):
 
 @admin.register(ControlPlaga)
 class ControlPlagaAdmin(ImagenAdminMixin):
-    list_display = ('nombre_producto', 'ver_detalles', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'mostrar_proveedores', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
+    list_display = ('nombre_producto', 'ver_detalles', 'tipo', 'cantidad_ingresada', 'cantidad_usada', 'cantidad_restante_con_unidad', 'precio', 'fecha_compra', 'fecha_vencimiento', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('tipo', 'proveedores', 'ubicaciones', 'fecha_vencimiento')
     search_fields = ('nombre_producto', 'tipo', 'ubicaciones__nombre', 'proveedores__nombre')
@@ -1247,7 +1245,6 @@ class MantenimientoAdmin(ImagenAdminMixin):
         'fecha_ultimo_mantenimiento', 
         'fecha_proximo_mantenimiento', 
         'completado', 
-        'mostrar_lugares_mantenimiento', 
         'imagen_thumbnail'
     )
     list_per_page = 10
@@ -1338,7 +1335,7 @@ class MantenimientoAdmin(ImagenAdminMixin):
 
 @admin.register(Combustible)
 class CombustibleAdmin(ImagenAdminMixin):
-    list_display = ('tipo', 'ver_detalles', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'mostrar_proveedores', 'imagen_thumbnail')
+    list_display = ('tipo', 'ver_detalles', 'cantidad_galones_ingresada', 'cantidad_galones_usados', 'cantidad_galones_restantes', 'precio', 'imagen_thumbnail')
     list_per_page = 10
     list_filter = ('tipo', 'ubicaciones', 'proveedores')
     search_fields = ('tipo', 'ubicaciones__nombre', 'proveedores__nombre')
@@ -1612,7 +1609,7 @@ class PagoAdmin(admin.ModelAdmin):
 
 @admin.register(LugarMantenimiento)
 class LugarMantenimientoAdmin(admin.ModelAdmin):
-    list_display = ("nombre_lugar", "ver_detalles", "nombre_empresa", "mostrar_proveedores", "correo", "numero")
+    list_display = ("nombre_lugar", "ver_detalles", "nombre_empresa", "correo", "numero")
     list_per_page = 10
     search_fields = ("nombre_lugar", "nombre_empresa", "ubicaciones__nombre", "proveedores__nombre")
     list_filter = ("ubicaciones", "proveedores")
