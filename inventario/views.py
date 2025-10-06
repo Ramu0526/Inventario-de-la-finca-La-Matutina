@@ -1217,10 +1217,31 @@ def crear_comprador_ajax(request):
 @login_required
 def medicamento_detalles_json(request, medicamento_id):
     medicamento = get_object_or_404(Medicamento, pk=medicamento_id)
-    
-    proveedores_data = [{'nombre': p.nombre, 'id': p.id} for p in Proveedor.objects.all()]
-    ubicaciones_data = [{'nombre': u.nombre, 'id': u.id} for u in Ubicacion.objects.all()]
-    etiquetas_data = [{'nombre': e.nombre, 'id': e.id} for e in Etiqueta.objects.filter(parent__isnull=True)]
+
+    # Detailed data for associated providers
+    proveedores_data = []
+    for proveedor in medicamento.proveedores.all():
+        proveedores_data.append({
+            'nombre': proveedor.nombre,
+            'nombre_local': getattr(proveedor, 'nombre_local', ''),
+            'correo': getattr(proveedor, 'correo_electronico', ''),
+            'telefono': getattr(proveedor, 'telefono', ''),
+            'imagen_url': get_safe_image_url(getattr(proveedor, 'imagen', None))
+        })
+
+    # Detailed data for associated locations
+    ubicaciones_data = []
+    for ubicacion in medicamento.ubicaciones.all():
+        ubicaciones_data.append({
+            'nombre': ubicacion.nombre, 'barrio': ubicacion.barrio,
+            'direccion': ubicacion.direccion, 'link': ubicacion.link,
+            'imagen_url': get_safe_image_url(getattr(ubicacion, 'imagen', None))
+        })
+
+    # Data for dropdowns/forms
+    all_proveedores_data = [{'nombre': p.nombre, 'id': p.id} for p in Proveedor.objects.all()]
+    all_ubicaciones_data = [{'nombre': u.nombre, 'id': u.id} for u in Ubicacion.objects.all()]
+    all_etiquetas_data = [{'nombre': e.nombre, 'id': e.id} for e in Etiqueta.objects.filter(parent__isnull=True)]
 
     data = {
         'id': medicamento.id,
@@ -1230,8 +1251,8 @@ def medicamento_detalles_json(request, medicamento_id):
         'cantidad_restante': str(medicamento.cantidad_restante),
         'categoria': {'nombre': medicamento.categoria.nombre} if medicamento.categoria else None,
         'precio': str(medicamento.precio),
-        'proveedores': list(medicamento.proveedores.values('id', 'nombre')),
-        'ubicaciones': list(medicamento.ubicaciones.values('id', 'nombre')),
+        'proveedores': proveedores_data,
+        'ubicaciones': ubicaciones_data,
         'fecha_compra': medicamento.fecha_compra.strftime('%Y-%m-%d'),
         'fecha_ingreso': medicamento.fecha_ingreso.strftime('%Y-%m-%d'),
         'fecha_vencimiento': medicamento.fecha_vencimiento.strftime('%Y-%m-%d'),
@@ -1239,9 +1260,9 @@ def medicamento_detalles_json(request, medicamento_id):
         'descripcion': medicamento.descripcion or "No hay descripción.",
         'unidad_medida': medicamento.get_unidad_medida_display(),
         # Datos para el formulario de vacunas
-        'all_proveedores': proveedores_data,
-        'all_ubicaciones': ubicaciones_data,
-        'all_etiquetas': etiquetas_data,
+        'all_proveedores': all_proveedores_data,
+        'all_ubicaciones': all_ubicaciones_data,
+        'all_etiquetas': all_etiquetas_data,
     }
     return JsonResponse(data)
 
