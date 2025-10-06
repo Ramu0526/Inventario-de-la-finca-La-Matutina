@@ -417,8 +417,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMedicamentoDetails(d) {
-        const proveedoresHtml = d.proveedores.map(p => `<li class="info-list-item">${p.nombre}</li>`).join('') || '<li>N/A</li>';
-        const ubicacionesHtml = d.ubicaciones.map(u => `<li class="info-list-item">${u.nombre}</li>`).join('') || '<li>N/A</li>';
+        const proveedoresHtml = d.proveedores.map((p, index) => `<li class="info-list-item">${p.nombre} <button class="info-btn" data-type="proveedor" data-index="${index}">Ver más</button></li>`).join('') || '<li>N/A</li>';
+        const ubicacionesHtml = d.ubicaciones.map((u, index) => `<li class="info-list-item">${u.nombre} <button class="info-btn" data-type="ubicacion" data-index="${index}">Ver más</button></li>`).join('') || '<li>N/A</li>';
     
         return `
             <div class="modal-header">

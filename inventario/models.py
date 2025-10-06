@@ -160,7 +160,7 @@ class Medicamento(models.Model):
     proveedores = models.ManyToManyField('caracteristicas.Proveedor', blank=True, related_name='medicamentos')
     fecha_compra = models.DateField(default=timezone.now)
     fecha_ingreso = models.DateField(default=timezone.now)
-    fecha_vencimiento = models.DateField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)
     imagen = CloudinaryField('image', folder='medicamentos', null=True, blank=True)
     descripcion = models.TextField(max_length=1000, blank=True, null=True, help_text="Descripción y notas sobre el medicamento.")
     
